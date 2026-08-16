@@ -1,0 +1,46 @@
+/**
+ * IncidentState - SOS/Incident state machine states
+ *
+ * Full state machine logic and invariants implemented in T07.
+ * See docs/data/data-dictionary.md for full transition rules.
+ */
+export enum IncidentState {
+  RECEIVED = "RECEIVED",
+  AUTO_SCREENING = "AUTO_SCREENING",
+  PENDING_VERIFICATION = "PENDING_VERIFICATION",
+  VERIFIED = "VERIFIED",
+  ASSIGNED = "ASSIGNED",
+  ACKNOWLEDGED = "ACKNOWLEDGED",
+  EN_ROUTE = "EN_ROUTE",
+  ON_SCENE = "ON_SCENE",
+  RESOLVED = "RESOLVED",
+  CLOSED = "CLOSED",
+  REJECTED = "REJECTED",
+  DUPLICATE = "DUPLICATE",
+  ESCALATED = "ESCALATED",
+  REASSIGNED = "REASSIGNED",
+  CANCELLED = "CANCELLED",
+}
+
+export enum ReportState {
+  RECEIVED = "RECEIVED",
+  SCREENING = "SCREENING",
+  PENDING_VERIFICATION = "PENDING_VERIFICATION",
+  VERIFIED = "VERIFIED",
+  REJECTED = "REJECTED",
+  DUPLICATE = "DUPLICATE",
+  IN_PROCESS = "IN_PROCESS",
+  RESOLVED = "RESOLVED",
+  CLOSED = "CLOSED",
+  ARCHIVED = "ARCHIVED",
+}
+
+export enum MapVersionState {
+  DRAFT = "DRAFT",
+  IN_REVIEW = "IN_REVIEW",
+  APPROVED = "APPROVED",
+  PUBLISHED = "PUBLISHED",
+  EXPIRED = "EXPIRED",
+  WITHDRAWN = "WITHDRAWN",
+  ARCHIVED = "ARCHIVED",
+}

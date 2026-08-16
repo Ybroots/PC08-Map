@@ -1,0 +1,234 @@
+# ATGT Platform - Local Development Compose
+#
+# Usage:
+#   pnpm dev:up        -- start all services
+#   pnpm dev:down      -- stop and remove containers
+#   pnpm dev:reset     -- full reset (removes volumes, re-seeds)
+#   pnpm dev:status    -- show health of all services
+#
+# Services:
+#   postgres  :5432   PostgreSQL 16 + PostGIS 3.4
+#   rabbitmq  :5672   RabbitMQ 3.13 (management :15672)
+#   redis     :6379   Redis 7.2
+#   minio     :9000   S3-compatible storage (console :9001)
+#   mailhog   :8025   Local SMTP/email catcher (UI :8025)
+#   otel      :4317   OpenTelemetry collector (OTLP gRPC)
+#   grafana   :3100   Grafana dashboards
+#   prometheus:9090   Prometheus metrics
+
+networks:
+  atgt-local:
+    name: atgt-local
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: atgt-postgres-data
+  rabbitmq_data:
+    name: atgt-rabbitmq-data
+  redis_data:
+    name: atgt-redis-data
+  minio_data:
+    name: atgt-minio-data
+  prometheus_data:
+    name: atgt-prometheus-data
+  grafana_data:
+    name: atgt-grafana-data
+
+services:
+  # ============================================================
+  # DATABASE: PostgreSQL 16 + PostGIS 3.4
+  # ============================================================
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: atgt-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: atgt_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: devpassword_local
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/01-roles.sql:/docker-entrypoint-initdb.d/01-roles.sql:ro
+      - ./postgres/02-schemas.sql:/docker-entrypoint-initdb.d/02-schemas.sql:ro
+      - ./postgres/03-platform-tables.sql:/docker-entrypoint-initdb.d/03-platform-tables.sql:ro
+      - ./seed/01-dev-seed.sql:/docker-entrypoint-initdb.d/04-dev-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d atgt_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - atgt-local
+
+  # ============================================================
+  # MESSAGE QUEUE: RabbitMQ 3.13 with Management UI
+  # ============================================================
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: atgt-rabbitmq
+    restart: unless-stopped
+    hostname: atgt-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: atgt
+      RABBITMQ_DEFAULT_PASS: devpassword_local
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    networks:
+      - atgt-local
+
+  # ============================================================
+  # CACHE / REALTIME: Redis 7.2
+  # ============================================================
+  redis:
+    image: redis:7.2-alpine
+    container_name: atgt-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning --requirepass devpassword_local
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "devpassword_local", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - atgt-local
+
+  # ============================================================
+  # OBJECT STORAGE: MinIO (S3-compatible)
+  # ============================================================
+  minio:
+    image: minio/minio:RELEASE.2024-06-13T22-53-53Z
+    container_name: atgt-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio_dev
+      MINIO_ROOT_PASSWORD: devpassword_local
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    networks:
+      - atgt-local
+
+  # MinIO bucket initialization
+  minio-init:
+    image: minio/mc:latest
+    container_name: atgt-minio-init
+    profiles: ["tools"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minio_dev devpassword_local;
+      mc mb --ignore-existing local/atgt-quarantine;
+      mc mb --ignore-existing local/atgt-evidence-original;
+      mc mb --ignore-existing local/atgt-evidence-derivative;
+      mc anonymous set none local/atgt-quarantine;
+      mc anonymous set none local/atgt-evidence-original;
+      mc anonymous set none local/atgt-evidence-derivative;
+      echo 'MinIO buckets initialized';
+      "
+    networks:
+      - atgt-local
+
+  # ============================================================
+  # EMAIL CATCHER: MailHog (local SMTP)
+  # ============================================================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: atgt-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - atgt-local
+
+  # ============================================================
+  # OBSERVABILITY: OpenTelemetry Collector
+  # ============================================================
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.101.0
+    container_name: atgt-otel
+    restart: unless-stopped
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./otel/otel-collector.yaml:/etc/otel/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8888:8888"   # Collector metrics
+    depends_on:
+      - prometheus
+    networks:
+      - atgt-local
+
+  # ============================================================
+  # METRICS: Prometheus
+  # ============================================================
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: atgt-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+      - --web.enable-remote-write-receiver
+    volumes:
+      - ./otel/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - atgt-local
+
+  # ============================================================
+  # DASHBOARDS: Grafana
+  # ============================================================
+  grafana:
+    image: grafana/grafana:10.3.0
+    container_name: atgt-grafana
+    restart: unless-stopped
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_SERVER_HTTP_PORT: "3100"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./otel/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+    ports:
+      - "3100:3100"
+    depends_on:
+      - prometheus
+    networks:
+      - atgt-local

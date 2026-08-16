@@ -1,0 +1,156 @@
+{
+  "rabbit_version": "3.13.0",
+  "users": [
+    {
+      "name": "atgt",
+      "password_hash": "V6PO5AAIY8iHjABECoibr0KnYBqSaJaFTRUgGnSNhkd9jLx7",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": ["administrator"],
+      "limits": {}
+    }
+  ],
+  "vhosts": [{ "name": "/" }],
+  "permissions": [
+    {
+      "user": "atgt",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "atgt.events",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "atgt.dlx",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "incidents.received",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-dead-letter-exchange": "atgt.dlx",
+        "x-dead-letter-routing-key": "incidents.received.dlq"
+      }
+    },
+    {
+      "name": "incidents.received.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": { "x-queue-type": "classic" }
+    },
+    {
+      "name": "dispatch.events",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-dead-letter-exchange": "atgt.dlx",
+        "x-dead-letter-routing-key": "dispatch.events.dlq"
+      }
+    },
+    {
+      "name": "dispatch.events.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": { "x-queue-type": "classic" }
+    },
+    {
+      "name": "evidence.pipeline",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-dead-letter-exchange": "atgt.dlx",
+        "x-dead-letter-routing-key": "evidence.pipeline.dlq"
+      }
+    },
+    {
+      "name": "evidence.pipeline.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": { "x-queue-type": "classic" }
+    },
+    {
+      "name": "notifications",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-dead-letter-exchange": "atgt.dlx",
+        "x-dead-letter-routing-key": "notifications.dlq"
+      }
+    },
+    {
+      "name": "notifications.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": { "x-queue-type": "classic" }
+    }
+  ],
+  "bindings": [
+    {
+      "source": "atgt.events",
+      "vhost": "/",
+      "destination": "incidents.received",
+      "destination_type": "queue",
+      "routing_key": "incident.received.v1",
+      "arguments": {}
+    },
+    {
+      "source": "atgt.events",
+      "vhost": "/",
+      "destination": "dispatch.events",
+      "destination_type": "queue",
+      "routing_key": "incident.verified.v1",
+      "arguments": {}
+    },
+    {
+      "source": "atgt.events",
+      "vhost": "/",
+      "destination": "dispatch.events",
+      "destination_type": "queue",
+      "routing_key": "assignment.#",
+      "arguments": {}
+    },
+    {
+      "source": "atgt.events",
+      "vhost": "/",
+      "destination": "evidence.pipeline",
+      "destination_type": "queue",
+      "routing_key": "evidence.#",
+      "arguments": {}
+    },
+    {
+      "source": "atgt.events",
+      "vhost": "/",
+      "destination": "notifications",
+      "destination_type": "queue",
+      "routing_key": "notification.requested.v1",
+      "arguments": {}
+    }
+  ]
+}

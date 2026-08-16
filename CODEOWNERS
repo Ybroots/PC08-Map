@@ -1,0 +1,27 @@
+# CODEOWNERS - Required reviews before merge
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default: Tech Lead reviews everything
+* @tech-lead
+
+# Security-sensitive paths require security reviewer
+packages/authorization/ @tech-lead @security-reviewer
+apps/api/src/modules/identity/ @tech-lead @security-reviewer
+apps/api/src/modules/audit/ @tech-lead @security-reviewer
+
+# Privacy vault - extra protection
+apps/api/src/modules/privacy-vault/ @tech-lead @security-reviewer @privacy-approver
+
+# Infrastructure changes
+infra/ @tech-lead @devops-lead
+.github/ @tech-lead @devops-lead
+
+# Evidence pipeline
+apps/api/src/modules/evidence/ @tech-lead @security-reviewer
+apps/worker/src/media/ @tech-lead @security-reviewer
+
+# ADR changes require architect sign-off
+docs/adr/ @tech-lead
+
+# Migration files require DBA review
+apps/api/src/database/migrations/ @tech-lead @dba

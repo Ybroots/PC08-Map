@@ -1,0 +1,31 @@
+# RB-04-redis-failover-cache-flush.md
+
+**Status**: DRAFT — Fill in before pilot go-live
+
+## Trigger condition
+
+[ Describe when this runbook applies ]
+
+## Prerequisites
+
+- Access level required:
+- Tools needed:
+
+## Steps
+
+1. [ Step 1 ]
+2. [ Step 2 ]
+
+## Verification
+
+- [ How to verify the situation is resolved ]
+
+## Escalation
+
+- Contact: [ Role/person ]
+- Escalate after: [ N minutes ]
+
+## Post-incident
+
+- [ Document in incident log ]
+- [ Update runbook if steps were wrong ]

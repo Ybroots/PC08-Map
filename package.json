@@ -1,0 +1,40 @@
+{
+  "name": "atgt-platform",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Ban do so va ung dung an toan giao thong tinh Lam Dong",
+  "scripts": {
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yaml}\" --ignore-path .gitignore",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yaml}\" --ignore-path .gitignore",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test -- --coverage",
+    "test:integration": "turbo run test:integration",
+    "test:contract": "turbo run test:contract",
+    "test:e2e": "turbo run test:e2e",
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "dev:up": "bash scripts/dev-up.sh",
+    "dev:down": "bash scripts/dev-down.sh",
+    "dev:reset": "bash scripts/dev-reset.sh",
+    "dev:status": "powershell -ExecutionPolicy Bypass -File scripts/dev-status.ps1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.0",
+    "ts-jest": "^29.2.5",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

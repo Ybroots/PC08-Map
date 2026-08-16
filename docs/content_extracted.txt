@@ -1,0 +1,1659 @@
+KẾ HOẠCH TRIỂN KHAI CODE CHI TIẾT
+BẢN ĐỒ SỐ VÀ ỨNG DỤNG AN TOÀN GIAO THÔNG TỈNH LÂM ĐỒNG
+Kế hoạch thực thi cho Codex: kiến trúc, backlog, API, dữ liệu, bảo mật, DevOps và kiểm thử
+Thuộc tính
+Giá trị
+Tài liệu nguồn
+Thuyet_minh_Ban_do_so_ATGT_Lam_Dong_PC08_v3.docx
+Phiên bản kế hoạch
+1.0 - ngày 16/08/2026
+Đối tượng sử dụng
+Chủ nhiệm dự án, kiến trúc sư, BA, đội phát triển, ATTT, QA, vận hành và Codex
+Phạm vi
+MVP/thí điểm và nền tảng sẵn sàng mở rộng toàn tỉnh; không thay thế thủ tục pháp lý, thẩm định cấp độ hoặc lựa chọn nhà thầu
+Nguyên tắc
+Một ticket = một kết quả có thể kiểm chứng; không code khi đầu vào pháp lý/nghiệp vụ ở cổng bắt buộc chưa được chốt
+Khuyến nghị kiến trúc: Bắt đầu bằng modular monolith có ranh giới module rõ, Outbox và hàng đợi bền vững; triển khai nhiều instance trên 02 nút ứng dụng. Chỉ tách microservice khi có bằng chứng về tải, quyền sở hữu đội hoặc nhu cầu cách ly rủi ro. Cách này phù hợp tiến độ MVP 10-14 tuần và vẫn hỗ trợ HA theo mô hình 09 VPS.
+Điểm dừng bắt buộc: Codex không tự suy đoán quy tắc điều phối, SLA liên ngành, thời hạn lưu dữ liệu, quyền gỡ ẩn danh, mức/cấp độ ATTT hoặc hạn mức VietMap. Các mục này phải được điền vào bảng quyết định và phê duyệt trước khi bật ở Production.
+MỤC LỤC ĐỊNH HƯỚNG
+1. Kết luận triển khai và phạm vi
+2. Bản đồ yêu cầu từ tài liệu nguồn
+3. Các quyết định kiến trúc nền
+4. Cấu trúc repository và quy ước code
+5. Phân hệ, vai trò và quyền truy cập
+6. Mô hình dữ liệu và state machine
+7. Hợp đồng API, sự kiện và xử lý bất đồng bộ
+8. Thiết kế tích hợp VietMap
+9. Thiết kế ứng dụng công dân và cổng điều hành
+10. Bảo mật, dữ liệu cá nhân và bằng chứng số
+11. Hạ tầng 09 VPS, CI/CD và vận hành
+12. Chiến lược kiểm thử và nghiệm thu
+13. Backlog triển khai chi tiết cho Codex
+14. Kế hoạch sprint, nhân sự và cổng kiểm soát
+15. Danh sách quyết định còn mở và rủi ro
+16. Cách giao việc cho Codex
+Phụ lục A-D: AGENTS.md, PLANS.md, biến môi trường, ma trận truy vết
+Tài liệu sử dụng Heading 1-3; có thể mở Navigation Pane trong Word để di chuyển nhanh giữa các mục.
+1. KẾT LUẬN TRIỂN KHAI VÀ PHẠM VI
+1.1. Mục tiêu code
+Xây dựng nền tảng số có thể tiếp nhận, xác minh, điều phối và theo dõi sự kiện theo vị trí; đồng thời quản trị lớp dữ liệu giao thông và tích hợp VietMap qua một Adapter tập trung. Hệ thống phải phục vụ năm nhóm: công dân/du khách, trực ban, đơn vị địa bàn, lãnh đạo và quản trị hệ thống.
+Luồng cốt lõi 1: SOS tai nạn/CNCH từ công dân đến trung tâm chỉ huy, gợi ý đơn vị theo vùng phục vụ và ETA, theo dõi các mốc tiếp nhận - di chuyển - hiện trường - hoàn tất.
+Luồng cốt lõi 2: phản ánh vi phạm kèm tọa độ và bằng chứng, chống spam/trùng, che định danh, xác minh trước khi dùng nghiệp vụ, cấp mã tra cứu tổng quát.
+Luồng cốt lõi 3: quản trị và công bố đường cấm/hạn chế, điểm nguy hiểm, bãi đỗ, cấm dừng/đỗ và sự kiện tạm thời có thời hạn hiệu lực.
+Luồng nền: phân quyền, audit, thông báo, dữ liệu không gian, VietMap, quan sát hệ thống, sao lưu/phục hồi và vận hành theo SLA.
+1.2. Phạm vi MVP
+Nhóm
+Có trong MVP
+Để sau thí điểm
+Công dân
+Bản đồ, SOS tối giản, phản ánh, mã tra cứu, cảnh báo gần/tuyến, click-to-call 112/113/114/115
+Dẫn đường turn-by-turn nâng cao, cộng đồng/chấm điểm, mạng xã hội
+Điều hành
+Hàng đợi, xác minh, phân công, SLA/escalation, bản đồ tác nghiệp, audit
+Tự động điều phối hoàn toàn, tích hợp sâu nhiều tổng đài khi chưa có quy chế
+Dữ liệu
+Đường cấm, điểm nguy hiểm, bãi đỗ, sự kiện tạm thời; version/approve/publish/expire
+AI dự báo điểm đen, kho dữ liệu lớn liên ngành
+Bằng chứng
+Upload cách ly, quét mã độc, checksum, metadata stripping, preview/watermark, quyền tải
+Phân tích giả mạo nâng cao, nhận dạng tự động dùng làm quyết định
+Hạ tầng
+HA Edge/App/Queue/DB, backup độc lập, monitoring, runbook failover
+DR khác miền lỗi hoàn chỉnh nếu chưa có hạ tầng/kinh phí
+1.3. Không thuộc phạm vi code tự động
+Quyết định cấp độ ATTT và hồ sơ thẩm định/phê duyệt; code chỉ cung cấp bằng chứng và cấu hình hỗ trợ.
+Phê duyệt giá, quota, hợp đồng/SLA VietMap; hệ thống chỉ đo và cảnh báo mức sử dụng.
+Quyết định xử phạt, kết luận vi phạm, mở danh tính người phản ánh hoặc công bố dữ liệu chưa xác minh.
+Thay thế các tổng đài khẩn cấp; ứng dụng luôn phải duy trì đường gọi dự phòng và thông báo giới hạn.
+2. BẢN ĐỒ YÊU CẦU TỪ TÀI LIỆU NGUỒN
+2.1. Ma trận yêu cầu - module - kiểm thử
+ID
+Yêu cầu
+Module/code sở hữu
+Bằng chứng kiểm thử
+REQ-01
+SOS lấy GPS/độ chính xác/thời gian, gửi tối giản
+incidents, mobile/sos
+E2E offline/online; idempotency; p95 ingest
+REQ-02
+Gợi ý lực lượng theo vùng, năng lực và ETA
+dispatch, geo, vietmap-adapter
+Spatial fixture; adapter mock; fallback khi provider lỗi
+REQ-03
+SLA xác nhận và escalation
+dispatch, scheduler, notifications
+Fake clock; timeout/escalation; audit
+REQ-04
+Phản ánh ẩn danh, chống spam/trùng
+reports, evidence, abuse
+Không lộ PII; duplicate heuristic; rate limit
+REQ-05
+Bằng chứng mã hóa, checksum, preview/watermark
+evidence, object-storage
+Hash integrity; malware quarantine; download authorization
+REQ-06
+Dữ liệu chỉ công bố sau duyệt và tự hết hạn
+map-data, approvals
+State transition; scheduled expiry; public API excludes draft
+REQ-07
+VietMap qua Adapter, key/quota/cache/circuit breaker
+vietmap-adapter
+Contract test; key absent in client; quota alarms
+REQ-08
+RBAC/ABAC theo vai trò, địa bàn, vụ việc
+identity, authorization
+Policy tests deny-by-default; cross-area denial
+REQ-09
+Audit xem/tải/sửa/xóa và gỡ ẩn danh
+audit, privacy-vault
+Append-only event; dual approval; exportable report
+REQ-10
+HA; VietMap lỗi vẫn nhận tin
+platform, outbox, queue
+Kill node/provider; no lost accepted event
+REQ-11
+KPI có baseline và nguồn đo
+analytics, observability
+Metric dictionary; trace/log correlation
+REQ-12
+Khiếu nại đối tượng bị phản ánh qua kênh chính thức
+complaints (internal)
+Case lifecycle; restricted evidence access
+2.2. Cổng đầu vào phải được chốt
+Quyết định
+Chủ sở hữu
+Ảnh hưởng code
+Giá trị tạm thời
+SLA xác nhận/chuyển cấp
+Tổ nghiệp vụ liên ngành
+Timer, cảnh báo, dashboard
+Config theo incident_type + area; chưa hard-code
+Vùng phục vụ/năng lực đơn vị
+Công an/Y tế/CNCH
+Dispatch ranking
+Import GeoJSON + capability catalog
+Thời hạn lưu từng loại dữ liệu
+Chủ quản dữ liệu/ATTT
+Retention, archive, delete
+Policy table; job tắt cho tới phê duyệt
+Quyền gỡ ẩn danh
+Cấp có thẩm quyền
+Break-glass workflow
+Hai người phê duyệt; lý do bắt buộc
+Hồ sơ phương tiện/routing
+Nghiệp vụ + VietMap
+Adapter request
+Car/bike mặc định theo hợp đồng; không giả định xe ưu tiên
+Chỉ tiêu tải
+Chủ đầu tư/MobiFone
+Sizing/load test
+Tham số hóa; không chốt dung lượng bằng suy đoán
+3. CÁC QUYẾT ĐỊNH KIẾN TRÚC NỀN
+3.1. Reference stack đề xuất
+Lưu ý: Đây là stack tham chiếu để Codex bắt đầu nhất quán. Nếu MobiFone có chuẩn Java/.NET/Flutter bắt buộc, cần lập ADR thay thế trước T00; nghiệp vụ, API và mô hình dữ liệu trong kế hoạch vẫn giữ nguyên.
+Lớp
+Công nghệ đề xuất
+Lý do/kiểm soát
+Monorepo
+pnpm workspace + Turborepo
+Chia sẻ contract TypeScript; cache build; một versioning policy
+Mobile
+React Native TypeScript, native development build
+VietMap có React Native SDK; không phụ thuộc Expo Go; chia sẻ contract
+Web
+Next.js + React + TypeScript
+Public web, ops web; SSR/PWA khi cần; RBAC route guard
+Backend
+NestJS modular monolith
+Module boundaries, validation, OpenAPI, background jobs và test tốt
+Database
+PostgreSQL + PostGIS
+Giao dịch + không gian + versioning; streaming replica
+Queue
+RabbitMQ quorum queues
+Sự kiện ưu tiên bền vững, retry/DLQ; thành viên trên VPS 04/05/06
+Cache/realtime
+Redis + Sentinel; SSE/WebSocket
+Cache quota/layer, distributed locks, fanout realtime
+Object storage
+S3-compatible private storage
+Quarantine/original/derivative buckets; versioning/lifecycle
+Identity
+OIDC/SSO + MFA cho cán bộ; anonymous session cho công dân
+Không tự xây mật khẩu; deny-by-default
+Deployment
+OCI containers + Ansible + systemd/Compose
+Phù hợp 09 VPS cố định; ít phức tạp hơn Kubernetes cho MVP
+Observability
+OpenTelemetry, Prometheus, Grafana, Loki/Elastic, Alertmanager
+Trace-log-metric correlation; cảnh báo SLA/quota
+3.2. Kiến trúc ứng dụng
+Modular monolith: một API deployable nhưng module không import trực tiếp repository của nhau; giao tiếp qua application service, domain event hoặc contract công khai.
+CQRS mức vừa đủ: command cho thay đổi trạng thái; query model tối ưu cho hàng đợi/dashboard. Không áp dụng event sourcing toàn hệ thống.
+Transactional Outbox: mọi thay đổi cần phát sự kiện ghi cùng transaction; relay đẩy sang RabbitMQ; consumer idempotent.
+Provider ports/adapters: VietMap, object storage, notification, antivirus, identity là interface; test bằng fake adapter; không rải SDK vendor trong domain.
+Deny-by-default: controller chỉ gọi use case sau authentication/authorization; repository luôn nhận access scope đã tính.
+No silent degradation: khi dùng ETA fallback hoặc dữ liệu cache cũ, response và UI phải có quality flag/observed_at.
+3.3. ADR bắt buộc
+ADR
+Nội dung
+Quyết định mặc định
+ADR-001
+Modular monolith vs microservices
+Modular monolith đến khi có tiêu chí tách
+ADR-002
+Mobile framework/VietMap SDK
+React Native native build
+ADR-003
+Cách điều phối
+Operator-confirmed; auto chỉ qua rule được phê duyệt
+ADR-004
+Dữ liệu định danh
+Vault/schema và role riêng; không join trong query nghiệp vụ
+ADR-005
+Bằng chứng
+Quarantine -> scan -> original immutable -> derivative
+ADR-006
+Queue/outbox
+RabbitMQ quorum + PostgreSQL outbox
+ADR-007
+HA database
+Streaming replica; failover theo runbook, không auto khi thiếu quorum tin cậy
+ADR-008
+Orchestration
+Ansible + containers cho MVP
+ADR-009
+Tọa độ
+EPSG:4326 ở API; geography geometry phù hợp trong PostGIS
+ADR-010
+Public case tracking
+Mã ngẫu nhiên entropy cao; chỉ trả trạng thái tổng quát
+4. CẤU TRÚC REPOSITORY VÀ QUY ƯỚC CODE
+4.1. Cây thư mục
+atgt-platform/
+  AGENTS.md                 # Quy tắc bền vững cho Codex
+  PLANS.md                  # Mẫu execution plan
+  pnpm-workspace.yaml
+  apps/
+    api/                    # NestJS HTTP/SSE/WebSocket
+    worker/                 # Outbox relay, media, notification, expiry, SLA jobs
+    citizen-mobile/         # React Native
+    citizen-web/            # Next.js public/PWA
+    ops-web/                # Next.js điều hành + lãnh đạo + quản trị
+  packages/
+    contracts/              # DTO, OpenAPI-generated client, event schemas
+    domain/                 # Value objects thuần, không phụ thuộc framework
+    authorization/          # Policy engine và access scope
+    vietmap-client/         # Port + HTTP adapter; không chứa key
+    observability/          # OTel/logging/metric helpers
+    config/                 # Typed configuration và validation
+    test-kit/               # Fixtures, factories, fake clock/provider
+    ui/                     # Design tokens/components dùng chung cho web
+  infra/
+    compose/                # Local/dev/test
+    ansible/                # 09 VPS inventory, roles, rollout/rollback
+    edge/                   # HAProxy/Nginx/WAF config
+    postgres/               # Replication/PITR/runbooks
+    rabbitmq/               # Quorum policies/DLQ
+    redis/                  # Sentinel config
+    monitoring/             # Prometheus/Grafana/log/alerts
+  docs/
+    adr/ api/ data/ plans/ security/ runbooks/ uat/
+4.2. Quy tắc phụ thuộc module
+Controller -> application use case -> domain -> port -> infrastructure adapter. Domain không import NestJS, ORM, HTTP SDK hoặc biến môi trường.
+Module khác chỉ gọi public application service hoặc consume event; cấm import sâu đường dẫn internal.
+DTO API không được dùng làm entity database. Mapping rõ ràng tại boundary.
+Mọi timestamp là UTC trong backend/database; UI hiển thị Asia/Ho_Chi_Minh; tên trường dùng *_at.
+Mọi ID nội bộ dùng UUID/ULID; mã tra cứu public sinh riêng, không tuần tự, không suy đoán được.
+Tiền/chi phí/quota không dùng float. Tọa độ validate range; GeoJSON tuân thủ [longitude, latitude].
+Error response theo RFC 7807 Problem Details; có error_code ổn định, trace_id và thông điệp không lộ nội bộ.
+4.3. Branch, commit và review
+Mục
+Quy ước
+Branch
+feature/Txx-short-name, fix/Txx-short-name, chore/...; bảo vệ main
+Commit
+Conventional Commits; mỗi commit build được; không trộn refactor ngoài phạm vi
+PR
+Liên kết ticket/plan, risk, migration, ảnh UI, test evidence, rollback
+Gate
+format + lint + typecheck + unit + integration + contract + SAST + dependency/license + container scan
+Migration
+Forward-only; expand/contract; có script kiểm tra và runbook rollback ứng dụng
+Secrets
+Không commit; secret scanning; cấu hình qua secret store/inventory mã hóa
+5. PHÂN HỆ, VAI TRÒ VÀ QUYỀN TRUY CẬP
+5.1. Bounded modules
+Module
+Trách nhiệm
+Không được làm
+identity
+OIDC claims, officer profile, citizen anonymous session
+Lưu mật khẩu cán bộ
+authorization
+RBAC + ABAC area/unit/case/data_class
+Cho phép mặc định khi thiếu policy
+incidents
+SOS/case, state, priority, status history
+Tự quyết đơn vị ngoài rule
+dispatch
+Candidate shortlist, ETA ranking, assignment, SLA/escalation
+Công khai vị trí lực lượng
+reports
+Phản ánh, tracking, duplicate/spam score, verification
+Dùng tin chưa xác minh để xử phạt
+evidence
+Upload lifecycle, hash, AV, derivative, chain of custody
+Ghi file public hoặc log URL ký
+map-data
+Layer/feature/version/approval/publication/expiry
+Ghi đè mất phiên bản
+vietmap-adapter
+Search/geocode/reverse/route/matrix, quota/cache
+Nhận PII/bằng chứng nghiệp vụ
+notifications
+Template, channel, preference, delivery status
+Gửi thông tin tác nghiệp cho công dân
+audit
+Append-only security/business audit
+Cho ứng dụng sửa/xóa log
+complaints
+Hồ sơ khiếu nại nội bộ và kết quả
+Mở kênh công dân ngoài quy chế
+analytics
+Metric/KPI đã ẩn danh và baseline
+Đọc vault định danh
+5.2. Ma trận vai trò
+Vai trò
+Phạm vi
+Quyền chính
+Hạn chế
+Citizen guest
+Phiên/thiết bị
+Gửi SOS/phản ánh, xem public layers, tra mã
+Không xem nội bộ/PII
+Dispatcher
+Địa bàn/ca trực
+Xác minh, gán, escalation, xem bằng chứng theo vụ
+Không duyệt gỡ ẩn danh một mình
+Field officer
+Đơn vị/vụ được giao
+Nhận việc, cập nhật trạng thái/kết quả
+Không xem vụ ngoài scope
+Data editor
+Lớp/địa bàn
+Tạo/sửa bản nháp
+Không tự duyệt bản mình tạo
+Data approver
+Lớp/địa bàn
+Duyệt/publish/withdraw
+Four-eyes cho lớp nhạy cảm
+Leader viewer
+Tỉnh/đơn vị
+Dashboard tổng hợp, drill-down được cấp
+Không mặc định xem định danh
+Security auditor
+Toàn hệ thống theo nhiệm vụ
+Audit, truy vấn bất thường
+Read-only; export có log
+Privacy approver
+Yêu cầu cụ thể
+Phê duyệt break-glass
+Cần 2 cấp và lý do
+System admin
+Hạ tầng/cấu hình
+User mapping, config, integration
+Không mặc định đọc bằng chứng
+6. MÔ HÌNH DỮ LIỆU VÀ STATE MACHINE
+6.1. Các bảng lõi
+Schema/bảng
+Trường quan trọng
+Kiểm soát
+incident.incidents
+id, public_code, type, priority, geom, accuracy_m, occurred_at, state, source
+RLS/scope; optimistic version
+incident.status_history
+incident_id, from_state, to_state, actor, reason, created_at
+Append-only
+dispatch.units
+unit_id, capability[], service_area, availability, contact_ref
+Không public; versioned
+dispatch.assignments
+incident_id, unit_id, eta_sec, route_quality, assigned/ack/on_scene_at
+SLA timer; unique active
+report.reports
+id, public_code, category, geom, plate_text_unverified, state, risk_score
+PII-free business table
+evidence.objects
+owner_type/id, object_key, sha256, mime, size, scan_state, retention_class
+Private bucket; checksum
+privacy.identity_links
+subject_ref, sealed_identity, reason, retention_until
+Role/key riêng; không join mặc định
+map.features
+layer_id, version_id, geom, properties, valid_from/to, publish_state
+PostGIS; version immutable
+map.approvals
+version_id, submitter, approver, decision, comment
+Maker-checker
+integration.provider_usage
+provider, api, key_alias, request_count, latency, status, cost_unit
+Không log key/query nhạy cảm
+platform.outbox
+event_id, aggregate, type, payload, occurred_at, published_at
+Cùng transaction; index pending
+audit.audit_events
+who, action, object, scope, outcome, reason, trace_id, happened_at
+Append-only/export signed
+6.2. Quy ước dữ liệu không gian
+API trao đổi GeoJSON EPSG:4326; thứ tự tọa độ bắt buộc longitude, latitude.
+Điểm dùng geography(Point,4326) khi đo mét; đoạn/vùng dùng geometry với GiST index và quy tắc validity.
+Lưu original_coordinate, normalized_coordinate, accuracy_m, source_crs và normalization_method khi có chuyển đổi.
+Mọi đối tượng thời hạn có valid_from, valid_to và publication_state; public query luôn lọc thời gian hiệu lực.
+Không trả dữ liệu hình học nội bộ của lực lượng/địa bàn nhạy cảm qua public API.
+6.3. State machine SOS/incident
+RECEIVED -> AUTO_SCREENING -> PENDING_VERIFICATION -> VERIFIED
+VERIFIED -> ASSIGNED -> ACKNOWLEDGED -> EN_ROUTE -> ON_SCENE -> RESOLVED -> CLOSED
+PENDING_VERIFICATION -> REJECTED | DUPLICATE
+ASSIGNED -> ESCALATED | REASSIGNED
+Any active state -> CANCELLED only with reason + authority
+Mỗi transition có precondition, actor role, required fields, timestamp và audit event.
+ASSIGNED tạo SLA deadline; ACKNOWLEDGED hủy timer; quá hạn phát assignment.ack_timed_out và escalation.
+Không cho nhảy thẳng RECEIVED -> CLOSED; sửa lịch sử bằng event bù, không update/xóa history.
+Citizen chỉ thấy trạng thái tổng quát: đã tiếp nhận, đang xử lý, đã hoàn tất/không đủ cơ sở.
+6.4. State machine phản ánh và lớp dữ liệu
+REPORT: RECEIVED -> SCREENING -> PENDING_VERIFICATION -> VERIFIED | REJECTED | DUPLICATE
+        VERIFIED -> IN_PROCESS -> RESOLVED -> CLOSED -> ARCHIVED
+MAP VERSION: DRAFT -> IN_REVIEW -> APPROVED -> PUBLISHED -> EXPIRED | WITHDRAWN -> ARCHIVED
+Invariant: Tin người dân và OCR chỉ là đầu vào chưa xác minh. Không có code path nào biến REPORT thành quyết định xử phạt; kết quả nghiệp vụ phải do actor có thẩm quyền và được audit.
+7. HỢP ĐỒNG API, SỰ KIỆN VÀ XỬ LÝ BẤT ĐỒNG BỘ
+7.1. Chuẩn API chung
+Base path /api/v1; OpenAPI là nguồn sự thật; client mobile/web sinh tự động từ schema đã kiểm tra tương thích.
+POST thay đổi quan trọng yêu cầu Idempotency-Key; server lưu request hash + response tối thiểu theo TTL.
+Cursor pagination; không trả offset cho bảng tăng nhanh. Filter/sort có allowlist.
+Request ID và traceparent được truyền xuyên Edge -> API -> queue -> worker -> provider.
+Upload dùng initiate/finalize; file luôn vào quarantine, không nhận object_key do client tự đặt.
+Public response tối thiểu dữ liệu; internal API áp dụng field-level policy và audit khi đọc bằng chứng.
+7.2. Endpoint MVP
+Kênh
+Endpoint
+Mục đích/kiểm soát
+Public
+POST /public/sos
+Tạo SOS; idempotent; rate limit ưu tiên; không phụ thuộc VietMap
+Public
+POST /public/reports
+Tạo phản ánh; anonymous session; captcha/risk-based control
+Public
+POST /public/uploads:initiate|finalize
+Quarantine upload; MIME/size/hash; scan async
+Public
+GET /public/cases/{code}
+Trạng thái tổng quát; chống enumeration
+Public
+GET /public/map/layers/{key}/features
+Chỉ published + valid; bbox/zoom filter
+Public
+GET /public/alerts/nearby
+Theo vị trí/hướng/phương tiện; chống lặp
+Map
+GET /map/search|reverse|route|matrix
+Backend Adapter; cache/quota/circuit breaker
+Ops
+GET /ops/incidents
+Queue theo scope; cursor; realtime resume token
+Ops
+POST /ops/incidents/{id}:verify|assign|transition
+Policy + state precondition + audit
+Ops
+GET /ops/units/candidates
+PostGIS shortlist + ETA; trả quality/fallback
+Data
+POST /admin/layers/{id}/versions
+Tạo version draft; validate geometry/schema
+Data
+POST /admin/versions/{id}:submit|approve|publish|withdraw
+Maker-checker; scheduled publish/expiry
+Privacy
+POST /privacy/unmask-requests
+Lý do/văn bản; two-person approval; immutable audit
+Audit
+GET /audit/events
+Chỉ auditor; export có watermark/hash
+7.3. Domain events và queue
+Routing key
+Producer
+Consumer
+Retry/DLQ
+incident.received.v1
+incidents
+dispatch, notifications, analytics
+Critical persistent; DLQ alert P1
+incident.verified.v1
+incidents
+dispatch
+Retry exponential; idempotent
+assignment.created.v1
+dispatch
+notifications, sla
+Delayed timer; dedupe assignment_id
+assignment.ack_timed_out.v1
+sla worker
+dispatch, ops realtime
+No infinite retry; alert
+evidence.scan_requested.v1
+evidence
+media worker
+Quarantine remains closed on failure
+evidence.ready.v1
+media worker
+reports/incidents
+Update readiness; audit
+map.version.published.v1
+map-data
+cache invalidator, notifications
+Retry + version key
+notification.requested.v1
+domain modules
+notification worker
+Provider retry policy; DLQ
+provider.quota_threshold.v1
+vietmap-adapter
+alerts/ops
+Throttle duplicate alarms
+7.4. Dispatch ranking
+Bước 1: lọc unit đang sẵn sàng, đúng capability, đúng policy và service_area bằng PostGIS.
+Bước 2: lấy top N theo khoảng cách không gian; N cấu hình theo incident type/area.
+Bước 3: gọi VietMap matrix/route qua Adapter, timeout ngắn và budget quota.
+Bước 4: tính score theo ETA, capability match, current load, jurisdiction và policy priority; lưu score breakdown để giải thích.
+Bước 5: trả danh sách gợi ý cho trực ban. Auto-assign chỉ khi rule version đã phê duyệt và có feature flag.
+Fallback: nếu VietMap lỗi, dùng khoảng cách/route cache và gắn quality=DEGRADED; vẫn cho trực ban thao tác.
+8. THIẾT KẾ TÍCH HỢP VIETMAP
+8.1. Nguyên tắc adapter
+Theo tài liệu VietMap hiện hành, service API nên được gọi từ backend; VietMap có SDK Web GL, Flutter và React Native. Kế hoạch dùng React Native SDK cho hiển thị bản đồ mobile và backend Adapter cho search/geocode/reverse/routing/matrix. Khóa client và server phải tách loại, hạn chế domain/IP/API/quota theo khả năng Console/hợp đồng.
+Domain chỉ biết MapProviderPort; adapter chuẩn hóa request/response về model nội bộ.
+Không gửi incident_id, public_code, danh tính, bằng chứng, ghi chú hoặc vị trí lực lượng cho provider; chỉ gửi tọa độ/tùy chọn route cần thiết.
+Cache key bỏ dữ liệu nhạy cảm, làm tròn tọa độ theo use case; TTL riêng search/reverse/route/matrix; không cache sai điều khoản giấy phép.
+Timeout, retry có jitter, circuit breaker, bulkhead và quota budget cho từng API/environment.
+Mọi response có provider, api_version, observed_at, cache_status, quality và latency_ms để truy vết.
+Không để key trong mobile bundle trừ key SDK bắt buộc đã giới hạn; server key chỉ ở secret store.
+8.2. Interface nội bộ
+interface MapProviderPort {
+  search(input: SearchInput, ctx: ProviderContext): Promise<SearchResult[]>;
+  reverse(input: ReverseInput, ctx: ProviderContext): Promise<AddressResult>;
+  route(input: RouteInput, ctx: ProviderContext): Promise<RouteResult>;
+  matrix(input: MatrixInput, ctx: ProviderContext): Promise<MatrixResult>;
+}
+type ProviderQuality = 'LIVE' | 'CACHED' | 'DEGRADED' | 'UNAVAILABLE';
+// ProviderContext chỉ chứa trace/budget/locale, tuyệt đối không chứa PII hay case notes.
+8.3. Acceptance tests VietMap
+Search/reverse/route/matrix map đúng schema, tọa độ và error code; contract test dùng recorded sanitized fixtures được phép.
+Key không xuất hiện trong log, error, source map, bundle public hoặc snapshot test.
+Circuit mở sau ngưỡng; request mới fail-fast; nhận SOS vẫn 201/202 và outbox vẫn phát.
+Quota 70/85/95% phát cảnh báo khác mức; dashboard tách theo key_alias/API/environment.
+Cache không trả dữ liệu quá max-stale; response gắn observed_at/quality; UI hiển thị suy giảm.
+Không gọi provider trong transaction database và không retry vô hạn.
+9. THIẾT KẾ ỨNG DỤNG CÔNG DÂN VÀ CỔNG ĐIỀU HÀNH
+9.1. Mobile/public web
+Màn hình
+Nội dung
+Điều kiện hoàn thành
+Home map
+Vị trí, lớp public, cảnh báo gần, tìm kiếm
+Tải suy giảm được; không lộ layer nội bộ
+SOS
+Xác nhận, GPS/accuracy, loại sự cố tối thiểu, gửi
+<= 3 thao tác sau mở; offline queue; click-to-call
+SOS detail
+Trạng thái tổng quát, hướng dẫn an toàn
+Không hiển thị đơn vị/vị trí tác nghiệp
+Report
+Loại, vị trí, mô tả, ảnh/video, biển số nhập tay
+Cảnh báo an toàn; upload resume; consent
+Tracking
+Nhập mã/khôi phục từ secure storage
+Chống enumeration; không lộ chi tiết điều tra
+Alerts
+Đường cấm/nguy hiểm/cấm đỗ/bãi đỗ
+Theo hướng/phương tiện/thời gian; anti-fatigue
+Connectivity
+Banner offline/provider degraded
+Không tạo cảm giác SOS chắc chắn đã gửi khi chưa ack
+9.2. Offline và mạng yếu
+Local queue mã hóa; item có client_event_id, idempotency key, created_at, retry_count và checksum media.
+Phân biệt rõ trạng thái đang lưu trên máy, đang gửi, server đã nhận, gửi thất bại. Chỉ hiển thị mã hồ sơ khi server xác nhận.
+SOS ưu tiên payload text/coordinate trước; media gửi sau. Nếu mất data, cung cấp tel:112/113/114/115 và hướng dẫn chia sẻ vị trí theo khả năng OS.
+Giới hạn dung lượng media, nén derivative trên thiết bị nếu phù hợp nhưng giữ original theo policy; không xóa trước khi server finalize.
+Cache public layer theo vùng/phiên bản; không cache dữ liệu nghiệp vụ.
+9.3. Ops web/dashboard
+Queue view: bộ lọc area/type/priority/SLA; sort ổn định; badge mất kết nối; resume bằng last_event_id.
+Incident workspace: map, timeline, evidence preview, candidate units, assignment và transition controls theo policy.
+Map operations: layer nội bộ theo quyền, cluster, bbox query, version/validity, không render toàn tỉnh một lần.
+Data admin: schema-driven form, geometry validation, submit-review-approve-publish, diff version và scheduled expiry.
+Leader dashboard: tổng hợp; suppression ô có số lượng nhỏ nếu có nguy cơ tái định danh; drill-down theo scope.
+Audit viewer: tìm theo actor/object/action/time/outcome/trace_id; export yêu cầu lý do và ghi log.
+10. BẢO MẬT, DỮ LIỆU CÁ NHÂN VÀ BẰNG CHỨNG SỐ
+10.1. Threat model tối thiểu
+Mối đe dọa
+Kiểm soát code
+Kiểm chứng
+Spam/SOS giả
+Rate limit theo risk, device session, duplicate, queue verify
+Abuse load test; không chặn nhầm P1
+Upload độc hại
+Quarantine, MIME magic, size, AV, CDR nếu cần
+EICAR/zip bomb/path traversal tests
+IDOR/vượt địa bàn
+Central policy + scoped repository
+Cross-tenant/area negative tests
+Lộ PII qua log
+Structured allowlist logging, redaction
+Log snapshot/secret scan
+Lộ API key
+Secret store, key alias, client/server split
+Bundle/image/repo scan
+Sửa/xóa bằng chứng
+Immutable object/version, sha256, chain of custody
+Tamper detection/restore test
+Gỡ ẩn danh trái phép
+Break-glass two-person, MFA, purpose, expiry
+Approval policy and audit test
+Queue replay/duplicate
+Message id, inbox/dedupe, idempotent handler
+Repeated delivery test
+Provider outage
+Circuit/cache/fallback/outbox
+Chaos test; SOS accepted
+Admin compromise
+MFA, bastion/VPN, least privilege, session audit
+Access review and session evidence
+10.2. Evidence pipeline
+Initiate: server cấp upload_id, object key ngẫu nhiên, size/MIME allowlist, short-lived upload authorization.
+Quarantine: object không đọc được bởi ứng dụng nghiệp vụ; worker xác minh magic bytes, hash SHA-256 và quét mã độc.
+Sanitize: loại EXIF không cần thiết khỏi derivative; original được giữ theo policy và mã hóa riêng.
+Derive: thumbnail/preview có watermark nội bộ gồm case code + timestamp; không watermark làm thay đổi original.
+Finalize: transaction cập nhật READY, lưu checksum/scan engine/version; phát evidence.ready.v1.
+Access: preview/download qua authorization service; URL ký thời gian ngắn; mọi hành động ghi audit.
+Retention: legal hold chặn xóa; job archive/delete chỉ chạy khi policy đã phê duyệt và tạo audit/báo cáo.
+10.3. Privacy vault và break-glass
+Thiết kế bắt buộc: Bảng nghiệp vụ report/incident không chứa IP, device identifier hoặc tài khoản có thể nhận diện. Liên kết định danh kỹ thuật tối thiểu, nếu được phép thu, nằm trong privacy vault với DB role và encryption key riêng.
+Unmask request cần case_id, căn cứ/văn bản, mục đích, phạm vi trường, thời hạn và người yêu cầu.
+Hai approver khác người yêu cầu; kiểm tra separation of duties; MFA step-up.
+Grant ngắn hạn, one-time hoặc time-boxed; mọi query trả đúng trường được duyệt; không export hàng loạt.
+Thông báo cho đầu mối ATTT/privacy theo rule; audit không thể bị actor nghiệp vụ chỉnh sửa.
+Tự động revoke khi hết hạn; báo cáo định kỳ các yêu cầu approved/rejected/used/unused.
+11. HẠ TẦNG 09 VPS, CI/CD VÀ VẬN HÀNH
+11.1. Ánh xạ dịch vụ
+VPS
+Dịch vụ
+Triển khai/HA
+Port/network
+01
+Edge A: HAProxy/Nginx/WAF
+VIP/health check với VPS02
+Public 443; admin chỉ từ VPS03
+02
+Edge B: HAProxy/Nginx/WAF
+Failover/sync config đã ký
+Public 443; internal upstream
+03
+VPN/Bastion/Ansible control
+MFA, key, session record
+Không host ứng dụng
+04
+API A, ops/public web, VietMap Adapter; RMQ/Redis member
+Stateless app; rolling deploy
+Chỉ Edge; egress VietMap allowlist
+05
+API B, ops/public web, VietMap Adapter; RMQ/Redis member
+Stateless app; rolling deploy
+Như VPS04
+06
+Worker, RMQ quorum member, Redis/Sentinel member
+Jobs idempotent; resource limits
+Không nhận public traffic
+07
+PostgreSQL/PostGIS primary
+PITR, audit, encrypted volume
+Chỉ app/DB replication/backup
+08
+PostgreSQL/PostGIS standby
+Near-sync; promotion runbook
+Không dùng thay backup
+09
+Prometheus/Grafana/log/Alertmanager/backup control
+App không có quyền xóa log
+Admin từ bastion; receive internal telemetry
+11.2. Pipeline
+PR: format, lint, typecheck, unit, integration Testcontainers, OpenAPI/event compatibility, SAST, secret/dependency/license scan.
+Build: reproducible OCI images, pinned base digest, SBOM, vulnerability scan, image signing/attestation.
+Deploy Test: migration dry run, smoke, DAST, contract with provider sandbox/mock, evidence pipeline test.
+Approval: phiếu thay đổi, version, risk, DB migration, rollback và window; separation of duties.
+Production: rolling API A/B; worker drain; migrate expand-first; health/readiness; canary internal.
+Post-deploy: synthetic SOS, queue depth, error/latency, DB replication lag, VietMap quota; auto/approved rollback.
+11.3. SLO và cảnh báo dự thảo
+Chỉ tiêu
+Mục tiêu dự thảo
+Nguồn đo/alert
+Availability core
+>=99,9%/tháng sau chốt
+Synthetic POST safe endpoint + API metrics
+SOS server acknowledgement
+p95 <=2s trong profile tải đã duyệt
+Distributed trace; tách network/client
+Hiển thị tại Ops
+p95 <=3s từ server accepted
+event timestamps + realtime client ack
+Queue critical
+Không mất accepted event; age cảnh báo
+RMQ depth/oldest age/DLQ
+DB
+RPO <=15 phút; replication lag theo threshold
+WAL/backup/replica metrics
+Recovery
+RTO core <=2 giờ; node fail vài phút
+Drill records
+VietMap
+Latency/error/quota từng API
+Adapter metrics; 70/85/95% quota
+Security
+100% sensitive read/download logged
+Audit reconciliation job
+Không tự chốt: Các con số hiệu năng ngoài 99,9%/RPO/RTO tham chiếu của tài liệu nguồn phải được xác nhận sau baseline và load profile. Codex tạo test có tham số, không biến giá trị dự thảo thành cam kết hợp đồng.
+11.4. Runbook phải có
+Runbook
+Tình huống
+RB-01 / RB-02
+Edge failover; API node loss
+RB-03 / RB-04
+RabbitMQ member/DLQ; Redis failover/cache flush
+RB-05 / RB-06
+PostgreSQL promotion/rejoin; PITR restore
+RB-07 / RB-08
+Object restore/version rollback; VietMap outage/quota/key rotation
+RB-09 / RB-10
+Certificate expiry/rotation; evidence malware incident
+RB-11 / RB-12
+Suspected data leak; break-glass misuse
+RB-13 / RB-14
+Deploy rollback; log/monitoring outage
+RB-15
+Time synchronization drift
+12. CHIẾN LƯỢC KIỂM THỬ VÀ NGHIỆM THU
+12.1. Test pyramid
+Lớp
+Phạm vi
+Gate
+Unit/domain
+State machine, policy, scoring, value object, retention
+Mọi PR; deterministic fake clock
+Integration
+Postgres/PostGIS, RabbitMQ, Redis, S3 fake, AV fake
+Mọi PR thay đổi backend/data
+Contract
+OpenAPI client, event schema, VietMap adapter fixtures
+Breaking change bị chặn
+Component UI
+Form validation, permission controls, map layer states
+Mọi PR frontend
+E2E
+SOS, report/evidence, dispatch, publish/expire, tracking
+Nightly + release
+Security
+OWASP API/Web/Mobile, IDOR, upload, authz, secret
+Release candidate
+Performance
+Ingest, queue, bbox, realtime, upload
+Trước UAT và sau thay sizing
+Resilience
+Kill node/provider/queue consumer; restore/failover
+Trước pilot/production
+UAT
+Kịch bản liên ngành theo dữ liệu mẫu
+Biên bản nghiệp vụ
+12.2. Kịch bản UAT tối thiểu
+UAT-01 SOS online có GPS tốt; UAT-02 GPS kém; UAT-03 offline rồi gửi lại; UAT-04 gửi trùng do retry.
+UAT-05 VietMap timeout nhưng trung tâm vẫn nhận; UAT-06 ETA live; UAT-07 ETA fallback hiển thị suy giảm.
+UAT-08 assignment đúng scope; UAT-09 quá SLA escalation; UAT-10 reassign có lý do/audit.
+UAT-11 upload ảnh hợp lệ; UAT-12 file độc hại; UAT-13 EXIF được loại khỏi derivative; UAT-14 download trái quyền bị chặn.
+UAT-15 report trùng; UAT-16 report sai bị reject; UAT-17 mã tra cứu không lộ chi tiết.
+UAT-18 draft layer không public; UAT-19 maker-checker; UAT-20 feature tự hết hạn; UAT-21 rollback version.
+UAT-22 cross-area access denied; UAT-23 break-glass thiếu approver; UAT-24 grant hết hạn; UAT-25 export audit có dấu vết.
+UAT-26 Edge/App node fail; UAT-27 DB promotion; UAT-28 restore backup; UAT-29 quota alert; UAT-30 key rotation.
+12.3. Definition of Done
+Acceptance criteria được tự động hóa hoặc có biên bản UAT; không chỉ kiểm tra bằng mắt.
+Format/lint/typecheck/test/security scan pass; không có Critical/High chưa được phê duyệt ngoại lệ.
+OpenAPI/event schema/migration/runbook/ADR cập nhật cùng code.
+Log/metric/trace/audit đủ để chẩn đoán; không chứa secret/PII cấm.
+Feature flag/rollback rõ; migration tương thích rolling deploy.
+Accessibility, localization tiếng Việt, network error/offline state được kiểm tra.
+Diff được Codex tự review lần cuối theo security rules và chỉ ra phần chưa kiểm chứng.
+13. BACKLOG TRIỂN KHAI CHI TIẾT CHO CODEX
+Mỗi task dưới đây nên chạy trong một chat/nhánh riêng. Codex phải đọc AGENTS.md, lập/update execution plan, chỉ sửa đúng phạm vi, chạy đầy đủ gate và kết thúc bằng tóm tắt file thay đổi, test đã chạy, rủi ro còn lại.
+T00. Khởi tạo repository và chuẩn chất lượng
+Mục tiêu: Tạo monorepo có thể build/test từ máy sạch, không chứa nghiệp vụ giả định.
+Phụ thuộc: ADR stack đã duyệt
+Tệp/phạm vi dự kiến:
+AGENTS.md, PLANS.md, package.json, pnpm-workspace.yaml, turbo.json
+.editorconfig, lint/format/typecheck/test configs
+docs/adr/ADR-001..010 skeleton
+Các bước Codex phải thực hiện:
+Khởi tạo apps/packages/infra/docs theo cây thư mục.
+Thiết lập Node LTS đã pin, pnpm lockfile và scripts chuẩn.
+Tạo CI PR tối thiểu và CODEOWNERS mẫu.
+Viết health-only app stubs; không cài SDK thừa.
+Kiểm thử bắt buộc:
+pnpm install --frozen-lockfile
+pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build
+Hoàn thành khi:
+Clone mới chạy được bằng README
+AGENTS.md và PLANS.md được Codex nhận biết
+Không có secret/sample key thật
+T01. Local development infrastructure
+Mục tiêu: Tạo môi trường local lặp lại cho API/worker/Postgres-PostGIS/RabbitMQ/Redis/S3/observability.
+Phụ thuộc: T00
+Tệp/phạm vi dự kiến:
+infra/compose
+packages/config
+scripts/dev-*
+docs/runbooks/local-dev.md
+Các bước Codex phải thực hiện:
+Compose healthcheck và network tách hợp lý.
+Seed chỉ dùng dữ liệu giả Lâm Đồng, không dùng hồ sơ thật.
+Typed env validation và .env.example không có secret.
+Tạo reset/seed/status scripts an toàn.
+Kiểm thử bắt buộc:
+Cold start
+Container health
+Integration smoke PostGIS/RMQ/Redis/S3
+Reset không xóa đường dẫn ngoài project
+Hoàn thành khi:
+Một lệnh khởi động
+API/worker kết nối qua config
+Tắt dịch vụ không để volume/process mồ côi ngoài phạm vi
+T02. Contract và error platform
+Mục tiêu: Thiết lập OpenAPI, Problem Details, request/trace ID, idempotency và event envelope v1.
+Phụ thuộc: T00-T01
+Tệp/phạm vi dự kiến:
+packages/contracts
+apps/api/src/platform
+packages/test-kit
+Các bước Codex phải thực hiện:
+Định nghĩa error_code registry.
+Middleware trace/correlation và safe logging.
+Idempotency store dùng Postgres/Redis abstraction.
+Event envelope có event_id/type/version/occurred_at/trace_id/data.
+Kiểm thử bắt buộc:
+Schema snapshots
+Duplicate POST same response
+Same key/different body returns conflict
+No stack/secret in errors
+Hoàn thành khi:
+Client generation pass
+Breaking schema check trong CI
+Trace xuyên request test
+T03. Identity và authorization nền
+Mục tiêu: Tích hợp OIDC cho cán bộ, anonymous citizen session và policy engine RBAC/ABAC.
+Phụ thuộc: T02 + thông tin IdP
+Tệp/phạm vi dự kiến:
+apps/api/src/modules/identity
+packages/authorization
+apps/ops-web auth shell
+docs/security/access-control.md
+Các bước Codex phải thực hiện:
+Map claims -> officer profile/scope.
+Policy input gồm role, unit, area, case assignment, data class.
+Repository helper bắt buộc access scope.
+Tạo audit authentication/authorization outcome nhưng không log token.
+Kiểm thử bắt buộc:
+Deny missing policy
+Cross-area/case negative matrix
+Expired/revoked session
+Anonymous session rotation
+Hoàn thành khi:
+Không route nội bộ nào thiếu guard
+Policy tests thành bảng truy vết
+MFA/step-up claim có interface
+T04. Nền tảng dữ liệu và PostGIS
+Mục tiêu: Tạo migration, entity mapping, spatial types/indexes, outbox và audit append-only.
+Phụ thuộc: T01-T03
+Tệp/phạm vi dự kiến:
+apps/api/src/database
+migrations
+modules/audit
+platform/outbox
+docs/data
+Các bước Codex phải thực hiện:
+Tạo schemas theo bounded module.
+Implement GeoPoint/GeoFeature value objects.
+Outbox ghi cùng transaction và relay lock-safe.
+Audit partition/index/retention hooks; app role không update/delete.
+Kiểm thử bắt buộc:
+Migration up trên DB rỗng
+Spatial distance/bbox fixtures
+Outbox crash/retry
+Audit mutation denied
+Hoàn thành khi:
+Schema diagram và data dictionary cập nhật
+No ORM sync in production
+PITR-compatible migration
+T05. VietMap Adapter
+Mục tiêu: Cô lập search/reverse/route/matrix, quota, cache, circuit breaker và telemetry.
+Phụ thuộc: T02 + VietMap sandbox/hợp đồng API
+Tệp/phạm vi dự kiến:
+packages/vietmap-client
+apps/api/src/modules/map-provider
+docs/integrations/vietmap.md
+dashboards/alerts
+Các bước Codex phải thực hiện:
+Implement port + HTTP adapter + fake adapter.
+Typed config key alias/base URL/timeouts/budgets.
+Cache và circuit breaker per API.
+Redact query/log; expose provider quality.
+Add quota usage metrics và alarm events.
+Kiểm thử bắt buộc:
+Sanitized contract fixtures
+Timeout/429/5xx/malformed response
+Key leak scan
+Circuit recovery
+No PII fields in request
+Hoàn thành khi:
+Domain không import vendor SDK
+Provider outage không làm health core down
+Docs key rotation/quota
+T06. Map data lifecycle
+Mục tiêu: CRUD có version cho layer/feature, maker-checker, publish/expire và public bbox API.
+Phụ thuộc: T03-T04
+Tệp/phạm vi dự kiến:
+modules/map-data
+apps/ops-web/features/map-admin
+apps/citizen-web map layers
+Các bước Codex phải thực hiện:
+Layer schema registry và GeoJSON validation.
+Version immutable sau submit.
+Approval separation of duties.
+Scheduled publish/expiry via worker/outbox.
+Public query chỉ published + valid + scope public.
+Kiểm thử bắt buộc:
+Invalid/self-intersect geometry
+Submitter cannot approve
+Expiry clock test
+bbox/zoom performance
+Draft leak negative
+Hoàn thành khi:
+Import GeoJSON có preview/error report
+Version diff/audit
+Cache invalidation event
+T07. SOS incident vertical slice
+Mục tiêu: Tạo luồng nhận SOS độc lập provider từ public API đến ops queue.
+Phụ thuộc: T02-T04
+Tệp/phạm vi dự kiến:
+modules/incidents
+apps/api public/ops controllers
+apps/worker outbox
+ops-web incident queue shell
+Các bước Codex phải thực hiện:
+Implement state machine/invariants.
+POST /public/sos idempotent và minimal validation.
+Persist incident + outbox transaction.
+Realtime feed có resume token.
+Public tracking code và projection tổng quát.
+Kiểm thử bắt buộc:
+Online/duplicate/concurrent submit
+Provider disabled
+Realtime reconnect
+Unauthorized state jump
+Tracking enumeration
+Hoàn thành khi:
+Accepted SOS hiển thị ops
+Audit/state history đủ
+SLO instrumentation có
+T08. Dispatch engine và SLA
+Mục tiêu: Gợi ý unit theo capability/service area/ETA, assignment, ack timer và escalation.
+Phụ thuộc: T05 + T07 + SLA/rules draft
+Tệp/phạm vi dự kiến:
+modules/dispatch
+worker/sla
+ops-web candidate/assignment panel
+docs/rules
+Các bước Codex phải thực hiện:
+Unit/capability/service area model.
+PostGIS shortlist; VietMap matrix top N.
+Explainable score breakdown.
+Assignment state + unique active rule.
+Delayed ack timeout và escalation policy version.
+Kiểm thử bắt buộc:
+Live/cached/unavailable ETA
+Wrong capability/area excluded
+Fake clock timeout
+Race double assignment
+Reassign audit
+Hoàn thành khi:
+Operator confirms by default
+Fallback clearly labeled
+No unit location in public payload
+T09. Citizen mobile SOS
+Mục tiêu: Hoàn thiện UX SOS mobile có offline queue, safe retry và emergency call fallback.
+Phụ thuộc: T07 + UI prototype
+Tệp/phạm vi dự kiến:
+apps/citizen-mobile/features/sos
+secure storage/network queue
+analytics privacy-safe
+Các bước Codex phải thực hiện:
+Location permission và accuracy handling.
+Confirm + minimal form + safety guidance.
+Send text first/media later.
+Local encrypted queue/idempotency.
+tel deep links và explicit delivery states.
+Kiểm thử bắt buộc:
+Permission denied
+GPS stale/low accuracy
+Airplane/offline/reconnect
+Double tap/app restart
+Accessibility
+Hoàn thành khi:
+Không báo server received trước ACK
+Khôi phục queue sau restart
+No PII analytics
+T10. Evidence pipeline
+Mục tiêu: Xây upload quarantine, scan, checksum, derivative, watermark và controlled download.
+Phụ thuộc: T04 + S3/AV decision
+Tệp/phạm vi dự kiến:
+modules/evidence
+worker/media
+object-storage adapter
+ops-web evidence viewer
+Các bước Codex phải thực hiện:
+Initiate/finalize API và object key server-side.
+Magic MIME/size/hash/AV pipeline.
+Strip EXIF derivative; keep original immutable.
+Preview watermark; signed short URL.
+Chain of custody/audit/retention class.
+Kiểm thử bắt buộc:
+EICAR/zip bomb/spoof MIME
+Hash mismatch
+Worker crash/retry
+Unauthorized preview/download
+Object tamper
+Hoàn thành khi:
+Quarantine closed by default
+No signed URL in log
+Original/derivative clearly separated
+T11. Citizen reports và chống lạm dụng
+Mục tiêu: Tạo phản ánh ẩn danh với duplicate/spam screening, evidence và tracking.
+Phụ thuộc: T09-T10
+Tệp/phạm vi dự kiến:
+modules/reports
+modules/abuse
+mobile/web report flow
+ops verification queue
+Các bước Codex phải thực hiện:
+Report state machine và public DTO.
+Plate text marked unverified.
+Risk-based rate limit/captcha port.
+Duplicate candidates by time/space/hash/plate.
+Merge/link suggestion, không auto kết luận.
+Kiểm thử bắt buộc:
+Anonymous normal path
+Duplicate false-positive override
+Rate limit emergency separation
+PII/log scan
+Tracking projection
+Hoàn thành khi:
+Business table không chứa identity
+Operator verification required
+Citizen sees only general state
+T12. Privacy vault và break-glass
+Mục tiêu: Tách dữ liệu định danh kỹ thuật tối thiểu và tạo workflow gỡ ẩn danh có điều kiện.
+Phụ thuộc: T03-T04 + quy chế được duyệt
+Tệp/phạm vi dự kiến:
+modules/privacy-vault
+authorization step-up
+ops privacy UI
+security runbook
+Các bước Codex phải thực hiện:
+Separate DB role/schema/key adapter.
+Request/approval/grant/use/revoke state machine.
+Two-person separation + MFA claim.
+Field-scoped one-time/time-boxed access.
+Audit/alert/report reconciliation.
+Kiểm thử bắt buộc:
+Requester cannot self-approve
+One approver insufficient
+Expired/reused grant denied
+Field overreach denied
+All views audited
+Hoàn thành khi:
+Không có join mặc định từ report
+Policy config phê duyệt
+Runbook misuse có
+T13. Cảnh báo giao thông
+Mục tiêu: Sinh cảnh báo theo tuyến/vị trí/hướng/phương tiện/thời gian từ published map data.
+Phụ thuộc: T05-T06
+Tệp/phạm vi dự kiến:
+modules/alerts
+mobile/web alert UI
+worker expiry/cache
+test route fixtures
+Các bước Codex phải thực hiện:
+Rule schema và priority.
+Intersection/proximity logic PostGIS.
+Route-aware query và anti-repeat cooldown.
+Audio opt-in/accessibility.
+Return source/validity/quality.
+Kiểm thử bắt buộc:
+Wrong direction/vehicle/time excluded
+Boundary distance
+Expired feature
+Alert fatigue
+Degraded route
+Hoàn thành khi:
+Warning explains restriction/action
+No unverified source public
+Metrics false/noisy feedback
+T14. Ops workspace hoàn chỉnh
+Mục tiêu: Tạo giao diện điều hành cho queue, map, timeline, evidence, dispatch và SLA.
+Phụ thuộc: T07-T10
+Tệp/phạm vi dự kiến:
+apps/ops-web/features/incidents
+realtime client
+authorization-aware navigation
+Các bước Codex phải thực hiện:
+Queue virtualized/filter/cursor.
+Incident workspace panels và state actions.
+Reconnect/resume/conflict handling.
+Map bbox/layers by scope.
+Sensitive action confirmation/reason.
+Kiểm thử bắt buộc:
+Role matrix UI/API
+Two operators concurrent
+Realtime gap/resync
+Large queue/map data
+Keyboard/accessibility
+Hoàn thành khi:
+UI không thay security API
+Stale data visible
+Screenshot evidence for UAT
+T15. Notifications và contact fallback
+Mục tiêu: Gửi push/SMS/email/internal notification qua port, template version và delivery audit.
+Phụ thuộc: T02-T03 + provider decisions
+Tệp/phạm vi dự kiến:
+modules/notifications
+worker/providers
+template admin
+mobile push handling
+Các bước Codex phải thực hiện:
+Channel/provider interfaces.
+Template data allowlist theo audience.
+Retry/DLQ/dedupe/preferences.
+Emergency contact directory + tel links.
+No operational detail in citizen notification.
+Kiểm thử bắt buộc:
+Provider 429/outage
+Duplicate event
+Wrong audience data blocked
+Opt-out except mandatory class
+Deep link auth
+Hoàn thành khi:
+Delivery status observable
+Sensitive template review
+Fallback channels documented
+T16. Audit, KPI và dashboard lãnh đạo
+Mục tiêu: Hoàn thiện metric dictionary, KPI baseline hooks, audit search/export và aggregated dashboard.
+Phụ thuộc: T04 + core flows
+Tệp/phạm vi dự kiến:
+modules/analytics
+modules/audit
+ops-web leader/audit
+docs/kpi-dictionary.md
+Các bước Codex phải thực hiện:
+Define metric name/unit/source/dimensions/owner.
+Compute from trusted state events.
+Suppress sensitive small cohorts.
+Audit search/export reason/hash.
+Baseline/target stored as governed config.
+Kiểm thử bắt buộc:
+Metric reconciliation
+Timezone/day boundary
+Scope denial
+Small-cell suppression
+Export audit
+Hoàn thành khi:
+Không hard-code target chưa duyệt
+Dashboard links to data freshness
+Audit completeness report
+T17. Production infrastructure as code
+Mục tiêu: Mã hóa cấu hình 09 VPS, hardening, certificates, deploy/rollback và monitoring.
+Phụ thuộc: T00-T16 + hạ tầng cấp
+Tệp/phạm vi dự kiến:
+infra/ansible roles/inventory templates
+edge/rabbitmq/redis/postgres/monitoring
+docs/runbooks
+Các bước Codex phải thực hiện:
+Tách secrets/inventory/environment.
+Idempotent roles và dry-run.
+Edge A/B, app rolling, RMQ quorum, Redis Sentinel, DB replication.
+OTel/metrics/log/alerts/dashboards.
+Backup/PITR/object/version checks.
+Kiểm thử bắt buộc:
+Molecule/ansible-lint
+Staging deploy twice no drift
+Kill node tests
+Backup restore
+Port/network scan
+Hoàn thành khi:
+Không public DB/admin
+Rollback rehearsed
+Evidence artifacts stored
+T18. Security hardening và release candidate
+Mục tiêu: Đóng các lỗ hổng, hoàn thiện threat model, penetration test và evidence cho thẩm định.
+Phụ thuộc: Feature complete
+Tệp/phạm vi dự kiến:
+docs/security/threat-model.md
+CI security gates
+hardening baselines
+release evidence
+Các bước Codex phải thực hiện:
+Threat modeling STRIDE/data flow.
+SAST/DAST/SCA/container/IaC scan.
+Manual authz/upload/business logic test.
+Fix P0/P1; document approved exception.
+Generate SBOM/build provenance.
+Kiểm thử bắt buộc:
+OWASP ASVS/API/MASVS mapped subset
+Secret/PII scans
+Rate-limit bypass
+Break-glass abuse
+Fail-closed controls
+Hoàn thành khi:
+No open Critical/High without approval
+Retest evidence
+ATTT action list owned
+T19. Performance, HA/DR và chaos rehearsal
+Mục tiêu: Chứng minh tải tham chiếu, không mất event, failover và restore theo RPO/RTO.
+Phụ thuộc: T17-T18
+Tệp/phạm vi dự kiến:
+tests/performance
+tests/chaos
+runbook evidence
+capacity report
+Các bước Codex phải thực hiện:
+Build load profile from approved baseline.
+Test SOS ingest/realtime/bbox/upload/queue.
+Kill Edge/App/RMQ/Redis; provider outage.
+DB failover/PITR; object restore.
+Tune và rerun; record bottleneck/capacity.
+Kiểm thử bắt buộc:
+Soak/spike
+Duplicate delivery
+Network partition
+Disk/queue pressure
+Clock drift
+Hoàn thành khi:
+SLO pass hoặc accepted gap
+RPO/RTO measured
+Capacity assumptions documented
+T20. UAT, pilot release và rollback
+Mục tiêu: Đóng gói release thí điểm có dữ liệu, đào tạo, support và exit criteria.
+Phụ thuộc: T18-T19 + legal/operational gates
+Tệp/phạm vi dự kiến:
+docs/uat
+release manifest
+feature flags
+pilot dashboard
+support runbook
+Các bước Codex phải thực hiện:
+Seed/import approved pilot data.
+Run UAT-01..30 và record evidence.
+Train dispatch/data/admin roles.
+Enable pilot area by feature flag.
+Monitor daily; triage P0-P3; rollback criteria.
+Kiểm thử bắt buộc:
+UAT signed
+Production smoke/synthetic
+Rollback drill
+Support escalation
+Post-pilot data export/retention
+Hoàn thành khi:
+No P0/P1 open
+KPI baseline measured
+Go/no-go minutes and owner
+Pilot can be disabled safely
+14. KẾ HOẠCH SPRINT, NHÂN SỰ VÀ CỔNG KIỂM SOÁT
+14.1. Tiến độ tham chiếu MVP 12 tuần
+Tiến độ chỉ khả thi khi có ít nhất bốn luồng làm việc song song và đầu vào nghiệp vụ/VietMap/hạ tầng đúng hạn. Với một lập trình viên dùng Codex, phải lập lại lịch theo effort/capacity, không coi 12 tuần là cam kết.
+Tuần
+Platform/Backend
+Citizen
+Ops/Data
+QA/Security/DevOps
+Gate
+1-2
+T00-T04 foundation
+Prototype + app shell
+Ops shell + data schema
+CI/local/threat model
+Architecture + DoR
+3-4
+T05-T07 VietMap/SOS
+SOS online/offline
+Incident queue
+Contract/E2E baseline
+Vertical slice
+5-6
+T08 dispatch; T10 evidence
+Report media
+Dispatch workspace
+Upload/security tests
+SOS + dispatch
+7-8
+T11-T13 report/alerts
+Tracking/alerts
+Map admin/version
+Performance wave 1
+Feature complete MVP
+9-10
+T12/T15/T16
+Polish/accessibility
+Leader/audit
+T17 infra; DAST
+Release candidate
+11-12
+Fix/observability
+UAT fixes
+UAT/data load
+T18-T20 failover/UAT
+Pilot go/no-go
+14.2. Nhân sự tối thiểu đề xuất
+Vai trò
+FTE tham chiếu
+Trách nhiệm
+Product/BA nghiệp vụ
+1-2
+Use case, rule, SLA, UAT, dữ liệu và cổng liên ngành
+Tech lead/architect
+1
+ADR, boundaries, review, risk, Codex task design
+Backend/GIS
+3-4
+API/domain/PostGIS/dispatch/VietMap/evidence
+Mobile
+2
+React Native, offline, map, push, accessibility
+Web
+2
+Ops/public/admin/dashboard/realtime
+QA automation
+2
+Contract/E2E/performance/UAT evidence
+DevSecOps/SRE
+1-2
+CI/CD, 09 VPS, monitoring, HA/DR, hardening
+ATTT/privacy
+0.5-1
+Threat/policy/audit/break-glass/compliance review
+UI/UX
+0.5-1
+Prototype, emergency UX, design system
+14.3. Cổng chuyển giai đoạn
+G0 Start coding: stack/ADR, source repo, data classification draft, owner và sandbox provider.
+G1 Vertical slice: SOS accepted without VietMap, ops receives, audit/outbox/realtime pass.
+G2 Feature complete: report/evidence/dispatch/map data/alerts end-to-end, no critical authz gap.
+G3 Release candidate: security/performance/HA tests, runbook, monitoring, restore proof.
+G4 Pilot: legal/procurement gate complete as applicable, rules/SLA signed, UAT signed, pilot roster/support ready.
+G5 Province rollout: cấp độ được thẩm định/phê duyệt, DR/operations/retention completed, pilot KPI/gaps accepted.
+15. DANH SÁCH QUYẾT ĐỊNH CÒN MỞ VÀ RỦI RO
+15.1. Decision register
+ID
+Câu hỏi cần chốt
+Hạn
+Nếu chưa chốt
+D-01
+Stack chính thức và năng lực đội
+Trước T00
+Dùng reference stack, không vào production
+D-02
+IdP/SSO/MFA cán bộ
+Trước T03
+Dùng mock OIDC local
+D-03
+API/version/quota/SDK VietMap theo hợp đồng
+Trước T05
+Fake adapter; không gọi production
+D-04
+SLA/escalation và trực liên ngành
+Trước T08
+Config mẫu disabled
+D-05
+Danh mục unit/capability/service area
+Trước T08/UAT
+Synthetic fixtures
+D-06
+Retention/legal hold từng lớp
+Trước T10/T12
+Không auto-delete
+D-07
+Quy trình break-glass
+Trước T12
+Feature disabled
+D-08
+Kênh notification và nhà cung cấp
+Trước T15
+In-app/internal only
+D-09
+Load profile và media limits
+Trước T19
+Test matrix tham số
+D-10
+Cấp độ ATTT và yêu cầu bổ sung
+Trước rollout
+Không tuyên bố đạt cấp độ
+15.2. Rủi ro code/project
+Rủi ro
+Dấu hiệu sớm
+Giảm thiểu/owner
+Microservice hóa sớm
+Nhiều repo/deploy nhưng chưa có vertical slice
+Giữ modular monolith; Tech lead phê duyệt ADR tách
+VietMap chi phối luồng SOS
+API provider nằm trong transaction/required path
+Outbox + adapter + fallback; backend owner
+Ẩn danh chỉ ở UI
+PII vẫn nằm bảng/log nghiệp vụ
+Vault + log allowlist + negative tests; privacy owner
+Queue HA trên giấy
+Một broker/consumer không idempotent
+Quorum/DLQ/inbox/chaos; SRE
+DB auto failover split-brain
+Hai node, không DCS quorum tin cậy
+Manual runbook hoặc bổ sung witness/DCS; DBA
+Scope creep
+AI/OCR/navigation sâu trước SOS end-to-end
+Cổng vertical slice và MVP scope; Product
+KPI không đo được
+Không có timestamp/metric dictionary
+Instrument từ T07; Product/QA
+Codex sửa quá rộng
+Diff lớn ngoài ticket, test thiếu
+One outcome/chat, AGENTS rules, diff review; Tech lead
+16. CÁCH GIAO VIỆC CHO CODEX
+16.1. Nhịp làm việc
+Mỗi chat/nhánh chỉ có một outcome: ví dụ 'T07 SOS vertical slice', không giao cả sprint.
+Bắt đầu ở Plan mode: Codex đọc AGENTS.md, docs/ADR và task plan; liệt kê giả định/câu hỏi blocker.
+Nếu thiếu quyết định ở Decision register, Codex tạo interface/feature flag/fake adapter và dừng trước production behavior.
+Codex triển khai theo lát dọc nhỏ: migration -> domain -> application -> API -> client -> tests -> docs/observability.
+Trước kết thúc, Codex chạy gate, review diff, xác nhận rollback và ghi phần chưa kiểm chứng.
+Không dùng một chat cho toàn dự án; sau mỗi task cập nhật plan/status và tạo checkpoint Git có chủ đích.
+16.2. Prompt chuẩn cho từng task
+MỤC TIÊU
+Triển khai [Txx - tên task] theo docs/plans/Txx.md.
+NGỮ CẢNH
+- Đọc AGENTS.md, PLANS.md và các ADR/module docs liên quan.
+- Tài liệu nghiệp vụ nguồn: docs/requirements/ATGT-Lam-Dong.md.
+- Chỉ sửa các thư mục được liệt kê trong task, trừ khi cần cập nhật contract/test/docs.
+RÀNG BUỘC
+- Không suy đoán SLA, retention, quyền gỡ ẩn danh, quota hoặc dữ liệu thật.
+- Không làm yếu security/authorization để test pass.
+- Không để VietMap/notification nằm trên critical transaction path của SOS.
+- Mọi consumer và POST retry phải idempotent; mọi sensitive access phải audit.
+CÁCH LÀM
+1. Khảo sát repo và tóm tắt current state.
+2. Cập nhật execution plan với file cụ thể, migration, test và rollback.
+3. Implement theo lát dọc nhỏ; giữ diff trong scope.
+4. Chạy format/lint/typecheck/unit/integration/contract/E2E phù hợp.
+5. Tự review diff về correctness, security, privacy, HA và regression.
+HOÀN THÀNH KHI
+- Acceptance criteria của Txx pass.
+- OpenAPI/event schema/migration/runbook/observability được cập nhật.
+- Báo cáo file đã đổi, test đã chạy, rủi ro/giả định và bước tiếp theo.
+16.3. Prompt review bảo mật
+Review diff hiện tại như reviewer ATTT cấp cao cho hệ thống tiếp nhận SOS.
+Ưu tiên P0/P1: bypass authorization/area/case scope; PII/secret/log leak;
+IDOR; upload/malware/path traversal; idempotency/replay; state transition;
+queue message loss; provider outage on SOS path; audit gaps; unsafe migration;
+fail-open behavior. Chỉ nêu lỗi có đường tái hiện cụ thể, file/vị trí, tác động
+và safe fix. Sau đó chạy hoặc đề xuất test chứng minh fix.
+PHỤ LỤC A. MẪU AGENTS.MD SẴN DÙNG
+# AGENTS.md
+## Mission
+Build the Lam Dong road-safety map platform. Preserve emergency intake,
+privacy, evidence integrity, authorization, auditability and degraded-mode
+behavior above feature convenience.
+## Repository map
+- apps/api: NestJS modular monolith HTTP/realtime API
+- apps/worker: outbox/media/notification/SLA/expiry jobs
+- apps/citizen-mobile: React Native citizen app
+- apps/citizen-web: public Next.js web/PWA
+- apps/ops-web: operations, data admin and leader dashboards
+- packages/contracts: OpenAPI DTOs, generated clients, event schemas
+- packages/domain: framework-free value objects and shared invariants
+- infra: local and 09-VPS deployment automation
+- docs: ADRs, plans, security, data, UAT and runbooks
+## Required workflow
+1. Read the closest instructions, relevant ADRs and the task execution plan.
+2. Inspect before editing. State blockers; never invent policy values.
+3. Keep one coherent outcome per branch/chat and avoid unrelated refactors.
+4. Implement migration/domain/application/API/client/test/docs/telemetry as needed.
+5. Run the relevant gates and review the final diff before handoff.
+## Commands
+- pnpm format:check
+- pnpm lint
+- pnpm typecheck
+- pnpm test
+- pnpm test:integration
+- pnpm test:contract
+- pnpm test:e2e
+- pnpm build
+## Architecture rules
+- Default to a modular monolith. Do not add a deployable service without ADR.
+- Domain code must not import framework, ORM, HTTP SDK or environment config.
+- Cross-module access uses public application services or versioned events.
+- Database changes are forward-only and rolling-deploy compatible.
+- External providers are ports/adapters; do not call them inside DB transactions.
+- Accepted SOS intake must work when VietMap and notification providers fail.
+- Use transactional outbox; consumers and retried POSTs must be idempotent.
+## Security and privacy rules
+- Deny by default; enforce role + unit + area + case + data-class scope in API.
+- UI hiding is never authorization.
+- Never log tokens, keys, signed URLs, identity data, evidence or case notes.
+- Business report/incident tables must not contain citizen technical identity.
+- Unmasking requires approved break-glass policy, step-up MFA and immutable audit.
+- Files enter quarantine, are type/size/hash/AV checked, then become readable.
+- Never make original evidence public or overwrite its checksum/history.
+- Never use an unverified citizen report/OCR result as an enforcement decision.
+## Geospatial and API rules
+- API coordinates are EPSG:4326 GeoJSON [longitude, latitude].
+- Public queries return only approved, published and currently valid features.
+- Errors use stable Problem Details codes and include trace_id without internals.
+- Public tracking codes are random and non-enumerable.
+## Testing and done
+- Add tests for state transitions, authorization denials, retries and outages.
+- Use a fake clock/provider; tests must be deterministic.
+- No Critical/High security finding may be hidden or weakened to pass CI.
+- Update OpenAPI/event schema, migration, ADR/runbook and observability together.
+- Handoff lists changed files, commands/results, assumptions, risks and rollback.
+PHỤ LỤC B. MẪU PLANS.MD
+# Execution Plan Template
+## Outcome
+What user/operator outcome will exist after this task?
+## Source requirements
+- Requirement IDs and source section
+- Relevant ADRs/policies
+## Current state
+- Existing code paths and tests
+- Constraints and known gaps
+## Decisions and blockers
+- Confirmed decisions
+- Missing policy values; fallback/feature flag; explicit stop point
+## Change map
+| Area | Files | Change | Risk |
+|---|---|---|---|
+## Implementation sequence
+1. Contract/migration
+2. Domain invariants and policy
+3. Application use case and adapters
+4. API/event/client UI
+5. Telemetry/audit/runbook
+## Test plan
+- Unit/domain
+- Integration/PostGIS/queue/storage
+- Contract/OpenAPI/events/provider
+- E2E and authorization-negative
+- Failure/degraded/rollback
+## Rollout and rollback
+- Feature flag/config
+- Migration compatibility
+- Deploy order, monitoring and abort thresholds
+## Definition of done
+- Acceptance criteria
+- Commands and expected results
+- Documentation/evidence
+## Progress log
+- [ ] Milestone 1
+- [ ] Milestone 2
+## Handoff
+- Changed files
+- Tests run/results
+- Remaining risks/assumptions
+PHỤ LỤC C. BIẾN MÔI TRƯỜNG VÀ SECRET CONTRACT
+Nhóm
+Tên/kiểu
+Quy tắc
+Runtime
+APP_ENV, APP_VERSION, LOG_LEVEL
+Typed allowlist; production rejects debug
+DB
+DATABASE_URL hoặc host/port/db/user refs
+Password từ secret; TLS; role tách app/migration/audit
+Queue
+RABBITMQ_ENDPOINTS, TLS refs, quorum policy
+Không URL có password trong log
+Redis
+REDIS_SENTINELS, master name, TLS refs
+Timeout; cache không là source of truth
+Storage
+S3_ENDPOINT, bucket aliases, credential refs
+Quarantine/original/derivative tách policy
+Identity
+OIDC_ISSUER, CLIENT_ID, audience, JWKS cache
+Không client secret trong public app
+VietMap
+base URLs, SERVER_KEY_REF, CLIENT_KEY_ALIAS, timeouts, quotas
+Key ref/alias, không plaintext repo
+Privacy
+VAULT_KEY_REF, grant TTL, policy version
+Feature disabled until approved
+Retention
+RETENTION_POLICY_VERSION
+Không hard-code ngày; delete job gated
+Telemetry
+OTEL endpoint, service/resource attrs
+Redaction and sampling policy
+PHỤ LỤC D. MA TRẬN TRUY VẾT NGHIỆM THU
+Yêu cầu
+Ticket
+Test/UAT
+Bằng chứng release
+SOS tiếp nhận khi provider lỗi
+T07,T09
+UAT-05; chaos provider
+Trace + DB/outbox + ops screenshot
+ETA và điều phối
+T05,T08
+UAT-06/07/08/09
+Score breakdown + audit
+Ẩn danh phản ánh
+T11,T12
+UAT-22/23/24
+Schema/log scan + policy report
+Bằng chứng
+T10
+UAT-11..14
+Hash/scan/chain-of-custody
+Dữ liệu công bố
+T06,T13
+UAT-18..21
+Version/approval/expiry log
+VietMap key/quota/degrade
+T05,T17
+UAT-05/29/30
+Dashboard/rotation record
+HA/restore
+T17,T19
+UAT-26..28
+Failover/restore minutes
+KPI baseline
+T16,T20
+Pilot reports
+Metric dictionary + baseline approval
+ATTT
+T18
+Pentest/retest
+SBOM, scans, findings disposition
+TÀI LIỆU THAM CHIẾU
+Tài liệu nguồn: Thuyet_minh_Ban_do_so_ATGT_Lam_Dong_PC08_v3.docx, tháng 8/2026.
+OpenAI Codex Best practices: https://learn.chatgpt.com/guides/best-practices (truy cập 16/08/2026).
+OpenAI Codex AGENTS.md: https://learn.chatgpt.com/docs/agent-configuration/agents-md (truy cập 16/08/2026).
+VietMap Maps API overview: https://maps.vietmap.vn/docs/map-api/overview/ (truy cập 16/08/2026).
+VietMap React Native Map SDK: https://maps.vietmap.vn/docs/sdk-mobile/react-native/map/ (truy cập 16/08/2026).
+VietMap Web GL SDK overview: https://maps.vietmap.vn/docs/sdk-web-gl/overview/ (truy cập 16/08/2026).
