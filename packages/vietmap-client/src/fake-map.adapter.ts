@@ -1,28 +1,33 @@
 import { ProviderQuality } from "@atgt/contracts";
-import {
-  MapProviderPort,
-  ProviderContext,
-  SearchInput,
-  SearchResult,
-  ReverseInput,
+import type {
   AddressResult,
-  RouteInput,
-  RouteResult,
+  MapProviderPort,
   MatrixInput,
   MatrixResult,
+  ProviderContext,
+  ProviderMetadata,
+  ReverseInput,
+  RouteInput,
+  RouteResult,
+  SearchInput,
+  SearchResult,
 } from "./map-provider.port";
+import { MapProviderError } from "./provider-error";
 
-/**
- * FakeMapAdapter - Test double for MapProviderPort
- *
- * Use this in ALL unit and integration tests.
- * Never use real VietMap in test suite.
- * Configure behavior via simulateFailure / simulateLatencyMs.
- */
+export interface FakeMapAdapterOptions {
+  now?: () => Date;
+}
+
+/** Deterministic test/local adapter. It never makes a network request. */
 export class FakeMapAdapter implements MapProviderPort {
   simulateFailure = false;
   simulateLatencyMs = 0;
   private callCount = 0;
+  private readonly now: () => Date;
+
+  constructor(options: FakeMapAdapterOptions = {}) {
+    this.now = options.now ?? (() => new Date());
+  }
 
   getCallCount(): number {
     return this.callCount;
@@ -34,15 +39,26 @@ export class FakeMapAdapter implements MapProviderPort {
     this.simulateLatencyMs = 0;
   }
 
-  private async maybeDelay(): Promise<void> {
-    if (this.simulateLatencyMs > 0) {
-      await new Promise((r) => setTimeout(r, this.simulateLatencyMs));
-    }
+  private metadata(): ProviderMetadata {
+    return {
+      provider: "fake",
+      apiVersion: "fake-v1",
+      quality: ProviderQuality.LIVE,
+      observedAt: this.now().toISOString(),
+      cacheStatus: "BYPASS",
+      latencyMs: this.simulateLatencyMs,
+    };
   }
 
-  private checkFailure(): void {
+  private async beforeCall(): Promise<void> {
+    this.callCount += 1;
+    if (this.simulateLatencyMs > 0) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, this.simulateLatencyMs),
+      );
+    }
     if (this.simulateFailure) {
-      throw new Error("FakeMapAdapter: simulated provider failure");
+      throw new MapProviderError("UPSTREAM_UNAVAILABLE", false);
     }
   }
 
@@ -50,16 +66,13 @@ export class FakeMapAdapter implements MapProviderPort {
     input: SearchInput,
     _ctx: ProviderContext,
   ): Promise<SearchResult[]> {
-    await this.maybeDelay();
-    this.checkFailure();
-    this.callCount++;
+    await this.beforeCall();
     return [
       {
         displayName: `Fake result for: ${input.query}`,
         longitude: 108.4384,
         latitude: 11.9404,
-        quality: ProviderQuality.LIVE,
-        observedAt: new Date().toISOString(),
+        ...this.metadata(),
       },
     ];
   }
@@ -68,26 +81,20 @@ export class FakeMapAdapter implements MapProviderPort {
     _input: ReverseInput,
     _ctx: ProviderContext,
   ): Promise<AddressResult> {
-    await this.maybeDelay();
-    this.checkFailure();
-    this.callCount++;
+    await this.beforeCall();
     return {
       displayAddress: "01 Tran Phu, Da Lat, Lam Dong",
-      quality: ProviderQuality.LIVE,
-      observedAt: new Date().toISOString(),
+      ...this.metadata(),
     };
   }
 
   async route(_input: RouteInput, _ctx: ProviderContext): Promise<RouteResult> {
-    await this.maybeDelay();
-    this.checkFailure();
-    this.callCount++;
+    await this.beforeCall();
     return {
       distanceMeters: 5000,
       durationSeconds: 600,
-      quality: ProviderQuality.LIVE,
-      observedAt: new Date().toISOString(),
       isDegraded: false,
+      ...this.metadata(),
     };
   }
 
@@ -95,18 +102,16 @@ export class FakeMapAdapter implements MapProviderPort {
     input: MatrixInput,
     _ctx: ProviderContext,
   ): Promise<MatrixResult> {
-    await this.maybeDelay();
-    this.checkFailure();
-    this.callCount++;
-    const n = input.origins.length;
-    const m = input.destinations.length;
+    await this.beforeCall();
     return {
-      durations: Array.from({ length: n }, () =>
-        Array.from({ length: m }, () => 300 + Math.random() * 300),
+      durations: input.origins.map((_origin, originIndex) =>
+        input.destinations.map(
+          (_destination, destinationIndex) =>
+            300 + originIndex * 60 + destinationIndex * 30,
+        ),
       ),
-      quality: ProviderQuality.LIVE,
-      observedAt: new Date().toISOString(),
       isDegraded: false,
+      ...this.metadata(),
     };
   }
 }

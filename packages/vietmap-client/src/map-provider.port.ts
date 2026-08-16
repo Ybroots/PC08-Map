@@ -1,17 +1,25 @@
-import { ProviderQuality } from "@atgt/contracts";
+import type { ProviderQuality } from "@atgt/contracts";
 
-/**
- * MapProviderPort - Port interface for map/routing provider (VietMap)
- *
- * From ADR-005 and Section 8.2:
- * - Domain/application code MUST only depend on this interface, NEVER on vendor SDK directly
- * - ProviderContext MUST NOT contain PII, case notes, or evidence references
- * - All responses include quality/observed_at for degraded-mode transparency
- * - Implementations: HttpVietMapAdapter (production), FakeMapAdapter (test)
- *
- * CRITICAL: Do NOT call VietMap inside database transactions.
- * CRITICAL: Do NOT send incident_id, public_code, identity, or evidence to provider.
- */
+export const MAP_PROVIDER_APIS = [
+  "search",
+  "reverse",
+  "route",
+  "matrix",
+] as const;
+
+export type MapProviderApi = (typeof MAP_PROVIDER_APIS)[number];
+export type ProviderCacheStatus = "MISS" | "HIT" | "STALE" | "BYPASS";
+
+/** Mandatory metadata prevents silent degradation at every caller boundary. */
+export interface ProviderMetadata {
+  provider: "vietmap" | "fake";
+  apiVersion: string;
+  quality: ProviderQuality;
+  observedAt: string;
+  cacheStatus: ProviderCacheStatus;
+  latencyMs: number;
+}
+
 export interface MapProviderPort {
   search(input: SearchInput, ctx: ProviderContext): Promise<SearchResult[]>;
   reverse(input: ReverseInput, ctx: ProviderContext): Promise<AddressResult>;
@@ -19,31 +27,25 @@ export interface MapProviderPort {
   matrix(input: MatrixInput, ctx: ProviderContext): Promise<MatrixResult>;
 }
 
-/**
- * ProviderContext - Request context passed to provider calls
- * MUST only contain tracing/budget/locale info. Zero PII or business identifiers.
- */
+/** Contains tracing and execution budget only; never add business identifiers. */
 export interface ProviderContext {
   traceId: string;
-  /** Budget in ms for this provider call */
   timeoutMs: number;
-  /** ISO language code for results */
   locale?: "vi" | "en";
 }
 
+export type Coordinate = readonly [longitude: number, latitude: number];
+
 export interface SearchInput {
   query: string;
-  /** Center point for bias - [longitude, latitude] */
-  center?: [number, number];
+  center?: Coordinate;
   limit?: number;
 }
 
-export interface SearchResult {
+export interface SearchResult extends ProviderMetadata {
   displayName: string;
   longitude: number;
   latitude: number;
-  quality: ProviderQuality;
-  observedAt: string; // UTC ISO8601
 }
 
 export interface ReverseInput {
@@ -51,42 +53,32 @@ export interface ReverseInput {
   latitude: number;
 }
 
-export interface AddressResult {
+export interface AddressResult extends ProviderMetadata {
   displayAddress: string;
-  quality: ProviderQuality;
-  observedAt: string;
 }
 
 export interface RouteInput {
-  origin: [number, number]; // [lon, lat]
-  destination: [number, number]; // [lon, lat]
+  origin: Coordinate;
+  destination: Coordinate;
   vehicle?: "car" | "motorcycle";
 }
 
-export interface RouteResult {
+export interface RouteResult extends ProviderMetadata {
   distanceMeters: number;
   durationSeconds: number;
-  quality: ProviderQuality;
-  observedAt: string;
-  /** Degraded = using cached/distance-based estimate */
   isDegraded: boolean;
 }
 
 export interface MatrixInput {
-  /** Origins as [lon, lat] pairs */
-  origins: [number, number][];
-  /** Destinations as [lon, lat] pairs */
-  destinations: [number, number][];
+  origins: readonly Coordinate[];
+  destinations: readonly Coordinate[];
   vehicle?: "car" | "motorcycle";
 }
 
-export interface MatrixResult {
-  /** durations[i][j] = seconds from origin i to destination j */
+export interface MatrixResult extends ProviderMetadata {
+  /** durations[i][j] is seconds from origin i to destination j. */
   durations: number[][];
-  quality: ProviderQuality;
-  observedAt: string;
   isDegraded: boolean;
 }
 
-/** Injection token for MapProviderPort */
 export const MAP_PROVIDER_PORT = Symbol("MapProviderPort");

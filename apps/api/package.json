@@ -15,6 +15,7 @@
     "@atgt/config": "workspace:*",
     "@atgt/contracts": "workspace:*",
     "@atgt/observability": "workspace:*",
+    "@atgt/vietmap-client": "workspace:*",
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",

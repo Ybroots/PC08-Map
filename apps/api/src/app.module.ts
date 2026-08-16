@@ -8,6 +8,7 @@ import { APP_FILTER } from "@nestjs/core";
 import type { AppConfig } from "@atgt/config";
 import { HealthModule } from "./modules/health/health.module";
 import { IdentityModule } from "./modules/identity/identity.module";
+import { MapProviderModule } from "./modules/map-provider/map-provider.module";
 import { DatabaseModule } from "./platform/database";
 import { ProblemDetailsFilter } from "./platform/problem-details.filter";
 import { RequestContextMiddleware } from "./platform/request-context.middleware";
@@ -31,6 +32,7 @@ export class AppModule implements NestModule {
         DatabaseModule.register(config),
         HealthModule,
         IdentityModule.register(config),
+        MapProviderModule.register(config),
       ],
       providers: [{ provide: APP_FILTER, useClass: ProblemDetailsFilter }],
     };
