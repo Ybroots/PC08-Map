@@ -1,6 +1,6 @@
 # ATGT Platform - Ban do so va ung dung an toan giao thong tinh Lam Dong
 
-> **Phiên bản**: 0.0.1 — T00 đến T03 đã hoàn thành
+> **Phiên bản**: 0.0.1 — T00 đến T04 đã hoàn thành
 > **Nguon tai lieu**: Ke_hoach_trien_khai_Code_Codex_ATGT_Lam_Dong.docx (v1.0, 16/08/2026)
 
 ## Gioi thieu
@@ -90,6 +90,18 @@ pnpm build
   và có PostgreSQL-backed idempotency cho POST retry.
 - API/worker kiểm tra toàn bộ cấu hình trước bootstrap và dừng khi cấu hình không an toàn.
 
+## Data platform
+
+- Core DDL nằm trong migration, không nằm trong development seed.
+- Incident point lưu bằng generated `geography(Point, 4326)` từ longitude/
+  latitude đã được database kiểm tra range; spatial columns có GiST indexes.
+- API dùng một managed PostgreSQL pool, transaction manager, transactional
+  outbox writer và idempotent inbox claims.
+- Incident repository bắt buộc branded `AccessScope`, prefilter area/case và
+  đánh giá lại policy role/unit/area/case/data class trước khi trả dữ liệu.
+- D-05/D-06/D-07/D-09 vẫn khóa dữ liệu đơn vị thật, retention cleanup,
+  break-glass và load tuning.
+
 ## Backlog trien khai (Codex tasks)
 
 | Task | Ten                                     | Phu thuoc             | Trang thai |
@@ -98,7 +110,7 @@ pnpm build
 | T01  | Local development infrastructure        | T00                   | DONE       |
 | T02  | Contract và error platform              | T00-T01               | DONE       |
 | T03  | Identity và authorization nền           | T02 + mock IdP local  | DONE       |
-| T04  | Nen tang du lieu va PostGIS             | T01-T03               | TODO       |
+| T04  | Nen tang du lieu va PostGIS             | T01-T03               | DONE       |
 | T05  | VietMap Adapter                         | T02 + VietMap sandbox | TODO       |
 | T06  | Map data lifecycle                      | T03-T04               | TODO       |
 | T07  | SOS incident vertical slice             | T02-T04               | TODO       |

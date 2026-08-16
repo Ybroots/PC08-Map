@@ -6,37 +6,47 @@
 
 ### incident schema
 
-| Table     | Column      | Type                  | Description                 | Constraints             |
-| --------- | ----------- | --------------------- | --------------------------- | ----------------------- |
-| incidents | id          | UUID                  | Primary key                 | PK, NOT NULL            |
-| incidents | public_code | VARCHAR(16)           | Random tracking code        | UNIQUE, NOT NULL        |
-| incidents | type        | VARCHAR(50)           | Incident type               | NOT NULL                |
-| incidents | priority    | VARCHAR(20)           | CRITICAL/HIGH/MEDIUM/LOW    | NOT NULL                |
-| incidents | geom        | geography(Point,4326) | Location                    | NOT NULL                |
-| incidents | accuracy_m  | NUMERIC(8,2)          | GPS accuracy meters         |                         |
-| incidents | occurred_at | TIMESTAMPTZ           | When incident happened      | NOT NULL                |
-| incidents | state       | VARCHAR(30)           | Current state machine state | NOT NULL                |
-| incidents | source      | VARCHAR(20)           | MOBILE_SOS/WEB/MANUAL       | NOT NULL                |
-| incidents | version     | INTEGER               | Optimistic lock             | NOT NULL, DEFAULT 1     |
-| incidents | created_at  | TIMESTAMPTZ           |                             | NOT NULL, DEFAULT NOW() |
-| incidents | updated_at  | TIMESTAMPTZ           |                             | NOT NULL                |
+| Table     | Column      | Type                  | Description                           | Constraints             |
+| --------- | ----------- | --------------------- | ------------------------------------- | ----------------------- |
+| incidents | id          | UUID                  | Internal primary key                  | PK, NOT NULL            |
+| incidents | public_code | CHAR(12)              | Random Crockford-base32 tracking code | UNIQUE, regex           |
+| incidents | type        | TEXT                  | Incident catalog code                 | FK catalog, NOT NULL    |
+| incidents | priority    | TEXT                  | CRITICAL/HIGH/MEDIUM/LOW              | CHECK, NOT NULL         |
+| incidents | longitude   | DOUBLE PRECISION      | EPSG:4326 longitude                   | -180..180, NOT NULL     |
+| incidents | latitude    | DOUBLE PRECISION      | EPSG:4326 latitude                    | -90..90, NOT NULL       |
+| incidents | geom        | geography(Point,4326) | Generated from longitude and latitude | STORED, GiST index      |
+| incidents | accuracy_m  | NUMERIC(8,2)          | GPS accuracy meters                   | 0..10000                |
+| incidents | description | TEXT                  | Citizen-provided description          | 1..500 when present     |
+| incidents | occurred_at | TIMESTAMPTZ           | When incident happened                | NOT NULL                |
+| incidents | state       | TEXT                  | Current state-machine value           | CHECK, NOT NULL         |
+| incidents | source      | TEXT                  | MOBILE_SOS/WEB/MANUAL                 | CHECK, NOT NULL         |
+| incidents | area_id     | TEXT                  | Opaque authorization-area reference   | NOT NULL                |
+| incidents | data_class  | TEXT                  | Data classification                   | CHECK, NOT NULL         |
+| incidents | version     | INTEGER               | Optimistic lock                       | > 0, DEFAULT 1          |
+| incidents | created_at  | TIMESTAMPTZ           | Created in UTC                        | NOT NULL, DEFAULT NOW() |
+| incidents | updated_at  | TIMESTAMPTZ           | Last mutation in UTC                  | >= created_at           |
 
-| Table          | Column      | Type        | Description           |
-| -------------- | ----------- | ----------- | --------------------- |
-| status_history | id          | UUID        | PK                    |
-| status_history | incident_id | UUID        | FK incidents.id       |
-| status_history | from_state  | VARCHAR(30) |                       |
-| status_history | to_state    | VARCHAR(30) |                       |
-| status_history | actor       | VARCHAR     | Officer ref (not PII) |
-| status_history | reason      | TEXT        |                       |
-| status_history | created_at  | TIMESTAMPTZ | Append-only           |
+| Table          | Column      | Type        | Description             |
+| -------------- | ----------- | ----------- | ----------------------- |
+| status_history | id          | UUID        | PK                      |
+| status_history | incident_id | UUID        | FK incidents.id         |
+| status_history | from_state  | VARCHAR(30) |                         |
+| status_history | to_state    | VARCHAR(30) |                         |
+| status_history | actor_ref   | VARCHAR     | Hashed/opaque actor ref |
+| status_history | reason      | TEXT        |                         |
+| status_history | trace_id    | TEXT        | 32-char trace ID        |
+| status_history | created_at  | TIMESTAMPTZ | Append-only             |
+
+`incident.incidents` has no citizen session, IP, fingerprint, account, token or
+identity-link column. `incident.status_history` grants the app INSERT/SELECT but
+revokes UPDATE/DELETE/TRUNCATE.
 
 ### dispatch schema
 
-| Table       | Key columns                                                              | Notes                                 |
-| ----------- | ------------------------------------------------------------------------ | ------------------------------------- |
-| units       | unit_id, capability[], service_area(geometry), availability, contact_ref | Not public; versioned                 |
-| assignments | incident_id, unit_id, eta_sec, route_quality, assigned/ack/on_scene_at   | SLA timer; unique active per incident |
+| Table       | Key columns                                                              | Notes                                                   |
+| ----------- | ------------------------------------------------------------------------ | ------------------------------------------------------- |
+| units       | unit_id, capability[], service_area(geometry), availability, contact_ref | Not public; versioned                                   |
+| assignments | incident_id, unit_id, assigned_by_ref, assigned/ack/on_scene/ended_at    | Unique active per incident; SLA/route fields remain T08 |
 
 ### report schema
 
@@ -65,16 +75,18 @@
 
 ### map schema
 
-| Table     | Key columns                                                                 | Notes                      |
-| --------- | --------------------------------------------------------------------------- | -------------------------- |
-| features  | layer_id, version_id, geom, properties, valid_from, valid_to, publish_state | PostGIS; version immutable |
-| approvals | version_id, submitter, approver, decision, comment                          | Maker-checker              |
+| Table     | Key columns                                                                 | Notes                                |
+| --------- | --------------------------------------------------------------------------- | ------------------------------------ |
+| layers    | layer_key, layer_name, layer_type, is_public                                | Base catalog; workflow remains T06   |
+| features  | layer_id, version_id, geom, properties, valid_from, valid_to, publish_state | Valid EPSG:4326 geometry; GiST index |
+| approvals | version_id, submitter, approver, decision, comment                          | Planned T06 maker-checker            |
 
 ### platform schema
 
-| Table  | Key columns                                                   | Notes                           |
-| ------ | ------------------------------------------------------------- | ------------------------------- |
-| outbox | event_id, aggregate, type, payload, occurred_at, published_at | Same transaction; index pending |
+| Table          | Key columns                                                                    | Notes                                      |
+| -------------- | ------------------------------------------------------------------------------ | ------------------------------------------ |
+| outbox         | event_id, aggregate, event_type/version, payload, trace_id, occurred/published | Same transaction as aggregate state change |
+| inbox_messages | consumer_name, message_id, event_type, trace_id, processed_at                  | Composite PK; duplicate claim loses        |
 
 ### integration schema
 

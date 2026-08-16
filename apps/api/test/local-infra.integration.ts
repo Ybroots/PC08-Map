@@ -91,6 +91,22 @@ describe("T01: Local dev infrastructure smoke tests", () => {
       expect(parseInt(result.rows[0]?.count)).toBe(1);
     });
 
+    it("T04 core data and inbox tables exist", async () => {
+      if (SKIP) return;
+      const result = await client.query(`
+        SELECT table_schema, table_name
+        FROM information_schema.tables
+        WHERE (table_schema, table_name) IN (
+          ('incident', 'incidents'),
+          ('incident', 'status_history'),
+          ('dispatch', 'assignments'),
+          ('map', 'features'),
+          ('platform', 'inbox_messages')
+        )
+      `);
+      expect(result.rows).toHaveLength(5);
+    });
+
     it("loads development seed data during first initialization", async () => {
       if (SKIP) return;
       const result = await client.query(`

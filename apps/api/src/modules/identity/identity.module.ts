@@ -2,10 +2,11 @@ import { DynamicModule, Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { AuthorizationPolicy } from "@atgt/authorization";
 import type { AppConfig } from "@atgt/config";
+import type { Pool } from "pg";
+import { DATABASE_POOL } from "../../platform/database";
 import { AuthorizationGuard } from "./authorization.guard";
 import { CitizenSessionController } from "./citizen-session.controller";
 import { CitizenSessionService } from "./citizen-session.service";
-import { IdentityDatabase } from "./identity-database";
 import {
   CITIZEN_SESSION_STORE,
   IDENTITY_PROVIDER,
@@ -28,25 +29,21 @@ export class IdentityModule {
       controllers: [CitizenSessionController],
       providers: [
         { provide: RUNTIME_CONFIG, useValue: config },
-        IdentityDatabase,
         AuthorizationPolicy,
         {
           provide: SESSION_REVOCATION_STORE,
-          inject: [IdentityDatabase],
-          useFactory: (database: IdentityDatabase) =>
-            new PostgresSessionRevocationStore(database.pool),
+          inject: [DATABASE_POOL],
+          useFactory: (pool: Pool) => new PostgresSessionRevocationStore(pool),
         },
         {
           provide: CITIZEN_SESSION_STORE,
-          inject: [IdentityDatabase],
-          useFactory: (database: IdentityDatabase) =>
-            new PostgresCitizenSessionStore(database.pool),
+          inject: [DATABASE_POOL],
+          useFactory: (pool: Pool) => new PostgresCitizenSessionStore(pool),
         },
         {
           provide: SECURITY_AUDIT_SINK,
-          inject: [IdentityDatabase],
-          useFactory: (database: IdentityDatabase) =>
-            new PostgresSecurityAuditSink(database.pool),
+          inject: [DATABASE_POOL],
+          useFactory: (pool: Pool) => new PostgresSecurityAuditSink(pool),
         },
         {
           provide: IDENTITY_PROVIDER,

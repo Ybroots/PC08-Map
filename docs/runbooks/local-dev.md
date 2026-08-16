@@ -66,7 +66,7 @@ Anonymous citizen sessions can be exercised without storing their raw tokens:
 ```bash
 curl -sS -X POST http://localhost:3000/api/v1/public/sessions \
   -H "Content-Type: application/json" \
-  -d '{"device":"web"}'
+  -d '{"device_class":"web"}'
 ```
 
 The response is `Cache-Control: no-store`. The API persists only a SHA-256 token
@@ -144,6 +144,25 @@ docker compose -f infra/compose/docker-compose.yml logs postgres
 # Connect and check
 docker exec -it atgt-postgres psql -U postgres -d atgt_dev -c "SELECT PostGIS_Version();"
 ```
+
+### Verify T04 core migration
+
+Development seed contains inserts only; core tables must already exist when the
+seed starts. After `pnpm dev:reset`, verify the generated geography and reliable
+event tables:
+
+```bash
+docker exec -it atgt-postgres psql -U postgres -d atgt_dev -c \
+  "SELECT table_schema, table_name FROM information_schema.tables WHERE (table_schema, table_name) IN (('incident','incidents'),('platform','outbox'),('platform','inbox_messages'));"
+
+docker exec -it atgt-postgres psql -U postgres -d atgt_dev -c \
+  "SELECT indexname FROM pg_indexes WHERE indexname IN ('incidents_geom_idx','map_features_geom_idx','dispatch_units_service_area_idx');"
+```
+
+Run `pnpm test:integration` for coordinate round-trip, atomic incident/outbox,
+duplicate inbox claim and scoped repository checks. Do not edit a mounted init
+SQL file and expect an existing PostgreSQL volume to re-run it; use
+`pnpm dev:reset`, which permanently deletes local development data.
 
 ## Security notes for local dev
 
