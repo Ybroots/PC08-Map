@@ -18,6 +18,12 @@ const validEnvironment = (): Record<string, string> => ({
   S3_BUCKET_DERIVATIVE: "derivative",
   OIDC_ISSUER: "http://localhost:8080/realms/atgt",
   OIDC_CLIENT_ID: "atgt-api",
+  OIDC_AUDIENCE: "atgt-api",
+  OIDC_JWKS_URI: "http://localhost:8080/realms/atgt/certs",
+  OIDC_JWKS_CACHE_TTL_MS: "600000",
+  OIDC_USE_MOCK: "false",
+  CITIZEN_SESSION_TTL_MINUTES: "60",
+  CITIZEN_SESSION_ROTATE_AFTER_MINUTES: "15",
   VIETMAP_BASE_URL: "https://maps.vietmap.vn",
   VIETMAP_SERVER_KEY_REF: "secret:vietmap/key",
   VIETMAP_CLIENT_KEY_ALIAS: "vietmap-client",
@@ -37,6 +43,7 @@ describe("loadAndValidateConfig", () => {
     expect(config.app.port).toBe(3000);
     expect(config.redis.sentinels).toHaveLength(2);
     expect(config.vietmap.useFakeAdapter).toBe(true);
+    expect(config.identity.useMock).toBe(false);
   });
 
   it("fails when an isolated database URL is missing", () => {
@@ -51,6 +58,59 @@ describe("loadAndValidateConfig", () => {
     expect(() =>
       loadAndValidateConfig({ ...validEnvironment(), APP_ENV: "production" }),
     ).toThrow("LOG_LEVEL=debug is not allowed in production");
+  });
+
+  it("rejects mock identity outside development and test", () => {
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        APP_ENV: "staging",
+        LOG_LEVEL: "info",
+        OIDC_ISSUER: "https://identity.example.test/realms/atgt",
+        OIDC_JWKS_URI: "https://identity.example.test/realms/atgt/certs",
+        OIDC_USE_MOCK: "true",
+      }),
+    ).toThrow("OIDC_USE_MOCK is allowed only in development or test");
+  });
+
+  it("requires all local mock identity fields without echoing its token", () => {
+    const secret = "local-token-that-must-not-be-echoed";
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        OIDC_USE_MOCK: "true",
+        OIDC_MOCK_TOKEN: secret,
+      }),
+    ).toThrow("OIDC_MOCK_SUBJECT is required");
+    try {
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        OIDC_USE_MOCK: "true",
+        OIDC_MOCK_TOKEN: secret,
+      });
+    } catch (error) {
+      expect(String(error)).not.toContain(secret);
+    }
+  });
+
+  it("requires session rotation before expiry", () => {
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        CITIZEN_SESSION_TTL_MINUTES: "15",
+        CITIZEN_SESSION_ROTATE_AFTER_MINUTES: "15",
+      }),
+    ).toThrow(
+      "CITIZEN_SESSION_ROTATE_AFTER_MINUTES must be less than CITIZEN_SESSION_TTL_MINUTES",
+    );
+  });
+
+  it("fails closed when citizen session policy is absent", () => {
+    const environment = validEnvironment();
+    delete environment.CITIZEN_SESSION_TTL_MINUTES;
+    expect(() => loadAndValidateConfig(environment)).toThrow(
+      "CITIZEN_SESSION_TTL_MINUTES is required",
+    );
   });
 
   it("keeps privacy disabled while policy is pending", () => {

@@ -16,6 +16,7 @@ import {
   IdempotencyConflictError,
   IdempotencyInProgressError,
 } from "./idempotency";
+import { SafeHttpException } from "./safe-http.exception";
 
 interface ErrorDescriptor {
   title: string;
@@ -24,6 +25,13 @@ interface ErrorDescriptor {
 }
 
 function describe(status: number, exception: unknown): ErrorDescriptor {
+  if (exception instanceof SafeHttpException) {
+    return {
+      title: exception.publicTitle,
+      detail: exception.publicDetail,
+      errorCode: exception.errorCode,
+    };
+  }
   if (exception instanceof IdempotencyConflictError) {
     return {
       title: "Idempotency conflict",

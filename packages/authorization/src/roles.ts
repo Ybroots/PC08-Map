@@ -1,10 +1,4 @@
-/**
- * Role definitions - ATGT Platform
- *
- * From Section 5.2 of technical spec.
- * DENY BY DEFAULT: absence of explicit permission = denied.
- * UI hiding is NEVER authorization - all checks happen server-side.
- */
+/** Officer roles defined by the approved access-control draft. */
 export enum OfficerRole {
   DISPATCHER = "dispatcher",
   FIELD_OFFICER = "field_officer",
@@ -16,6 +10,9 @@ export enum OfficerRole {
   SYSTEM_ADMIN = "system_admin",
 }
 
+export const CITIZEN_GUEST_ROLE = "citizen_guest" as const;
+export type PrincipalRole = OfficerRole | typeof CITIZEN_GUEST_ROLE;
+
 export enum DataClass {
   PUBLIC = "public",
   INTERNAL = "internal",
@@ -23,40 +20,83 @@ export enum DataClass {
   RESTRICTED = "restricted",
 }
 
-/**
- * AccessScope - The resolved scope passed to every repository method.
- *
- * Every repository query MUST receive a scope; queries without scope are rejected.
- * This prevents accidental full-table access.
- */
-export interface AccessScope {
-  /** The authenticated principal */
+export interface AccessScopeInput {
   principalId: string;
-  role: OfficerRole | "citizen_guest";
-  /** Unit IDs this principal belongs to (for field officers) */
-  unitIds?: string[];
-  /** Area IDs this principal has jurisdiction over */
-  areaIds?: string[];
-  /** Specific case IDs this principal is assigned to */
-  assignedCaseIds?: string[];
-  /** Maximum data class this principal can access */
+  role: PrincipalRole;
+  unitIds?: readonly string[];
+  areaIds?: readonly string[];
+  assignedCaseIds?: readonly string[];
   maxDataClass: DataClass;
+  sessionId?: string;
+  authenticationMethods?: readonly string[];
 }
 
+const resolvedScope: unique symbol = Symbol("atgt.resolved-access-scope");
+
 /**
- * CitizenSession - Anonymous session for citizen/public access
- * No PII stored; session is rotated periodically.
+ * Scope accepted by application services and repositories.
+ *
+ * The brand can only be created through `createAccessScope`, preventing a
+ * repository caller from accidentally passing an unvalidated claims object.
  */
+export type AccessScope = Readonly<{
+  principalId: string;
+  role: PrincipalRole;
+  unitIds: readonly string[];
+  areaIds: readonly string[];
+  assignedCaseIds: readonly string[];
+  maxDataClass: DataClass;
+  sessionId?: string;
+  authenticationMethods: readonly string[];
+  [resolvedScope]: true;
+}>;
+
+function normalizeIdentifiers(
+  identifiers: readonly string[] | undefined,
+): readonly string[] {
+  return Object.freeze(
+    [...new Set(identifiers ?? [])]
+      .map((identifier) => identifier.trim())
+      .filter(Boolean)
+      .sort(),
+  );
+}
+
+export function createAccessScope(input: AccessScopeInput): AccessScope {
+  const principalId = input.principalId.trim();
+  if (!principalId) throw new Error("principalId is required");
+
+  return Object.freeze({
+    principalId,
+    role: input.role,
+    unitIds: normalizeIdentifiers(input.unitIds),
+    areaIds: normalizeIdentifiers(input.areaIds),
+    assignedCaseIds: normalizeIdentifiers(input.assignedCaseIds),
+    maxDataClass: input.maxDataClass,
+    sessionId: input.sessionId?.trim() || undefined,
+    authenticationMethods: normalizeIdentifiers(input.authenticationMethods),
+    [resolvedScope]: true as const,
+  });
+}
+
+export function requireAccessScope(
+  scope: AccessScope | null | undefined,
+): AccessScope {
+  if (!scope || scope[resolvedScope] !== true) {
+    throw new Error("A resolved access scope is required");
+  }
+  return scope;
+}
+
 export interface CitizenSession {
-  sessionId: string; // Anonymous session token (not user ID)
-  deviceClass: string; // "mobile" | "web" - for rate limiting
-  createdAt: string; // UTC ISO8601
+  sessionId: string;
+  deviceClass: "mobile" | "web";
+  createdAt: string;
+  expiresAt: string;
 }
 
-/**
- * PolicyResult - Result of a policy evaluation
- */
-export interface PolicyResult {
-  allowed: boolean;
-  reason?: string; // Only populated when denied - for logging, not for client
+export interface StepUpContext {
+  mfaSatisfied: boolean;
+  authenticationMethods: readonly string[];
+  approvedGrantId?: string;
 }

@@ -40,6 +40,9 @@ importers:
 
   apps/api:
     dependencies:
+      "@atgt/authorization":
+        specifier: workspace:*
+        version: link:../../packages/authorization
       "@atgt/config":
         specifier: workspace:*
         version: link:../../packages/config
@@ -64,6 +67,9 @@ importers:
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
+      jose:
+        specifier: ^5.10.0
+        version: 5.10.0
       pg:
         specifier: ^8.11.0
         version: 8.23.0
@@ -5277,6 +5283,12 @@ packages:
     resolution:
       {
         integrity: sha512-1RuuER6kmt8K8I3nIWvPZKi5RQCb568ZPyY4Pwjlua+yo+63ZTmIwxLZH0heBmiKN4uxjvCiarDrjaeH84xicQ==,
+      }
+
+  jose@5.10.0:
+    resolution:
+      {
+        integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==,
       }
 
   js-tokens@4.0.0:
@@ -11627,6 +11639,8 @@ snapshots:
       "@sideway/address": 4.1.5
       "@sideway/formula": 3.0.1
       "@sideway/pinpoint": 2.0.0
+
+  jose@5.10.0: {}
 
   js-tokens@4.0.0: {}
 

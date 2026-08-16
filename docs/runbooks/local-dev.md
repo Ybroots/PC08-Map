@@ -18,7 +18,8 @@ cd atgt-platform
 
 # 2. Copy env file
 cp .env.example .env.local
-# Edit .env.local if needed (defaults work out of the box)
+# Edit .env.local. For local OIDC, enable the mock adapter and provide a
+# non-production opaque token plus the officer scope described below.
 
 # 3. Start all services
 pnpm dev:up
@@ -35,6 +36,44 @@ pnpm test:integration   # requires services running
 # 6. Start API in dev mode
 pnpm dev
 ```
+
+## Local identity setup
+
+The repository is fail-closed: `.env.example` does not include a usable officer
+credential, and staging/production refuse to start with the mock adapter. For
+local development only, set the following values in the ignored `.env.local`
+file:
+
+```dotenv
+OIDC_USE_MOCK=true
+OIDC_MOCK_TOKEN=<a-long-random-local-only-value>
+OIDC_MOCK_SUBJECT=local-officer
+OIDC_MOCK_ROLE=dispatcher
+OIDC_MOCK_UNIT_IDS=unit-dalat-traffic
+OIDC_MOCK_AREA_IDS=area-dalat
+OIDC_MOCK_CASE_IDS=case-local-001
+OIDC_MOCK_MAX_DATA_CLASS=internal
+OIDC_MOCK_AUTHENTICATION_METHODS=pwd,mfa
+OIDC_MOCK_SESSION_ID=local-session
+```
+
+Never paste the token into issue reports, screenshots, application logs, or
+committed files. Officer routes require both a valid bearer credential and an
+explicit route policy; a route without policy metadata is denied.
+
+Anonymous citizen sessions can be exercised without storing their raw tokens:
+
+```bash
+curl -sS -X POST http://localhost:3000/api/v1/public/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"device":"web"}'
+```
+
+The response is `Cache-Control: no-store`. The API persists only a SHA-256 token
+hash in `identity.citizen_sessions`; callers must keep the returned token only
+for the active client session. Rotation uses
+`POST /api/v1/public/sessions/rotate` with the token in
+`X-Citizen-Session` and invalidates the previous token atomically.
 
 ## Daily workflow
 
@@ -88,6 +127,9 @@ pnpm dev:up
 pnpm dev:reset
 ```
 
+This recreates every local volume and initializes the platform, identity, and
+seed schemas from scratch. It permanently removes local development data.
+
 ### Container won't start healthy
 
 ```bash
@@ -109,6 +151,9 @@ docker exec -it atgt-postgres psql -U postgres -d atgt_dev -c "SELECT PostGIS_Ve
 - .env.local is in .gitignore - never commit it
 - Real VietMap keys are NOT used in local dev (VIETMAP_USE_FAKE_ADAPTER=true)
 - Privacy vault feature is DISABLED (PRIVACY_POLICY_VERSION=PENDING) until D-07 approved
+- Break-glass authorization is DISABLED until its policy and approval path are accepted
+- Mock OIDC is allowed only in development/test; production-like environments require HTTPS issuer and JWKS URLs
+- Raw officer/citizen credentials are never persisted or written to security audit events
 - Auto-delete retention jobs are DISABLED until D-06 approved
 
 ## Seed data

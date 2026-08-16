@@ -56,6 +56,13 @@
 | -------------- | ----------------------------------------------------- | ---------------------------------- |
 | identity_links | subject_ref, sealed_identity, reason, retention_until | Separate role/key; no default join |
 
+### identity schema
+
+| Table                    | Key columns                                                                                        | Notes                                               |
+| ------------------------ | -------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| citizen_sessions         | session_id, token_hash, device_class, rotate_after, expires_at, revoked_at, replaced_by_session_id | Anonymous; hash only, no IP/fingerprint/account/PII |
+| revoked_officer_sessions | session_id_hash, revoked_at, expires_at, reason_code                                               | OIDC `sid` hash only; no bearer token               |
+
 ### map schema
 
 | Table     | Key columns                                                                 | Notes                      |

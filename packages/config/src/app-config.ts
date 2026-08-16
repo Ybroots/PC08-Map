@@ -21,7 +21,26 @@ export interface AppConfig {
     bucketOriginal: string;
     bucketDerivative: string;
   };
-  identity: { oidcIssuer: string; clientId: string };
+  identity: {
+    oidcIssuer: string;
+    clientId: string;
+    audience: string;
+    jwksUri?: string;
+    jwksCacheTtlMs: number;
+    useMock: boolean;
+    mock?: {
+      token: string;
+      subject: string;
+      role: string;
+      unitIds: readonly string[];
+      areaIds: readonly string[];
+      assignedCaseIds: readonly string[];
+      maxDataClass: string;
+      authenticationMethods: readonly string[];
+      sessionId: string;
+    };
+  };
+  citizenSession: { ttlMinutes: number; rotateAfterMinutes: number };
   vietmap: {
     baseUrl: string;
     serverKeyRef: string;
@@ -50,6 +69,17 @@ const APP_ENVIRONMENTS = [
   "production",
 ] as const;
 const LOG_LEVELS = ["debug", "info", "warn", "error"] as const;
+const OFFICER_ROLES = [
+  "dispatcher",
+  "field_officer",
+  "data_editor",
+  "data_approver",
+  "leader_viewer",
+  "security_auditor",
+  "privacy_approver",
+  "system_admin",
+] as const;
+const DATA_CLASSES = ["public", "internal", "sensitive", "restricted"] as const;
 
 function required(source: Environment, name: string): string {
   const value = source[name]?.trim();
@@ -123,6 +153,13 @@ function list(source: Environment, name: string): string[] {
   return values;
 }
 
+function optionalList(source: Environment, name: string): string[] {
+  return (source[name] ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 function redisSentinels(source: Environment): { host: string; port: number }[] {
   return list(source, "REDIS_SENTINELS").map((sentinel) => {
     const separator = sentinel.lastIndexOf(":");
@@ -170,6 +207,73 @@ export function loadAndValidateConfig(
     );
   }
 
+  const oidcIssuer = url(
+    required(source, "OIDC_ISSUER"),
+    "OIDC_ISSUER",
+    env === "production" || env === "staging"
+      ? ["https:"]
+      : ["http:", "https:"],
+  );
+  const useMockIdentity = boolean(source, "OIDC_USE_MOCK", false);
+  if (useMockIdentity && env !== "development" && env !== "test") {
+    throw new Error("OIDC_USE_MOCK is allowed only in development or test");
+  }
+  const jwksUriRaw = source["OIDC_JWKS_URI"]?.trim();
+  const jwksUri = useMockIdentity
+    ? undefined
+    : url(
+        required(source, "OIDC_JWKS_URI"),
+        "OIDC_JWKS_URI",
+        env === "production" || env === "staging"
+          ? ["https:"]
+          : ["http:", "https:"],
+      );
+  const mockIdentity = useMockIdentity
+    ? {
+        token: required(source, "OIDC_MOCK_TOKEN"),
+        subject: required(source, "OIDC_MOCK_SUBJECT"),
+        role: oneOf(
+          required(source, "OIDC_MOCK_ROLE"),
+          "OIDC_MOCK_ROLE",
+          OFFICER_ROLES,
+        ),
+        unitIds: optionalList(source, "OIDC_MOCK_UNIT_IDS"),
+        areaIds: optionalList(source, "OIDC_MOCK_AREA_IDS"),
+        assignedCaseIds: optionalList(source, "OIDC_MOCK_CASE_IDS"),
+        maxDataClass: oneOf(
+          required(source, "OIDC_MOCK_MAX_DATA_CLASS"),
+          "OIDC_MOCK_MAX_DATA_CLASS",
+          DATA_CLASSES,
+        ),
+        authenticationMethods: optionalList(
+          source,
+          "OIDC_MOCK_AUTHENTICATION_METHODS",
+        ),
+        sessionId: required(source, "OIDC_MOCK_SESSION_ID"),
+      }
+    : undefined;
+  required(source, "CITIZEN_SESSION_TTL_MINUTES");
+  const citizenSessionTtlMinutes = integer(
+    source,
+    "CITIZEN_SESSION_TTL_MINUTES",
+    60,
+    5,
+    1440,
+  );
+  required(source, "CITIZEN_SESSION_ROTATE_AFTER_MINUTES");
+  const citizenSessionRotateAfterMinutes = integer(
+    source,
+    "CITIZEN_SESSION_ROTATE_AFTER_MINUTES",
+    15,
+    1,
+    1439,
+  );
+  if (citizenSessionRotateAfterMinutes >= citizenSessionTtlMinutes) {
+    throw new Error(
+      "CITIZEN_SESSION_ROTATE_AFTER_MINUTES must be less than CITIZEN_SESSION_TTL_MINUTES",
+    );
+  }
+
   return {
     app: {
       env,
@@ -211,11 +315,23 @@ export function loadAndValidateConfig(
       bucketDerivative: required(source, "S3_BUCKET_DERIVATIVE"),
     },
     identity: {
-      oidcIssuer: url(required(source, "OIDC_ISSUER"), "OIDC_ISSUER", [
-        "http:",
-        "https:",
-      ]),
+      oidcIssuer,
       clientId: required(source, "OIDC_CLIENT_ID"),
+      audience: required(source, "OIDC_AUDIENCE"),
+      jwksUri: jwksUriRaw ? jwksUri : undefined,
+      jwksCacheTtlMs: integer(
+        source,
+        "OIDC_JWKS_CACHE_TTL_MS",
+        600_000,
+        30_000,
+        3_600_000,
+      ),
+      useMock: useMockIdentity,
+      mock: mockIdentity,
+    },
+    citizenSession: {
+      ttlMinutes: citizenSessionTtlMinutes,
+      rotateAfterMinutes: citizenSessionRotateAfterMinutes,
     },
     vietmap: {
       baseUrl: url(required(source, "VIETMAP_BASE_URL"), "VIETMAP_BASE_URL", [

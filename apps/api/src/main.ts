@@ -7,7 +7,7 @@ import { resolve } from "path";
 async function bootstrap() {
   loadEnvironmentFile({ path: resolve(__dirname, "../../../.env.local") });
   const config = loadAndValidateConfig();
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule.register(config));
 
   // API prefix
   app.setGlobalPrefix("api/v1");

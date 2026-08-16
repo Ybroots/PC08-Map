@@ -1,6 +1,6 @@
 # Access Control Policy
 
-**Status**: DRAFT — Requires ATTT review before production
+**Status**: DRAFT — T03 executable baseline; requires ATTT and D-02 review before production
 
 ## Role matrix
 
@@ -27,5 +27,32 @@
 ## Deny-by-default enforcement
 
 - Every controller method requires explicit `@RequirePolicy()` decorator
+- Public endpoints require explicit `@PublicRoute()`; absence of both is denied
 - Repository methods require `AccessScope` parameter
 - Tests must include explicit denial cases for each role boundary
+
+## OIDC claim contract
+
+| Claim             | Required      | Use                                           |
+| ----------------- | ------------- | --------------------------------------------- |
+| `iss` + `sub`     | Yes           | Stable hashed principal reference             |
+| `sid`             | Yes           | Session revocation by stored hash             |
+| `atgt_role`       | Yes           | One known officer role; unknown values denied |
+| `atgt_unit_ids`   | Optional list | Unit scope                                    |
+| `atgt_area_ids`   | Optional list | Geographic scope                              |
+| `atgt_case_ids`   | Optional list | Assigned-case scope                           |
+| `atgt_data_class` | Yes           | Maximum data classification                   |
+| `amr`             | Optional list | Step-up/MFA evidence interface                |
+
+Signature verification is pinned to the configured issuer, audience and trusted
+JWKS URI. Only RS256 and ES256 are accepted. Raw tokens and raw OIDC subjects are
+not written to application logs or security audit metadata.
+
+## Decision gates
+
+- D-02 pending: `OIDC_USE_MOCK` is accepted only in development/test. Ops login
+  stays closed until issuer, audience, JWKS and IdP claim mapping are approved.
+- D-07 pending: `privacy.break_glass.approve` always denies. An MFA claim alone
+  never enables unmasking.
+- UI navigation is advisory only; the API guard and scoped repository remain the
+  enforcement points.

@@ -25,6 +25,7 @@ CREATE SCHEMA IF NOT EXISTS map        AUTHORIZATION atgt_app;
 CREATE SCHEMA IF NOT EXISTS integration AUTHORIZATION atgt_app;
 CREATE SCHEMA IF NOT EXISTS platform   AUTHORIZATION atgt_app;
 CREATE SCHEMA IF NOT EXISTS analytics  AUTHORIZATION atgt_app;
+CREATE SCHEMA IF NOT EXISTS identity   AUTHORIZATION atgt_app;
 
 -- Audit schema: app can INSERT only; no UPDATE/DELETE
 CREATE SCHEMA IF NOT EXISTS audit AUTHORIZATION atgt_migration;
@@ -37,10 +38,10 @@ CREATE SCHEMA IF NOT EXISTS privacy AUTHORIZATION atgt_privacy;
 -- ============================================================
 
 -- atgt_app: full access to module schemas
-GRANT USAGE ON SCHEMA incident, dispatch, report, evidence, map, integration, platform, analytics TO atgt_app;
-ALTER DEFAULT PRIVILEGES IN SCHEMA incident, dispatch, report, evidence, map, integration, platform, analytics
+GRANT USAGE ON SCHEMA incident, dispatch, report, evidence, map, integration, platform, analytics, identity TO atgt_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA incident, dispatch, report, evidence, map, integration, platform, analytics, identity
   GRANT ALL ON TABLES TO atgt_app;
-ALTER DEFAULT PRIVILEGES IN SCHEMA incident, dispatch, report, evidence, map, integration, platform, analytics
+ALTER DEFAULT PRIVILEGES IN SCHEMA incident, dispatch, report, evidence, map, integration, platform, analytics, identity
   GRANT ALL ON SEQUENCES TO atgt_app;
 
 -- atgt_app: INSERT only on audit (not UPDATE/DELETE)
@@ -58,7 +59,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA privacy GRANT ALL ON TABLES TO atgt_privacy;
 ALTER DEFAULT PRIVILEGES IN SCHEMA privacy GRANT ALL ON SEQUENCES TO atgt_privacy;
 
 -- atgt_migration: can run DDL (CREATE TABLE etc.)
-GRANT ALL ON SCHEMA incident, dispatch, report, evidence, map, integration, platform, analytics, audit TO atgt_migration;
+GRANT ALL ON SCHEMA incident, dispatch, report, evidence, map, integration, platform, analytics, identity, audit TO atgt_migration;
 GRANT ALL PRIVILEGES ON DATABASE atgt_dev TO atgt_migration;
 
 -- ============================================================
@@ -72,5 +73,6 @@ COMMENT ON SCHEMA map         IS 'Spatial layers, features, versions, approvals'
 COMMENT ON SCHEMA integration IS 'Provider usage metrics (VietMap quota, antivirus)';
 COMMENT ON SCHEMA platform    IS 'Transactional outbox, idempotency store';
 COMMENT ON SCHEMA analytics   IS 'Anonymized KPI aggregations and metric snapshots';
+COMMENT ON SCHEMA identity    IS 'OIDC session revocation and anonymous citizen sessions; no passwords or raw tokens';
 COMMENT ON SCHEMA audit       IS 'Append-only security/business audit log - app CANNOT modify';
 COMMENT ON SCHEMA privacy     IS 'Privacy vault: identity linkage - RESTRICTED ACCESS - separate role';

@@ -8,6 +8,9 @@ import {
   OpenApiGeneratorV31,
 } from "@asteasolutions/zod-to-openapi";
 import {
+  CitizenSessionHeaderSchema,
+  CitizenSessionSchema,
+  CreateCitizenSessionSchema,
   CreateSosSchema,
   EventEnvelopeSchema,
   ProblemDetailsSchema,
@@ -21,6 +24,18 @@ const sosAccepted = registry.register("SosAccepted", SosAcceptedSchema);
 const problemDetails = registry.register(
   "ProblemDetails",
   ProblemDetailsSchema,
+);
+const createCitizenSession = registry.register(
+  "CreateCitizenSession",
+  CreateCitizenSessionSchema,
+);
+const citizenSession = registry.register(
+  "CitizenSession",
+  CitizenSessionSchema,
+);
+const citizenSessionHeader = registry.register(
+  "CitizenSessionHeader",
+  CitizenSessionHeaderSchema,
 );
 registry.register("EventEnvelope", EventEnvelopeSchema);
 registry.register("ProviderQuality", ProviderQualitySchema);
@@ -48,6 +63,47 @@ registry.registerPath({
     },
     409: {
       description: "Idempotency conflict",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/public/sessions",
+  summary: "Create an anonymous citizen session",
+  tags: ["Identity"],
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: createCitizenSession } },
+    },
+  },
+  responses: {
+    201: {
+      description: "Anonymous session created",
+      content: { "application/json": { schema: citizenSession } },
+    },
+    400: {
+      description: "Invalid request",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/public/sessions/rotate",
+  summary: "Rotate an anonymous citizen session",
+  tags: ["Identity"],
+  request: { headers: citizenSessionHeader },
+  responses: {
+    201: {
+      description: "Replacement session created and previous session revoked",
+      content: { "application/json": { schema: citizenSession } },
+    },
+    401: {
+      description: "Session expired, revoked, or invalid",
       content: { "application/problem+json": { schema: problemDetails } },
     },
   },

@@ -100,6 +100,12 @@
               "ATGT_COORDINATE_INVALID",
               "ATGT_UNAUTHORIZED",
               "ATGT_FORBIDDEN",
+              "ATGT_AUTH_TOKEN_INVALID",
+              "ATGT_AUTH_SESSION_REVOKED",
+              "ATGT_AUTH_POLICY_MISSING",
+              "ATGT_CITIZEN_SESSION_INVALID",
+              "ATGT_CITIZEN_SESSION_EXPIRED",
+              "ATGT_CITIZEN_SESSION_REVOKED",
               "ATGT_NOT_FOUND",
               "ATGT_CONFLICT",
               "ATGT_IDEMPOTENCY_CONFLICT",
@@ -124,6 +130,50 @@
           "error_code",
           "trace_id"
         ],
+        "additionalProperties": false
+      },
+      "CreateCitizenSession": {
+        "type": "object",
+        "properties": {
+          "device_class": { "type": "string", "enum": ["mobile", "web"] }
+        },
+        "required": ["device_class"],
+        "additionalProperties": false
+      },
+      "CitizenSession": {
+        "type": "object",
+        "properties": {
+          "session_id": { "type": "string", "format": "uuid" },
+          "session_token": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 128
+          },
+          "device_class": { "type": "string", "enum": ["mobile", "web"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "rotate_after": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "session_id",
+          "session_token",
+          "device_class",
+          "created_at",
+          "expires_at",
+          "rotate_after"
+        ],
+        "additionalProperties": false
+      },
+      "CitizenSessionHeader": {
+        "type": "object",
+        "properties": {
+          "x-citizen-session": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 128
+          }
+        },
+        "required": ["x-citizen-session"],
         "additionalProperties": false
       },
       "EventEnvelope": {
@@ -211,6 +261,70 @@
           },
           "409": {
             "description": "Idempotency conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/sessions": {
+      "post": {
+        "summary": "Create an anonymous citizen session",
+        "tags": ["Identity"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCitizenSession" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Anonymous session created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CitizenSession" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/sessions/rotate": {
+      "post": {
+        "summary": "Rotate an anonymous citizen session",
+        "tags": ["Identity"],
+        "parameters": [
+          {
+            "schema": { "type": "string", "minLength": 43, "maxLength": 128 },
+            "required": true,
+            "name": "x-citizen-session",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Replacement session created and previous session revoked",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CitizenSession" }
+              }
+            }
+          },
+          "401": {
+            "description": "Session expired, revoked, or invalid",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetails" }

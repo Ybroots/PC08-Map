@@ -1,5 +1,7 @@
 import {
   CreateSosSchema,
+  CreateCitizenSessionSchema,
+  CitizenSessionSchema,
   ERROR_CODES,
   EVENT_ROUTING_KEYS,
   EmergencyContactSchema,
@@ -116,5 +118,27 @@ describe("executable contracts", () => {
         emergencyContacts: [{ name: "Emergency", number: "112", type: "112" }],
       }),
     ).toBeDefined();
+  });
+
+  it("validates anonymous citizen sessions without technical identity", () => {
+    expect(
+      CreateCitizenSessionSchema.parse({ device_class: "mobile" }),
+    ).toEqual({ device_class: "mobile" });
+    expect(
+      CitizenSessionSchema.parse({
+        session_id: uuid,
+        session_token: "a".repeat(43),
+        device_class: "mobile",
+        created_at: "2026-08-16T10:00:00.000Z",
+        expires_at: "2026-08-16T11:00:00.000Z",
+        rotate_after: "2026-08-16T10:15:00.000Z",
+      }),
+    ).toBeDefined();
+    expect(() =>
+      CreateCitizenSessionSchema.parse({
+        device_class: "mobile",
+        ip_address: "127.0.0.1",
+      }),
+    ).toThrow();
   });
 });

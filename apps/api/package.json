@@ -11,6 +11,7 @@
     "test:integration": "jest --config jest.integration.config.js --passWithNoTests"
   },
   "dependencies": {
+    "@atgt/authorization": "workspace:*",
     "@atgt/config": "workspace:*",
     "@atgt/contracts": "workspace:*",
     "@atgt/observability": "workspace:*",
@@ -19,6 +20,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/terminus": "^10.0.0",
     "dotenv": "^16.4.5",
+    "jose": "^5.10.0",
     "pg": "^8.11.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",

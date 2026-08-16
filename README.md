@@ -1,6 +1,6 @@
 # ATGT Platform - Ban do so va ung dung an toan giao thong tinh Lam Dong
 
-> **Phiên bản**: 0.0.1 — T00, T01 và T02 đã hoàn thành  
+> **Phiên bản**: 0.0.1 — T00 đến T03 đã hoàn thành
 > **Nguon tai lieu**: Ke_hoach_trien_khai_Code_Codex_ATGT_Lam_Dong.docx (v1.0, 16/08/2026)
 
 ## Gioi thieu
@@ -97,7 +97,7 @@ pnpm build
 | T00  | Khởi tạo repository và chuẩn chất lượng | ADR stack tham chiếu  | DONE       |
 | T01  | Local development infrastructure        | T00                   | DONE       |
 | T02  | Contract và error platform              | T00-T01               | DONE       |
-| T03  | Identity va authorization nen           | T02 + IdP             | TODO       |
+| T03  | Identity và authorization nền           | T02 + mock IdP local  | DONE       |
 | T04  | Nen tang du lieu va PostGIS             | T01-T03               | TODO       |
 | T05  | VietMap Adapter                         | T02 + VietMap sandbox | TODO       |
 | T06  | Map data lifecycle                      | T03-T04               | TODO       |

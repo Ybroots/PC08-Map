@@ -4,6 +4,7 @@ import {
   HealthCheckService,
   MemoryHealthIndicator,
 } from "@nestjs/terminus";
+import { PublicRoute } from "../identity/authorization.decorators";
 
 /**
  * HealthController
@@ -15,6 +16,7 @@ import {
  * GET /api/v1/health/ready - readiness: can the process serve traffic?
  */
 @Controller("health")
+@PublicRoute()
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,

@@ -69,7 +69,7 @@ describe("T01: Local dev infrastructure smoke tests", () => {
       if (SKIP) return;
       const result = await client.query(`
         SELECT schema_name FROM information_schema.schemata
-        WHERE schema_name IN ('incident','dispatch','report','evidence','map','platform','audit','analytics')
+        WHERE schema_name IN ('incident','dispatch','report','evidence','map','platform','audit','analytics','identity')
         ORDER BY schema_name
       `);
       const schemas = result.rows.map(
@@ -79,6 +79,7 @@ describe("T01: Local dev infrastructure smoke tests", () => {
       expect(schemas).toContain("dispatch");
       expect(schemas).toContain("audit");
       expect(schemas).toContain("platform");
+      expect(schemas).toContain("identity");
     });
 
     it("outbox table exists", async () => {

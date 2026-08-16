@@ -1,6 +1,13 @@
-import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import {
+  DynamicModule,
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+} from "@nestjs/common";
 import { APP_FILTER } from "@nestjs/core";
+import type { AppConfig } from "@atgt/config";
 import { HealthModule } from "./modules/health/health.module";
+import { IdentityModule } from "./modules/identity/identity.module";
 import { ProblemDetailsFilter } from "./platform/problem-details.filter";
 import { RequestContextMiddleware } from "./platform/request-context.middleware";
 
@@ -14,11 +21,16 @@ import { RequestContextMiddleware } from "./platform/request-context.middleware"
  * IMPORTANT: No module may import another module's internal repository.
  * Cross-module access uses public application services or domain events only.
  */
-@Module({
-  imports: [HealthModule],
-  providers: [{ provide: APP_FILTER, useClass: ProblemDetailsFilter }],
-})
+@Module({})
 export class AppModule implements NestModule {
+  static register(config: AppConfig): DynamicModule {
+    return {
+      module: AppModule,
+      imports: [HealthModule, IdentityModule.register(config)],
+      providers: [{ provide: APP_FILTER, useClass: ProblemDetailsFilter }],
+    };
+  }
+
   configure(consumer: MiddlewareConsumer): void {
     consumer.apply(RequestContextMiddleware).forRoutes("*");
   }
