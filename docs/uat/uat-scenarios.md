@@ -56,6 +56,10 @@ with monotonic cursors 12–15 and state `RECEIVED`.
 | UAT-13 | EXIF data in photo            | Derivative has EXIF stripped; original retained immutably      |
 | UAT-14 | Unauthorized download attempt | Blocked; audit event logged                                    |
 
+T10A covers contract/schema/lifecycle/config invariants only. It does not upload
+or read an object, run AV/derivative processing, or authorize a preview; therefore
+UAT-11..14 remain pending until T10B adapters and runtime paths exist.
+
 ## Reports (UAT-15 to UAT-17)
 
 | ID     | Scenario                    | Expected result                                                |

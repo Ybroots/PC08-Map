@@ -160,6 +160,7 @@ services:
       mc anonymous set none local/atgt-quarantine;
       mc anonymous set none local/atgt-evidence-original;
       mc anonymous set none local/atgt-evidence-derivative;
+      mc version enable local/atgt-evidence-original;
       echo 'MinIO buckets initialized';
       "
     networks:
@@ -189,9 +190,9 @@ services:
     volumes:
       - ./otel/otel-collector.yaml:/etc/otel/config.yaml:ro
     ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
-      - "8888:8888"   # Collector metrics
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "8888:8888" # Collector metrics
     depends_on:
       - prometheus
     networks:

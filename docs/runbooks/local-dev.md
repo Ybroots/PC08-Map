@@ -258,6 +258,41 @@ says location is unavailable and keeps 112/113/114/115 callable. On an emulator,
 verify a tap resolves to a Dialer intent (`dat=tel:112`); only a physical-device
 test can validate the complete call experience.
 
+### Evidence pipeline foundation
+
+Migration 08 creates `evidence.uploads`, `evidence.objects` and append-only
+`evidence.scan_history`. The MinIO initializer keeps all three evidence buckets
+private and enables versioning on `atgt-evidence-original`. Re-run the idempotent
+initializer after pulling T10A:
+
+```bash
+docker compose -f infra/compose/docker-compose.yml run --rm minio-init
+```
+
+T10A does not expose runtime upload routes or start a media worker. Leave the
+feature disabled unless working on T10B:
+
+```dotenv
+EVIDENCE_PIPELINE_ENABLED=false
+EVIDENCE_USE_FAKE_ANTIVIRUS=false
+```
+
+Local/test enablement requires explicit values for
+`EVIDENCE_ALLOWED_MIME_TYPES`, `EVIDENCE_MAX_BYTES`,
+`EVIDENCE_UPLOAD_URL_TTL_SECONDS`, `EVIDENCE_WORKER_POLL_MS` and
+`EVIDENCE_WORKER_BATCH_SIZE`, plus the deliberately fake AV flag. These are test
+fixtures, not production policy. Staging/production reject T10A enablement until
+the approved T10B storage/AV adapters exist. Never place raw capabilities,
+signed URLs, object keys, checksums or scan detail in logs/tickets/screenshots.
+
+There is no retention cleanup path. Do not manually delete quarantine/original
+objects or evidence rows to “unstick” a test; inspect append-only history and keep
+the feature disabled. Integration verification:
+
+```bash
+pnpm --filter @atgt/api exec jest --config jest.integration.config.js --runInBand evidence-foundation.integration.ts
+```
+
 ### Port conflict
 
 ```bash

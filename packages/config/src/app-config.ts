@@ -63,6 +63,15 @@ export interface AppConfig {
     idempotencyTtlMinutes?: number;
   };
   outboxRelay: { enabled: boolean; pollMs?: number; batchSize?: number };
+  evidence: {
+    enabled: boolean;
+    allowedMimeTypes: readonly string[];
+    maxBytes?: number;
+    uploadUrlTtlSeconds?: number;
+    workerPollMs?: number;
+    workerBatchSize?: number;
+    useFakeAntivirus: boolean;
+  };
   telemetry: { otlpEndpoint: string; serviceName: string };
 }
 
@@ -244,6 +253,78 @@ export function loadAndValidateConfig(
   const outboxRelayBatchSize = source["OUTBOX_RELAY_BATCH_SIZE"]?.trim()
     ? integer(source, "OUTBOX_RELAY_BATCH_SIZE", 0, 1, 1000)
     : undefined;
+  const evidenceEnabled = boolean(source, "EVIDENCE_PIPELINE_ENABLED", false);
+  const useFakeAntivirus = boolean(
+    source,
+    "EVIDENCE_USE_FAKE_ANTIVIRUS",
+    false,
+  );
+  if (useFakeAntivirus && (env === "staging" || env === "production")) {
+    throw new Error(
+      "EVIDENCE_USE_FAKE_ANTIVIRUS is allowed only in development or test",
+    );
+  }
+  if (evidenceEnabled && (env === "staging" || env === "production")) {
+    throw new Error(
+      "EVIDENCE_PIPELINE_ENABLED is blocked outside local/test until T10B provider approval",
+    );
+  }
+  if (evidenceEnabled) {
+    for (const name of [
+      "EVIDENCE_ALLOWED_MIME_TYPES",
+      "EVIDENCE_MAX_BYTES",
+      "EVIDENCE_UPLOAD_URL_TTL_SECONDS",
+      "EVIDENCE_WORKER_POLL_MS",
+      "EVIDENCE_WORKER_BATCH_SIZE",
+    ]) {
+      required(source, name);
+    }
+    if (!useFakeAntivirus) {
+      throw new Error(
+        "EVIDENCE_USE_FAKE_ANTIVIRUS must be true for the T10A local/test pipeline",
+      );
+    }
+  }
+  const evidenceAllowedMimeTypes = evidenceEnabled
+    ? list(source, "EVIDENCE_ALLOWED_MIME_TYPES")
+    : optionalList(source, "EVIDENCE_ALLOWED_MIME_TYPES");
+  if (
+    evidenceAllowedMimeTypes.some(
+      (mime) =>
+        mime !== mime.toLowerCase() ||
+        !/^[a-z0-9][a-z0-9!#$&^_.+-]*\/[a-z0-9][a-z0-9!#$&^_.+-]*$/.test(mime),
+    )
+  ) {
+    throw new Error(
+      "EVIDENCE_ALLOWED_MIME_TYPES contains an invalid MIME type",
+    );
+  }
+  const evidenceMaxBytes = source["EVIDENCE_MAX_BYTES"]?.trim()
+    ? integer(source, "EVIDENCE_MAX_BYTES", 0, 1, Number.MAX_SAFE_INTEGER)
+    : undefined;
+  const evidenceUploadUrlTtlSeconds = source[
+    "EVIDENCE_UPLOAD_URL_TTL_SECONDS"
+  ]?.trim()
+    ? integer(
+        source,
+        "EVIDENCE_UPLOAD_URL_TTL_SECONDS",
+        0,
+        1,
+        Number.MAX_SAFE_INTEGER,
+      )
+    : undefined;
+  const evidenceWorkerPollMs = source["EVIDENCE_WORKER_POLL_MS"]?.trim()
+    ? integer(source, "EVIDENCE_WORKER_POLL_MS", 0, 1, Number.MAX_SAFE_INTEGER)
+    : undefined;
+  const evidenceWorkerBatchSize = source["EVIDENCE_WORKER_BATCH_SIZE"]?.trim()
+    ? integer(
+        source,
+        "EVIDENCE_WORKER_BATCH_SIZE",
+        0,
+        1,
+        Number.MAX_SAFE_INTEGER,
+      )
+    : undefined;
 
   const oidcIssuer = url(
     required(source, "OIDC_ISSUER"),
@@ -404,6 +485,15 @@ export function loadAndValidateConfig(
       enabled: outboxRelayEnabled,
       pollMs: outboxRelayPollMs,
       batchSize: outboxRelayBatchSize,
+    },
+    evidence: {
+      enabled: evidenceEnabled,
+      allowedMimeTypes: evidenceAllowedMimeTypes,
+      maxBytes: evidenceMaxBytes,
+      uploadUrlTtlSeconds: evidenceUploadUrlTtlSeconds,
+      workerPollMs: evidenceWorkerPollMs,
+      workerBatchSize: evidenceWorkerBatchSize,
+      useFakeAntivirus,
     },
     telemetry: {
       otlpEndpoint: url(

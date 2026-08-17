@@ -17,7 +17,8 @@
 | T07  | DONE                  | Atomic SOS, replay, tracking, scoped feed, relay + ops shell   |
 | T08  | BLOCKED               | Chờ D-04 SLA/escalation và D-05 unit/service-area              |
 | T09  | ANDROID EMULATOR PASS | UAT-01..04 xong; physical/iOS và production config còn pending |
-| T10+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
+| T10  | SAFE FOUNDATION DONE  | Contract/schema/lifecycle/config xong; provider/worker/UAT chờ |
+| T11+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
 real HTTP adapter/contract fixtures và sandbox contract suite; xem
@@ -62,6 +63,12 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
 - Native release fail closed: `com.atgtlamdong.dev` và local HTTP endpoint chỉ hoạt
   động trong debug; release thiếu approved application ID, HTTPS endpoint và
   signing chỉ hiển thị trạng thái chưa gửi cùng bốn số gọi khẩn cấp.
+- Evidence T10A có public initiate/finalize contract nhưng chưa có runtime route;
+  typed events không mang object key/URL/checksum. Migration 08 tạo uploads,
+  immutable READY objects và append-only scan history, không có delete path.
+- Evidence lifecycle chỉ READY sau exact hash/MIME/size, clean AV và đủ original +
+  derivative. Config mặc định disabled, yêu cầu toàn bộ deployment values và chặn
+  staging/production cho tới T10B provider approval.
 
 ## Hard stops còn mở
 
@@ -78,7 +85,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: physical/iOS gate T09 hoặc decision gate T08
+## Bước tiếp theo đề xuất: T10B provider gate hoặc physical/iOS gate T09
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -91,6 +98,12 @@ permission precise/approximate/deny, airplane-mode reconnect, double action và
 `tel:112` Dialer intent. Bước kế tiếp là physical Android network/call UAT và iOS
 build/UAT trên macOS. Trước release cần approved application ID, HTTPS API endpoint
 và signing; không tự suy đoán các giá trị này. D-09 vẫn khóa media/load.
+
+T10A đã khóa chain-of-custody tại contract/domain/database/config nhưng chưa phát
+signed upload URL hoặc đọc file. T10B cần quyết định/adapter S3-compatible và AV,
+cùng explicit MIME/max bytes/URL TTL/worker poll+batch cho từng deployment. Khi
+chưa có, giữ `EVIDENCE_PIPELINE_ENABLED=false`; không dựng fake production, không
+đánh dấu UAT-11..14 pass và không thêm retention delete khi D-06 còn pending.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -113,6 +126,13 @@ tại commit `2b54b57`; UAT fixes/evidence đã publish tại `8cc7e88`. GitHub 
 `32002194610` xanh đủ sáu job gồm secret scan, static gates, contract drift, unit,
 cold-start integration và build. Full local frozen-install, format/lint/typecheck,
 unit/coverage/contract/integration/e2e/build và Android `assembleDebug` cũng pass.
+
+T10A focused verification có 21 contract tests, 39 domain tests, 17 config tests
+và 3 PostgreSQL evidence integration tests. Migration 08 đã được áp dụng lên local
+DB hiện tại; MinIO initializer xác nhận ba bucket private và original versioning.
+Full local frozen-install, format/lint/typecheck, unit/coverage/contract,
+integration/e2e và build đều pass; API integration hiện có 45 test, worker có 3.
+Xem `docs/plans/T10-evidence-pipeline.md` để tiếp tục T10B mà không vượt hard stop.
 
 Từ repository root:
 

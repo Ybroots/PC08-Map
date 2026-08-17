@@ -6,6 +6,11 @@ import {
   EVENT_ROUTING_KEYS,
   EmergencyContactSchema,
   EventEnvelopeSchema,
+  EvidenceReadyEventSchema,
+  EvidenceScanRequestedEventSchema,
+  EvidenceUploadInitiatedSchema,
+  FinalizeEvidenceUploadSchema,
+  InitiateEvidenceUploadSchema,
   MapFeatureCollectionInputSchema,
   PublicMapQuerySchema,
   ProblemDetailsSchema,
@@ -180,6 +185,58 @@ describe("executable contracts", () => {
         ip_address: "127.0.0.1",
       }),
     ).toThrow();
+  });
+
+  it("keeps evidence upload contracts executable and storage-key free", () => {
+    const request = InitiateEvidenceUploadSchema.parse({
+      declared_mime: "image/jpeg",
+      declared_size_bytes: 4096,
+      declared_sha256: "a".repeat(64),
+    });
+    expect(request.declared_size_bytes).toBe(4096);
+    const initiated = EvidenceUploadInitiatedSchema.parse({
+      upload_id: uuid,
+      upload_url: "https://upload.example.test/capability",
+      upload_method: "PUT",
+      upload_capability: "c".repeat(43),
+      expires_at: "2026-08-16T10:05:00.000Z",
+    });
+    expect(initiated).not.toHaveProperty("object_key");
+    expect(
+      FinalizeEvidenceUploadSchema.parse({ observed_sha256: "a".repeat(64) }),
+    ).toBeDefined();
+  });
+
+  it("keeps evidence events free of object keys, URLs and checksums", () => {
+    const base = {
+      event_id: uuid,
+      version: 1,
+      occurred_at: "2026-08-16T10:00:00.000Z",
+      trace_id: traceId,
+      aggregate_id: uuid,
+      aggregate_type: "evidence",
+    };
+    const requested = EvidenceScanRequestedEventSchema.parse({
+      ...base,
+      type: EVENT_ROUTING_KEYS.EVIDENCE_SCAN_REQUESTED,
+      data: { evidence_id: uuid, state: "SCAN_PENDING" },
+    });
+    const ready = EvidenceReadyEventSchema.parse({
+      ...base,
+      type: EVENT_ROUTING_KEYS.EVIDENCE_READY,
+      data: {
+        evidence_id: uuid,
+        state: "READY",
+        mime: "image/jpeg",
+        size_bytes: 4096,
+      },
+    });
+    for (const event of [requested, ready]) {
+      const serialized = JSON.stringify(event);
+      expect(serialized).not.toContain("object_key");
+      expect(serialized).not.toContain("upload_url");
+      expect(serialized).not.toContain("sha256");
+    }
   });
 
   it("accepts ordered EPSG:4326 map input and normalizes bbox query values", () => {

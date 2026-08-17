@@ -211,6 +211,84 @@ describe("loadAndValidateConfig", () => {
     ).toEqual({ enabled: true, pollMs: 1000, batchSize: 25 });
   });
 
+  it("keeps the evidence pipeline disabled without implicit media policy", () => {
+    expect(loadAndValidateConfig(validEnvironment()).evidence).toEqual({
+      enabled: false,
+      allowedMimeTypes: [],
+      maxBytes: undefined,
+      uploadUrlTtlSeconds: undefined,
+      workerPollMs: undefined,
+      workerBatchSize: undefined,
+      useFakeAntivirus: false,
+    });
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        EVIDENCE_PIPELINE_ENABLED: "true",
+      }),
+    ).toThrow("EVIDENCE_ALLOWED_MIME_TYPES is required");
+  });
+
+  it("requires every evidence deployment parameter when enabled", () => {
+    const enabled = {
+      ...validEnvironment(),
+      EVIDENCE_PIPELINE_ENABLED: "true",
+      EVIDENCE_ALLOWED_MIME_TYPES: "image/jpeg,image/png",
+      EVIDENCE_MAX_BYTES: "1048576",
+      EVIDENCE_UPLOAD_URL_TTL_SECONDS: "300",
+      EVIDENCE_WORKER_POLL_MS: "1000",
+      EVIDENCE_WORKER_BATCH_SIZE: "10",
+      EVIDENCE_USE_FAKE_ANTIVIRUS: "true",
+    };
+    expect(loadAndValidateConfig(enabled).evidence).toEqual({
+      enabled: true,
+      allowedMimeTypes: ["image/jpeg", "image/png"],
+      maxBytes: 1048576,
+      uploadUrlTtlSeconds: 300,
+      workerPollMs: 1000,
+      workerBatchSize: 10,
+      useFakeAntivirus: true,
+    });
+    expect(() =>
+      loadAndValidateConfig({ ...enabled, EVIDENCE_MAX_BYTES: "" }),
+    ).toThrow("EVIDENCE_MAX_BYTES is required");
+    expect(() =>
+      loadAndValidateConfig({
+        ...enabled,
+        EVIDENCE_USE_FAKE_ANTIVIRUS: "false",
+      }),
+    ).toThrow(
+      "EVIDENCE_USE_FAKE_ANTIVIRUS must be true for the T10A local/test pipeline",
+    );
+  });
+
+  it("rejects fake antivirus outside development and test", () => {
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        APP_ENV: "production",
+        LOG_LEVEL: "info",
+        OIDC_ISSUER: "https://identity.example.test/realms/atgt",
+        OIDC_JWKS_URI: "https://identity.example.test/realms/atgt/certs",
+        EVIDENCE_USE_FAKE_ANTIVIRUS: "true",
+      }),
+    ).toThrow(
+      "EVIDENCE_USE_FAKE_ANTIVIRUS is allowed only in development or test",
+    );
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        APP_ENV: "staging",
+        LOG_LEVEL: "info",
+        OIDC_ISSUER: "https://identity.example.test/realms/atgt",
+        OIDC_JWKS_URI: "https://identity.example.test/realms/atgt/certs",
+        EVIDENCE_PIPELINE_ENABLED: "true",
+      }),
+    ).toThrow(
+      "EVIDENCE_PIPELINE_ENABLED is blocked outside local/test until T10B provider approval",
+    );
+  });
+
   it("does not include a secret value in URL validation errors", () => {
     const secret = "super-secret-password";
     let message = "";

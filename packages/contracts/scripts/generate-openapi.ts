@@ -14,6 +14,11 @@ import {
   CreateCitizenSessionSchema,
   CreateSosSchema,
   EventEnvelopeSchema,
+  EvidenceScanPendingSchema,
+  EvidenceUploadCapabilityHeaderSchema,
+  EvidenceUploadInitiatedSchema,
+  FinalizeEvidenceUploadSchema,
+  InitiateEvidenceUploadSchema,
   CreateMapVersionSchema,
   MapImportPreviewRequestSchema,
   MapImportPreviewSchema,
@@ -32,6 +37,26 @@ import {
 } from "../src";
 
 const registry = new OpenAPIRegistry();
+const initiateEvidenceUpload = registry.register(
+  "InitiateEvidenceUpload",
+  InitiateEvidenceUploadSchema,
+);
+const evidenceUploadInitiated = registry.register(
+  "EvidenceUploadInitiated",
+  EvidenceUploadInitiatedSchema,
+);
+const finalizeEvidenceUpload = registry.register(
+  "FinalizeEvidenceUpload",
+  FinalizeEvidenceUploadSchema,
+);
+const evidenceScanPending = registry.register(
+  "EvidenceScanPending",
+  EvidenceScanPendingSchema,
+);
+const evidenceUploadCapabilityHeader = registry.register(
+  "EvidenceUploadCapabilityHeader",
+  EvidenceUploadCapabilityHeaderSchema,
+);
 const createSos = registry.register("CreateSos", CreateSosSchema);
 const sosAccepted = registry.register("SosAccepted", SosAcceptedSchema);
 const sosHeaders = registry.register(
@@ -116,6 +141,67 @@ registry.registerPath({
     },
     409: {
       description: "Idempotency conflict",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/public/uploads/initiate",
+  summary: "Initiate a quarantine evidence upload",
+  description:
+    "Returns a short-lived upload authorization without exposing the server-generated object key.",
+  tags: ["Evidence"],
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: initiateEvidenceUpload } },
+    },
+  },
+  responses: {
+    201: {
+      description: "Quarantine upload authorization created",
+      content: { "application/json": { schema: evidenceUploadInitiated } },
+    },
+    503: {
+      description: "Evidence pipeline is configuration-blocked",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/public/uploads/{uploadId}/finalize",
+  summary: "Finalize a quarantine upload and request scanning",
+  tags: ["Evidence"],
+  request: {
+    params: z.object({
+      uploadId: z
+        .string()
+        .uuid()
+        .openapi({
+          param: { name: "uploadId", in: "path" },
+        }),
+    }),
+    headers: evidenceUploadCapabilityHeader,
+    body: {
+      required: true,
+      content: { "application/json": { schema: finalizeEvidenceUpload } },
+    },
+  },
+  responses: {
+    202: {
+      description: "Upload accepted into the asynchronous scan pipeline",
+      content: { "application/json": { schema: evidenceScanPending } },
+    },
+    409: {
+      description: "Upload state or checksum conflict",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+    503: {
+      description: "Evidence pipeline is configuration-blocked",
       content: { "application/problem+json": { schema: problemDetails } },
     },
   },

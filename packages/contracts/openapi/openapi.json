@@ -8,6 +8,73 @@
   "servers": [{ "url": "http://localhost:3000" }],
   "components": {
     "schemas": {
+      "InitiateEvidenceUpload": {
+        "type": "object",
+        "properties": {
+          "declared_mime": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 127,
+            "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*\\/[a-z0-9][a-z0-9!#$&^_.+-]*$"
+          },
+          "declared_size_bytes": { "type": "integer", "exclusiveMinimum": 0 },
+          "declared_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        },
+        "required": ["declared_mime", "declared_size_bytes", "declared_sha256"],
+        "additionalProperties": false
+      },
+      "EvidenceUploadInitiated": {
+        "type": "object",
+        "properties": {
+          "upload_id": { "type": "string", "format": "uuid" },
+          "upload_url": { "type": "string", "format": "uri" },
+          "upload_method": { "type": "string", "enum": ["PUT"] },
+          "upload_capability": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 256
+          },
+          "expires_at": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "upload_id",
+          "upload_url",
+          "upload_method",
+          "upload_capability",
+          "expires_at"
+        ],
+        "additionalProperties": false
+      },
+      "FinalizeEvidenceUpload": {
+        "type": "object",
+        "properties": {
+          "observed_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        },
+        "required": ["observed_sha256"],
+        "additionalProperties": false
+      },
+      "EvidenceScanPending": {
+        "type": "object",
+        "properties": {
+          "evidence_id": { "type": "string", "format": "uuid" },
+          "state": { "type": "string", "enum": ["SCAN_PENDING"] },
+          "accepted_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["evidence_id", "state", "accepted_at"],
+        "additionalProperties": false
+      },
+      "EvidenceUploadCapabilityHeader": {
+        "type": "object",
+        "properties": {
+          "x-upload-capability": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 256
+          }
+        },
+        "required": ["x-upload-capability"],
+        "additionalProperties": false
+      },
       "CreateSos": {
         "type": "object",
         "properties": {
@@ -1054,6 +1121,99 @@
           },
           "409": {
             "description": "Idempotency conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/uploads/initiate": {
+      "post": {
+        "summary": "Initiate a quarantine evidence upload",
+        "description": "Returns a short-lived upload authorization without exposing the server-generated object key.",
+        "tags": ["Evidence"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitiateEvidenceUpload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Quarantine upload authorization created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceUploadInitiated"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Evidence pipeline is configuration-blocked",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/uploads/{uploadId}/finalize": {
+      "post": {
+        "summary": "Finalize a quarantine upload and request scanning",
+        "tags": ["Evidence"],
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "uploadId",
+            "in": "path"
+          },
+          {
+            "schema": { "type": "string", "minLength": 43, "maxLength": 256 },
+            "required": true,
+            "name": "x-upload-capability",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalizeEvidenceUpload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Upload accepted into the asynchronous scan pipeline",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EvidenceScanPending" }
+              }
+            }
+          },
+          "409": {
+            "description": "Upload state or checksum conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          },
+          "503": {
+            "description": "Evidence pipeline is configuration-blocked",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetails" }

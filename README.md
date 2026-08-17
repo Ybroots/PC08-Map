@@ -1,6 +1,6 @@
 # ATGT Platform - Ban do so va ung dung an toan giao thong tinh Lam Dong
 
-> **Phiên bản**: 0.0.1 — T00 đến T07 hoàn thành; T09 Android emulator UAT pass, physical/iOS còn chờ
+> **Phiên bản**: 0.0.1 — T00 đến T07 hoàn thành; T09 Android emulator pass; T10A evidence foundation
 > **Nguon tai lieu**: Ke_hoach_trien_khai_Code_Codex_ATGT_Lam_Dong.docx (v1.0, 16/08/2026)
 
 ## Gioi thieu
@@ -142,6 +142,20 @@ pnpm build
   sang màn hình gọi `112/113/114/115`; physical-device call/network UAT và iOS
   build trên macOS vẫn là gate bắt buộc, không gọi debug APK là native release.
 
+## Evidence pipeline foundation
+
+- T10A có executable initiate/finalize contracts, typed scan/ready events và
+  expand-only schema `evidence.uploads/objects/scan_history`.
+- Upload declaration/capability hash bất biến; business schema không chứa citizen
+  session/token/IP/device identity. App role không được delete evidence hoặc sửa
+  scan history; original checksum/storage facts được DB trigger bảo vệ.
+- Lifecycle chỉ cho `INITIATED -> SCAN_PENDING -> READY|REJECTED`; READY yêu cầu
+  hash/MIME/size/AV/original/derivative facts đều pass. Original MinIO bucket có
+  versioning và ba bucket vẫn private.
+- Pipeline mặc định tắt. Local/test phải khai báo MIME/max bytes/URL TTL/worker
+  poll+batch và fake AV rõ ràng; staging/production bị chặn cho tới T10B provider
+  approval. Chưa có upload adapter, media worker, viewer/download hoặc UAT-11..14.
+
 ## Backlog trien khai (Codex tasks)
 
 | Task | Ten                                     | Phu thuoc             | Trang thai                     |
@@ -156,7 +170,7 @@ pnpm build
 | T07  | SOS incident vertical slice             | T02-T04               | DONE                           |
 | T08  | Dispatch engine va SLA                  | T05+T07+SLA rules     | BLOCKED D-04/D-05              |
 | T09  | Citizen mobile SOS                      | T07 + UI prototype    | ANDROID EMULATOR UAT PASS      |
-| T10  | Evidence pipeline                       | T04 + S3/AV decision  | TODO                           |
+| T10  | Evidence pipeline                       | T04 + S3/AV decision  | SAFE FOUNDATION / T10B BLOCKED |
 | T11  | Citizen reports va chong lam dung       | T09-T10               | TODO                           |
 | T12  | Privacy vault va break-glass            | T03-T04 + quy che     | TODO                           |
 | T13  | Canh bao giao thong                     | T05-T06               | TODO                           |
