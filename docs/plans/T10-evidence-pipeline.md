@@ -107,12 +107,15 @@ derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
 - [x] 2026-08-17: full frozen-install, format, lint, typecheck, unit, coverage,
       contract, integration, e2e and build gates pass locally. Compose config and
       MinIO original-bucket versioning were also verified.
+- [x] 2026-08-17: clean-runner CI exposed the missing migration mount; fixed
+      init order to migration 08 then seed 09. CI run `32004958414` passed all
+      six jobs, including cold-start/integration from an empty volume.
 
 ## Handoff
 
 - Changed files: evidence contracts/OpenAPI, migration, domain/config tests,
   Compose versioning, integration test and roadmap/runbook/handoff.
 - Tests run/results: focused T10A suites and all local repository gates pass;
-  clean-runner cold-start CI pending.
+  clean-runner CI `32004958414` is green 6/6, including cold start.
 - Remaining risks: provider decision, media limits, AV/CDR behavior, physical UAT.
 - Rollback: keep all evidence rows/objects; disable feature and worker.

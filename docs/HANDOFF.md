@@ -132,6 +132,10 @@ và 3 PostgreSQL evidence integration tests. Migration 08 đã được áp dụ
 DB hiện tại; MinIO initializer xác nhận ba bucket private và original versioning.
 Full local frozen-install, format/lint/typecheck, unit/coverage/contract,
 integration/e2e và build đều pass; API integration hiện có 45 test, worker có 3.
+T10A implementation ở commit `8f4ca18`; cold-start phát hiện migration 08 chưa
+được mount nên thứ tự init đã sửa tại `979b755` thành migration 08 rồi seed 09.
+GitHub CI run `32004958414` xanh đủ sáu job, gồm secret/static/contract/unit,
+cold-start integration từ volume rỗng và build toàn workspace.
 Xem `docs/plans/T10-evidence-pipeline.md` để tiếp tục T10B mà không vượt hard stop.
 
 Từ repository root:
