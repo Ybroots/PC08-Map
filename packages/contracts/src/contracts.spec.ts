@@ -7,6 +7,8 @@ import {
   EmergencyContactSchema,
   EventEnvelopeSchema,
   EvidenceReadyEventSchema,
+  EvidenceFinalizeHeadersSchema,
+  EvidenceInitiateHeadersSchema,
   EvidenceScanRequestedEventSchema,
   EvidenceUploadInitiatedSchema,
   FinalizeEvidenceUploadSchema,
@@ -205,6 +207,21 @@ describe("executable contracts", () => {
     expect(
       FinalizeEvidenceUploadSchema.parse({ observed_sha256: "a".repeat(64) }),
     ).toBeDefined();
+    expect(
+      EvidenceInitiateHeadersSchema.parse({
+        "idempotency-key": uuid,
+        "x-citizen-session": "s".repeat(43),
+      }),
+    ).toBeDefined();
+    expect(
+      EvidenceFinalizeHeadersSchema.parse({
+        "x-upload-capability": "c".repeat(43),
+        "x-citizen-session": "s".repeat(43),
+      }),
+    ).toBeDefined();
+    expect(() =>
+      EvidenceInitiateHeadersSchema.parse({ "idempotency-key": uuid }),
+    ).toThrow();
   });
 
   it("keeps evidence events free of object keys, URLs and checksums", () => {

@@ -20,6 +20,10 @@ export interface AppConfig {
     bucketQuarantine: string;
     bucketOriginal: string;
     bucketDerivative: string;
+    region?: string;
+    accessKey?: string;
+    secretKey?: string;
+    forcePathStyle: boolean;
   };
   identity: {
     oidcIssuer: string;
@@ -71,6 +75,7 @@ export interface AppConfig {
     workerPollMs?: number;
     workerBatchSize?: number;
     useFakeAntivirus: boolean;
+    capabilitySecret?: string;
   };
   telemetry: { otlpEndpoint: string; serviceName: string };
 }
@@ -276,15 +281,33 @@ export function loadAndValidateConfig(
       "EVIDENCE_UPLOAD_URL_TTL_SECONDS",
       "EVIDENCE_WORKER_POLL_MS",
       "EVIDENCE_WORKER_BATCH_SIZE",
+      "EVIDENCE_CAPABILITY_SECRET",
+      "S3_REGION",
+      "S3_ACCESS_KEY",
+      "S3_SECRET_KEY",
+      "S3_FORCE_PATH_STYLE",
     ]) {
       required(source, name);
     }
     if (!useFakeAntivirus) {
       throw new Error(
-        "EVIDENCE_USE_FAKE_ANTIVIRUS must be true for the T10A local/test pipeline",
+        "EVIDENCE_USE_FAKE_ANTIVIRUS must be true for the local/test evidence pipeline",
       );
     }
   }
+  const evidenceCapabilitySecret = source["EVIDENCE_CAPABILITY_SECRET"]?.trim();
+  if (
+    evidenceCapabilitySecret !== undefined &&
+    evidenceCapabilitySecret.length < 32
+  ) {
+    throw new Error(
+      "EVIDENCE_CAPABILITY_SECRET must be at least 32 characters",
+    );
+  }
+  const storageRegion = source["S3_REGION"]?.trim() || undefined;
+  const storageAccessKey = source["S3_ACCESS_KEY"]?.trim() || undefined;
+  const storageSecretKey = source["S3_SECRET_KEY"]?.trim() || undefined;
+  const storageForcePathStyle = boolean(source, "S3_FORCE_PATH_STYLE", false);
   const evidenceAllowedMimeTypes = evidenceEnabled
     ? list(source, "EVIDENCE_ALLOWED_MIME_TYPES")
     : optionalList(source, "EVIDENCE_ALLOWED_MIME_TYPES");
@@ -305,13 +328,7 @@ export function loadAndValidateConfig(
   const evidenceUploadUrlTtlSeconds = source[
     "EVIDENCE_UPLOAD_URL_TTL_SECONDS"
   ]?.trim()
-    ? integer(
-        source,
-        "EVIDENCE_UPLOAD_URL_TTL_SECONDS",
-        0,
-        1,
-        Number.MAX_SAFE_INTEGER,
-      )
+    ? integer(source, "EVIDENCE_UPLOAD_URL_TTL_SECONDS", 0, 1, 604_800)
     : undefined;
   const evidenceWorkerPollMs = source["EVIDENCE_WORKER_POLL_MS"]?.trim()
     ? integer(source, "EVIDENCE_WORKER_POLL_MS", 0, 1, Number.MAX_SAFE_INTEGER)
@@ -432,6 +449,10 @@ export function loadAndValidateConfig(
       bucketQuarantine: required(source, "S3_BUCKET_QUARANTINE"),
       bucketOriginal: required(source, "S3_BUCKET_ORIGINAL"),
       bucketDerivative: required(source, "S3_BUCKET_DERIVATIVE"),
+      region: storageRegion,
+      accessKey: storageAccessKey,
+      secretKey: storageSecretKey,
+      forcePathStyle: storageForcePathStyle,
     },
     identity: {
       oidcIssuer,
@@ -494,6 +515,7 @@ export function loadAndValidateConfig(
       workerPollMs: evidenceWorkerPollMs,
       workerBatchSize: evidenceWorkerBatchSize,
       useFakeAntivirus,
+      capabilitySecret: evidenceCapabilitySecret,
     },
     telemetry: {
       otlpEndpoint: url(

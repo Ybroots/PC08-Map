@@ -220,6 +220,7 @@ describe("loadAndValidateConfig", () => {
       workerPollMs: undefined,
       workerBatchSize: undefined,
       useFakeAntivirus: false,
+      capabilitySecret: undefined,
     });
     expect(() =>
       loadAndValidateConfig({
@@ -239,6 +240,11 @@ describe("loadAndValidateConfig", () => {
       EVIDENCE_WORKER_POLL_MS: "1000",
       EVIDENCE_WORKER_BATCH_SIZE: "10",
       EVIDENCE_USE_FAKE_ANTIVIRUS: "true",
+      EVIDENCE_CAPABILITY_SECRET: "local-test-capability-secret-32-characters",
+      S3_REGION: "us-east-1",
+      S3_ACCESS_KEY: "local-test-access-key",
+      S3_SECRET_KEY: "local-test-secret-key",
+      S3_FORCE_PATH_STYLE: "true",
     };
     expect(loadAndValidateConfig(enabled).evidence).toEqual({
       enabled: true,
@@ -248,6 +254,7 @@ describe("loadAndValidateConfig", () => {
       workerPollMs: 1000,
       workerBatchSize: 10,
       useFakeAntivirus: true,
+      capabilitySecret: "local-test-capability-secret-32-characters",
     });
     expect(() =>
       loadAndValidateConfig({ ...enabled, EVIDENCE_MAX_BYTES: "" }),
@@ -258,8 +265,14 @@ describe("loadAndValidateConfig", () => {
         EVIDENCE_USE_FAKE_ANTIVIRUS: "false",
       }),
     ).toThrow(
-      "EVIDENCE_USE_FAKE_ANTIVIRUS must be true for the T10A local/test pipeline",
+      "EVIDENCE_USE_FAKE_ANTIVIRUS must be true for the local/test evidence pipeline",
     );
+    expect(() =>
+      loadAndValidateConfig({
+        ...enabled,
+        EVIDENCE_CAPABILITY_SECRET: "too-short",
+      }),
+    ).toThrow("EVIDENCE_CAPABILITY_SECRET must be at least 32 characters");
   });
 
   it("rejects fake antivirus outside development and test", () => {

@@ -269,8 +269,9 @@ initializer after pulling T10A:
 docker compose -f infra/compose/docker-compose.yml run --rm minio-init
 ```
 
-T10A does not expose runtime upload routes or start a media worker. Leave the
-feature disabled unless working on T10B:
+T10B1 exposes citizen-session-protected initiate/finalize routes for local/test,
+but does not start a media worker. Leave the feature disabled unless explicitly
+testing this slice:
 
 ```dotenv
 EVIDENCE_PIPELINE_ENABLED=false
@@ -280,9 +281,13 @@ EVIDENCE_USE_FAKE_ANTIVIRUS=false
 Local/test enablement requires explicit values for
 `EVIDENCE_ALLOWED_MIME_TYPES`, `EVIDENCE_MAX_BYTES`,
 `EVIDENCE_UPLOAD_URL_TTL_SECONDS`, `EVIDENCE_WORKER_POLL_MS` and
-`EVIDENCE_WORKER_BATCH_SIZE`, plus the deliberately fake AV flag. These are test
-fixtures, not production policy. Staging/production reject T10A enablement until
-the approved T10B storage/AV adapters exist. Never place raw capabilities,
+`EVIDENCE_WORKER_BATCH_SIZE`, plus `EVIDENCE_CAPABILITY_SECRET` (32+ characters),
+`S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_FORCE_PATH_STYLE` and the
+deliberately fake AV flag. Compose uses region `us-east-1`, path style and the
+synthetic MinIO credentials already declared in `docker-compose.yml`; keep the
+capability secret in `.env.local`. MIME/size/TTL/poll/batch remain explicit test
+fixtures, not production policy. Staging/production reject enablement until the
+approved storage/AV provider and secret resolver exist. Never place raw capabilities,
 signed URLs, object keys, checksums or scan detail in logs/tickets/screenshots.
 
 There is no retention cleanup path. Do not manually delete quarantine/original
@@ -291,6 +296,7 @@ the feature disabled. Integration verification:
 
 ```bash
 pnpm --filter @atgt/api exec jest --config jest.integration.config.js --runInBand evidence-foundation.integration.ts
+pnpm --filter @atgt/api exec jest --config jest.integration.config.js --runInBand evidence-runtime.integration.ts
 ```
 
 ### Port conflict

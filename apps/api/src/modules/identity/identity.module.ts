@@ -6,6 +6,7 @@ import type { Pool } from "pg";
 import { DATABASE_POOL } from "../../platform/database";
 import { AuthorizationGuard } from "./authorization.guard";
 import { CitizenSessionController } from "./citizen-session.controller";
+import { CitizenSessionGuard } from "./citizen-session.guard";
 import { CitizenSessionService } from "./citizen-session.service";
 import {
   CITIZEN_SESSION_STORE,
@@ -72,6 +73,10 @@ export class IdentityModule {
         {
           provide: APP_GUARD,
           useClass: AuthorizationGuard,
+        },
+        {
+          provide: APP_GUARD,
+          useClass: CitizenSessionGuard,
         },
       ],
       exports: [CitizenSessionService, IDENTITY_PROVIDER],

@@ -63,16 +63,34 @@
         "required": ["evidence_id", "state", "accepted_at"],
         "additionalProperties": false
       },
-      "EvidenceUploadCapabilityHeader": {
+      "EvidenceInitiateHeaders": {
+        "type": "object",
+        "properties": {
+          "idempotency-key": { "type": "string", "format": "uuid" },
+          "x-citizen-session": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 256
+          }
+        },
+        "required": ["idempotency-key", "x-citizen-session"],
+        "additionalProperties": false
+      },
+      "EvidenceFinalizeHeaders": {
         "type": "object",
         "properties": {
           "x-upload-capability": {
             "type": "string",
             "minLength": 43,
             "maxLength": 256
+          },
+          "x-citizen-session": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 256
           }
         },
-        "required": ["x-upload-capability"],
+        "required": ["x-upload-capability", "x-citizen-session"],
         "additionalProperties": false
       },
       "CreateSos": {
@@ -461,6 +479,7 @@
               "ATGT_EVIDENCE_MIME_NOT_ALLOWED",
               "ATGT_EVIDENCE_SIZE_EXCEEDED",
               "ATGT_EVIDENCE_HASH_MISMATCH",
+              "ATGT_EVIDENCE_STORAGE_UNAVAILABLE",
               "ATGT_RATE_LIMIT_EXCEEDED",
               "ATGT_MAP_PROVIDER_UNAVAILABLE",
               "ATGT_MAP_GEOMETRY_INVALID",
@@ -1135,6 +1154,20 @@
         "summary": "Initiate a quarantine evidence upload",
         "description": "Returns a short-lived upload authorization without exposing the server-generated object key.",
         "tags": ["Evidence"],
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "idempotency-key",
+            "in": "header"
+          },
+          {
+            "schema": { "type": "string", "minLength": 43, "maxLength": 256 },
+            "required": true,
+            "name": "x-citizen-session",
+            "in": "header"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1182,6 +1215,12 @@
             "schema": { "type": "string", "minLength": 43, "maxLength": 256 },
             "required": true,
             "name": "x-upload-capability",
+            "in": "header"
+          },
+          {
+            "schema": { "type": "string", "minLength": 43, "maxLength": 256 },
+            "required": true,
+            "name": "x-citizen-session",
             "in": "header"
           }
         ],

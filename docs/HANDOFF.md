@@ -17,7 +17,7 @@
 | T07  | DONE                  | Atomic SOS, replay, tracking, scoped feed, relay + ops shell   |
 | T08  | BLOCKED               | Chờ D-04 SLA/escalation và D-05 unit/service-area              |
 | T09  | ANDROID EMULATOR PASS | UAT-01..04 xong; physical/iOS và production config còn pending |
-| T10  | SAFE FOUNDATION DONE  | Contract/schema/lifecycle/config xong; provider/worker/UAT chờ |
+| T10  | T10B1 UPLOAD PASS     | Local initiate/finalize xong; AV worker/derivative/UAT còn chờ |
 | T11+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
@@ -63,9 +63,10 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
 - Native release fail closed: `com.atgtlamdong.dev` và local HTTP endpoint chỉ hoạt
   động trong debug; release thiếu approved application ID, HTTPS endpoint và
   signing chỉ hiển thị trạng thái chưa gửi cùng bốn số gọi khẩn cấp.
-- Evidence T10A có public initiate/finalize contract nhưng chưa có runtime route;
-  typed events không mang object key/URL/checksum. Migration 08 tạo uploads,
-  immutable READY objects và append-only scan history, không có delete path.
+- Evidence T10B1 có citizen-session-protected initiate/finalize runtime, replay-safe
+  idempotency, server-generated quarantine key và HMAC capability chỉ lưu hash.
+  MinIO adapter signed PUT/HEAD chạy ngoài transaction; finalize atomically ghi
+  state/history/audit/outbox. Event không mang object key/URL/checksum.
 - Evidence lifecycle chỉ READY sau exact hash/MIME/size, clean AV và đủ original +
   derivative. Config mặc định disabled, yêu cầu toàn bộ deployment values và chặn
   staging/production cho tới T10B provider approval.
@@ -99,11 +100,12 @@ permission precise/approximate/deny, airplane-mode reconnect, double action và
 build/UAT trên macOS. Trước release cần approved application ID, HTTPS API endpoint
 và signing; không tự suy đoán các giá trị này. D-09 vẫn khóa media/load.
 
-T10A đã khóa chain-of-custody tại contract/domain/database/config nhưng chưa phát
-signed upload URL hoặc đọc file. T10B cần quyết định/adapter S3-compatible và AV,
-cùng explicit MIME/max bytes/URL TTL/worker poll+batch cho từng deployment. Khi
-chưa có, giữ `EVIDENCE_PIPELINE_ENABLED=false`; không dựng fake production, không
-đánh dấu UAT-11..14 pass và không thêm retention delete khi D-06 còn pending.
+T10B1 đã phát signed upload URL và xác nhận object quarantine trên local MinIO,
+nhưng production storage/secret resolver và AV vẫn chưa được duyệt. Bước tiếp theo
+là idempotent media worker: magic/size/hash/AV, original bất biến và derivative.
+Khi chưa có quyết định provider cùng explicit deployment values, giữ
+`EVIDENCE_PIPELINE_ENABLED=false`; không dựng fake production, không đánh dấu
+UAT-11..14 pass và không thêm retention delete khi D-06 còn pending.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -136,7 +138,13 @@ T10A implementation ở commit `8f4ca18`; cold-start phát hiện migration 08 c
 được mount nên thứ tự init đã sửa tại `979b755` thành migration 08 rồi seed 09.
 GitHub CI run `32004958414` xanh đủ sáu job, gồm secret/static/contract/unit,
 cold-start integration từ volume rỗng và build toàn workspace.
-Xem `docs/plans/T10-evidence-pipeline.md` để tiếp tục T10B mà không vượt hard stop.
+T10B1 focused verification hiện có 57 API unit tests và 46 API integration tests;
+runtime integration thực hiện signed PUT thật vào quarantine, replay initiate/
+finalize và xác nhận đúng một scan-request event. Full local frozen-install,
+format/lint/typecheck, unit/coverage/contract/integration/e2e/build đều pass; CI
+của commit T10B1 được ghi tiếp sau khi publish. Xem
+`docs/plans/T10-evidence-pipeline.md` để tiếp tục media worker mà không vượt hard
+stop.
 
 Từ repository root:
 

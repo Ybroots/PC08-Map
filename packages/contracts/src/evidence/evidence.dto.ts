@@ -3,6 +3,7 @@ import {
   EVENT_ROUTING_KEYS,
   eventEnvelopeSchema,
 } from "../events/event-envelope";
+import { IdempotencyKeySchema } from "../common/idempotency";
 
 export const EvidenceSha256Schema = z.string().regex(/^[0-9a-f]{64}$/);
 
@@ -48,6 +49,18 @@ export const EvidenceUploadCapabilityHeaderSchema = z
     "x-upload-capability": z.string().min(43).max(256),
   })
   .strict();
+
+export const EvidenceInitiateHeadersSchema = z
+  .object({
+    "idempotency-key": IdempotencyKeySchema,
+    "x-citizen-session": z.string().min(43).max(256),
+  })
+  .strict();
+
+export const EvidenceFinalizeHeadersSchema =
+  EvidenceUploadCapabilityHeaderSchema.extend({
+    "x-citizen-session": z.string().min(43).max(256),
+  }).strict();
 
 export const EvidenceScanPendingSchema = z
   .object({

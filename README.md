@@ -152,9 +152,14 @@ pnpm build
 - Lifecycle chỉ cho `INITIATED -> SCAN_PENDING -> READY|REJECTED`; READY yêu cầu
   hash/MIME/size/AV/original/derivative facts đều pass. Original MinIO bucket có
   versioning và ba bucket vẫn private.
+- T10B1 đã nối runtime initiate/finalize: citizen-session guard, idempotent
+  initiation, HMAC capability chỉ lưu hash, server-generated quarantine key,
+  MinIO signed PUT + HEAD và atomic scan-request outbox. Integration không lưu
+  session/token, raw capability, signed URL hoặc object key trong event.
 - Pipeline mặc định tắt. Local/test phải khai báo MIME/max bytes/URL TTL/worker
-  poll+batch và fake AV rõ ràng; staging/production bị chặn cho tới T10B provider
-  approval. Chưa có upload adapter, media worker, viewer/download hoặc UAT-11..14.
+  poll+batch, S3 credentials và fake AV rõ ràng; staging/production bị chặn cho
+  tới provider approval. Chưa có AV/media worker, derivative, viewer/download
+  hoặc UAT-11..14.
 
 ## Backlog trien khai (Codex tasks)
 
@@ -170,7 +175,7 @@ pnpm build
 | T07  | SOS incident vertical slice             | T02-T04               | DONE                           |
 | T08  | Dispatch engine va SLA                  | T05+T07+SLA rules     | BLOCKED D-04/D-05              |
 | T09  | Citizen mobile SOS                      | T07 + UI prototype    | ANDROID EMULATOR UAT PASS      |
-| T10  | Evidence pipeline                       | T04 + S3/AV decision  | SAFE FOUNDATION / T10B BLOCKED |
+| T10  | Evidence pipeline                       | T04 + S3/AV decision  | T10B1 UPLOAD / WORKER BLOCKED  |
 | T11  | Citizen reports va chong lam dung       | T09-T10               | TODO                           |
 | T12  | Privacy vault va break-glass            | T03-T04 + quy che     | TODO                           |
 | T13  | Canh bao giao thong                     | T05-T06               | TODO                           |

@@ -3,6 +3,7 @@ import { DataClass, PolicyAction } from "@atgt/authorization";
 
 export const PUBLIC_ROUTE_METADATA = "atgt.public-route";
 export const POLICY_METADATA = "atgt.required-policy";
+export const CITIZEN_SESSION_METADATA = "atgt.citizen-session-required";
 
 export interface RequiredPolicyMetadata {
   action: PolicyAction;
@@ -14,6 +15,10 @@ export interface RequiredPolicyMetadata {
 
 /** Explicitly declares an unauthenticated route. */
 export const PublicRoute = () => SetMetadata(PUBLIC_ROUTE_METADATA, true);
+
+/** Public citizen route that still requires a valid anonymous citizen session. */
+export const RequireCitizenSession = () =>
+  SetMetadata(CITIZEN_SESSION_METADATA, true);
 
 /** Every non-public handler must declare one policy. */
 export const RequirePolicy = (policy: RequiredPolicyMetadata) =>

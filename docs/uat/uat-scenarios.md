@@ -56,9 +56,9 @@ with monotonic cursors 12–15 and state `RECEIVED`.
 | UAT-13 | EXIF data in photo            | Derivative has EXIF stripped; original retained immutably      |
 | UAT-14 | Unauthorized download attempt | Blocked; audit event logged                                    |
 
-T10A covers contract/schema/lifecycle/config invariants only. It does not upload
-or read an object, run AV/derivative processing, or authorize a preview; therefore
-UAT-11..14 remain pending until T10B adapters and runtime paths exist.
+T10B1 now verifies a technical signed PUT into quarantine and idempotent finalize
+against local MinIO/PostgreSQL. It still does not run magic-byte/AV/derivative
+processing or authorize a preview; therefore UAT-11..14 remain pending.
 
 ## Reports (UAT-15 to UAT-17)
 

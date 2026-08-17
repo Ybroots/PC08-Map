@@ -27,11 +27,11 @@ derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
 ## Current state
 
 - Local Compose có ba bucket private `atgt-quarantine`,
-  `atgt-evidence-original`, `atgt-evidence-derivative`; chưa có application
-  object-storage adapter hoặc media worker.
-- `evidence` schema đã tồn tại nhưng chưa có table. Platform đã có transaction,
-  outbox/inbox, audit append-only, stable Problem Details và config parser.
-- Event routing keys evidence đã được đặt tên nhưng chưa có typed payload schema.
+  `atgt-evidence-original`, `atgt-evidence-derivative`; T10B1 đã nối S3-compatible
+  signed PUT/HEAD adapter cho local/test nhưng chưa có media worker.
+- `evidence` schema có upload/object/history tables và immutable triggers. Runtime
+  initiate/finalize dùng citizen session, idempotency, transaction và outbox.
+- Evidence events có typed payload không mang object key/URL/checksum.
 - T09 gửi text/toạ độ trước; `mediaChecksum` vẫn `null` và không tuyên bố upload.
 
 ## Decisions and blockers
@@ -63,7 +63,7 @@ derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
 
 1. T10A: executable contracts/events, expand-only migration and DB immutability.
 2. T10A: pure lifecycle and fail-closed configuration with deterministic tests.
-3. T10B: initiate/finalize application service + S3-compatible quarantine port.
+3. T10B1: initiate/finalize application service + S3-compatible quarantine port.
 4. T10B: idempotent media worker, magic/hash/AV, immutable original and derivative.
 5. T10B: scoped preview/download authorization, audit, observability and UAT.
 
@@ -89,7 +89,7 @@ derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
 ## Definition of done
 
 - [x] T10A contracts/events/migration/domain/config and deterministic tests pass.
-- [ ] Initiate/finalize use server key and quarantine only.
+- [x] Initiate/finalize use server key and quarantine only.
 - [ ] Worker validates magic/size/hash/AV and retries idempotently.
 - [ ] Original immutable; derivative strips EXIF and carries internal watermark.
 - [ ] Scoped preview/download is short-lived and audit logged; no URL/key in logs.
@@ -110,12 +110,17 @@ derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
 - [x] 2026-08-17: clean-runner CI exposed the missing migration mount; fixed
       init order to migration 08 then seed 09. CI run `32004958414` passed all
       six jobs, including cold-start/integration from an empty volume.
+- [x] 2026-08-17: T10B1 runtime initiate/finalize added with citizen-session
+      guard, replay-safe initiation, HMAC capability hash, MinIO signed PUT/HEAD
+      and atomic history/outbox. Real PostgreSQL + MinIO integration passes.
 
 ## Handoff
 
-- Changed files: evidence contracts/OpenAPI, migration, domain/config tests,
-  Compose versioning, integration test and roadmap/runbook/handoff.
-- Tests run/results: focused T10A suites and all local repository gates pass;
-  clean-runner CI `32004958414` is green 6/6, including cold start.
-- Remaining risks: provider decision, media limits, AV/CDR behavior, physical UAT.
+- Changed files: T10A foundation plus T10B1 API module, citizen-session guard,
+  S3 adapter, configuration, OpenAPI and runtime integration.
+- Tests run/results: focused T10B1 has 57 API unit tests and 46 API integration
+  tests; frozen install, format, lint, typecheck, unit/coverage, contract,
+  integration, e2e and build all pass locally. Current commit CI pending.
+- Remaining risks: production provider/secret resolution, media limits, AV/CDR,
+  derivative/download authorization and physical UAT.
 - Rollback: keep all evidence rows/objects; disable feature and worker.

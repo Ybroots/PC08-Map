@@ -15,7 +15,8 @@ import {
   CreateSosSchema,
   EventEnvelopeSchema,
   EvidenceScanPendingSchema,
-  EvidenceUploadCapabilityHeaderSchema,
+  EvidenceFinalizeHeadersSchema,
+  EvidenceInitiateHeadersSchema,
   EvidenceUploadInitiatedSchema,
   FinalizeEvidenceUploadSchema,
   InitiateEvidenceUploadSchema,
@@ -53,9 +54,13 @@ const evidenceScanPending = registry.register(
   "EvidenceScanPending",
   EvidenceScanPendingSchema,
 );
-const evidenceUploadCapabilityHeader = registry.register(
-  "EvidenceUploadCapabilityHeader",
-  EvidenceUploadCapabilityHeaderSchema,
+const evidenceInitiateHeaders = registry.register(
+  "EvidenceInitiateHeaders",
+  EvidenceInitiateHeadersSchema,
+);
+const evidenceFinalizeHeaders = registry.register(
+  "EvidenceFinalizeHeaders",
+  EvidenceFinalizeHeadersSchema,
 );
 const createSos = registry.register("CreateSos", CreateSosSchema);
 const sosAccepted = registry.register("SosAccepted", SosAcceptedSchema);
@@ -154,6 +159,7 @@ registry.registerPath({
     "Returns a short-lived upload authorization without exposing the server-generated object key.",
   tags: ["Evidence"],
   request: {
+    headers: evidenceInitiateHeaders,
     body: {
       required: true,
       content: { "application/json": { schema: initiateEvidenceUpload } },
@@ -185,7 +191,7 @@ registry.registerPath({
           param: { name: "uploadId", in: "path" },
         }),
     }),
-    headers: evidenceUploadCapabilityHeader,
+    headers: evidenceFinalizeHeaders,
     body: {
       required: true,
       content: { "application/json": { schema: finalizeEvidenceUpload } },
