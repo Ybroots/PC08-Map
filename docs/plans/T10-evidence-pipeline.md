@@ -113,6 +113,10 @@ derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
 - [x] 2026-08-17: T10B1 runtime initiate/finalize added with citizen-session
       guard, replay-safe initiation, HMAC capability hash, MinIO signed PUT/HEAD
       and atomic history/outbox. Real PostgreSQL + MinIO integration passes.
+- [x] 2026-08-17: clean-runner exposed the smoke test's fixed timestamp preceding
+      PostgreSQL `created_at`; the test now uses the runtime clock. Commit
+      `3655aff` passed all six jobs in CI run `32007748446`, including cold-start
+      PostgreSQL/MinIO integration from empty volumes.
 
 ## Handoff
 
@@ -120,7 +124,7 @@ derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
   S3 adapter, configuration, OpenAPI and runtime integration.
 - Tests run/results: focused T10B1 has 57 API unit tests and 46 API integration
   tests; frozen install, format, lint, typecheck, unit/coverage, contract,
-  integration, e2e and build all pass locally. Current commit CI pending.
+  integration, e2e and build all pass locally. CI run `32007748446` passes 6/6.
 - Remaining risks: production provider/secret resolution, media limits, AV/CDR,
   derivative/download authorization and physical UAT.
 - Rollback: keep all evidence rows/objects; disable feature and worker.

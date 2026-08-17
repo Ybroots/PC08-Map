@@ -141,8 +141,11 @@ cold-start integration từ volume rỗng và build toàn workspace.
 T10B1 focused verification hiện có 57 API unit tests và 46 API integration tests;
 runtime integration thực hiện signed PUT thật vào quarantine, replay initiate/
 finalize và xác nhận đúng một scan-request event. Full local frozen-install,
-format/lint/typecheck, unit/coverage/contract/integration/e2e/build đều pass; CI
-của commit T10B1 được ghi tiếp sau khi publish. Xem
+format/lint/typecheck, unit/coverage/contract/integration/e2e/build đều pass.
+Runtime ở commit `72b334e`; clean-runner phát hiện test dùng timestamp cố định
+trước `created_at` của PostgreSQL nên smoke clock đã sửa tại `3655aff`. GitHub CI
+run `32007748446` xanh đủ sáu job, gồm cold-start PostgreSQL/MinIO và signed PUT
+integration. Xem
 `docs/plans/T10-evidence-pipeline.md` để tiếp tục media worker mà không vượt hard
 stop.
 
