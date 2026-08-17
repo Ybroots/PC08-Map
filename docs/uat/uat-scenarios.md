@@ -14,11 +14,30 @@
 | UAT-06 | ETA with live VietMap      | ETA shown as LIVE; dispatch candidate list accurate            |
 | UAT-07 | ETA with VietMap fallback  | ETA shown as DEGRADED/CACHED; operator clearly informed        |
 
-T09 has deterministic application/UI coverage for UAT-01..04 boundaries
-(validated ACK, low accuracy, offline/reconnect, stable retry). Android/iOS
-permission manifests now exist and Android debug APK builds, but no target was
-attached during verification. Airplane mode, OS permission prompts, end-to-end
-API/ops observation and real `tel:` behavior remain pending device UAT evidence.
+T09 has deterministic application/UI coverage for UAT-01..04 boundaries and
+Android emulator evidence for the complete native paths below. Physical-device
+network/call behavior and iOS build/UAT still remain release gates.
+
+### T09 Android emulator evidence — 2026-08-17
+
+Target: Pixel 6 AVD, Android 14/API 34, Google APIs x86_64; synthetic local API
+and PostgreSQL/PostGIS stack. The emulator used `10.0.2.2` only through the
+explicit debug Android configuration.
+
+| ID     | Result | Evidence                                                                                                              |
+| ------ | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| UAT-01 | PASS   | Precise OS permission, two-step submit, server/public tracking `RMDCKVSBYQ2R` = `RECEIVED`; one incident persisted.   |
+| UAT-02 | PASS   | Approximate fix rendered `±2000 m` warning; submit still ACKed as `SRQ4E5MQ0S5M`; one row with `accuracy_m=2000`.     |
+| UAT-03 | PASS   | Airplane mode saved locally with no false ACK; reconnect drained automatically; `754WBBMP83MK` = `RECEIVED`, one row. |
+| UAT-04 | PASS   | Two immediate confirmation taps produced one new incident only; `Z1YTSGH9NTWK` = `RECEIVED`, DB count delta was one.  |
+
+Additional native checks: denying FINE and COARSE renders an explicit permission
+message while keeping all four `112/113/114/115` actions. Tapping 112 dispatched
+`android.intent.action.VIEW` with `tel:112` to Google Dialer. This proves Android
+intent wiring, not a physical emergency call. Test location providers and shell
+mock-location permission were removed after the run; no real incident or person
+data was used. The authorized `lam-dong` ops feed returned all four UAT incidents
+with monotonic cursors 12–15 and state `RECEIVED`.
 
 ## Dispatch (UAT-08 to UAT-10)
 

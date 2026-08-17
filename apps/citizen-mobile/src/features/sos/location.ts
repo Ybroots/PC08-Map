@@ -19,8 +19,8 @@ export class NativeLocationPort implements LocationPort {
   ) {}
 
   async getCurrentFix(): Promise<LocationFix> {
-    const permitted = await requestLocationPermission();
-    if (!permitted) {
+    const permission = await requestLocationPermission();
+    if (!permission) {
       throw new LocationUnavailableError("PERMISSION_DENIED");
     }
     return new Promise<LocationFix>((resolve, reject) => {
@@ -35,7 +35,7 @@ export class NativeLocationPort implements LocationPort {
         },
         () => reject(new LocationUnavailableError("POSITION_UNAVAILABLE")),
         {
-          enableHighAccuracy: true,
+          enableHighAccuracy: permission === "precise",
           timeout: this.options.requestTimeoutMs,
           maximumAge: this.options.maximumAgeMs,
         },
@@ -44,20 +44,29 @@ export class NativeLocationPort implements LocationPort {
   }
 }
 
-async function requestLocationPermission(): Promise<boolean> {
+type LocationPermission = "precise" | "approximate";
+
+async function requestLocationPermission(): Promise<
+  LocationPermission | undefined
+> {
   if (Platform.OS === "android") {
-    const result = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-    );
-    return result === PermissionsAndroid.RESULTS.GRANTED;
+    const fine = PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION;
+    const coarse = PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION;
+    if (await PermissionsAndroid.check(fine)) return "precise";
+    if (await PermissionsAndroid.check(coarse)) return "approximate";
+    const results = await PermissionsAndroid.requestMultiple([fine, coarse]);
+    if (results[fine] === PermissionsAndroid.RESULTS.GRANTED) return "precise";
+    if (results[coarse] === PermissionsAndroid.RESULTS.GRANTED)
+      return "approximate";
+    return undefined;
   }
   if (Platform.OS === "ios") {
-    return new Promise<boolean>((resolve) => {
+    return new Promise<LocationPermission | undefined>((resolve) => {
       Geolocation.requestAuthorization(
-        () => resolve(true),
-        () => resolve(false),
+        () => resolve("precise"),
+        () => resolve(undefined),
       );
     });
   }
-  return false;
+  return undefined;
 }

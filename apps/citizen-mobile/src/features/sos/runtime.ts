@@ -15,6 +15,7 @@ import type { SosIncidentTypeOption } from "./SosScreen";
 export interface NativeSosRuntimeConfig {
   readonly apiBaseUrl: string;
   readonly incidentTypes: readonly SosIncidentTypeOption[];
+  readonly allowAndroidEmulatorHttp?: boolean;
   readonly analytics?: SosAnalyticsPort;
   readonly fetcher?: FetchPort;
 }
@@ -44,7 +45,9 @@ export function createNativeSosRuntime(config: NativeSosRuntimeConfig) {
     location: new NativeLocationPort(),
     submission: new SosSubmissionService(
       store,
-      new FetchSosTransport(config.apiBaseUrl, fetcher),
+      new FetchSosTransport(config.apiBaseUrl, fetcher, {
+        allowAndroidEmulatorHttp: config.allowAndroidEmulatorHttp,
+      }),
       secureUuidIdentifiers,
       { now: () => new Date() },
       config.analytics ?? noOpSosAnalytics,

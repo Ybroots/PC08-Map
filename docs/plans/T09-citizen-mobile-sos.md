@@ -28,9 +28,9 @@ người dùng vẫn có thể gọi trực tiếp `112/113/114/115`.
 - Feature/composition, encrypted queue, tests và React Native 0.73 Android/iOS
   shell đã tồn tại trong `apps/citizen-mobile`.
 - Android debug APK build pass với application ID development
-  `com.atgtlamdong.dev`; không có attached device/emulator và iOS không thể build
-  trên Windows, nên permission/deep-link UAT và release signing chưa được giả vờ
-  đã kiểm chứng.
+  `com.atgtlamdong.dev`; UAT-01..04, permission allow/deny và `tel:` intent pass
+  trên Android 14/API 34 emulator. iOS không thể build trên Windows; physical-call
+  behavior, production config và release signing vẫn chưa được kiểm chứng.
 
 ## Decisions and blockers
 
@@ -113,8 +113,9 @@ nhận diện cho receipt rail và copy chính xác về nơi dữ liệu đang 
 - UI/accessibility: labeled controls, 48px targets, live delivery status, call
   links, confirm step and public code hidden before ACK.
 - Native: Metro release bundle and Android debug APK build are automated locally;
-  permission prompts, airplane-mode reconnect and `tel:` still require attached
-  Android device/emulator. iOS build/UAT requires macOS.
+  permission prompts, airplane-mode reconnect and `tel:` intent đã được kiểm tra
+  trên Android emulator. Physical device vẫn là release gate; iOS build/UAT yêu
+  cầu macOS.
 
 ## Rollout and rollback
 
@@ -135,7 +136,8 @@ nhận diện cho receipt rail và copy chính xác về nơi dữ liệu đang 
 - [x] Accessibility assertions and privacy-safe analytics tests pass.
 - [x] RN 0.73 Android/iOS shell, permissions and fail-closed release entry exist.
 - [x] Android native modules autolink and an installable debug APK builds.
-- [ ] UAT-01..04 pass on an attached Android target; iOS build/UAT passes on macOS.
+- [x] UAT-01..04 pass on an attached Android emulator target.
+- [ ] Physical Android call/network UAT và iOS build/UAT pass trước release.
 - [x] `format:check`, lint, typecheck, tests, contract, integration, e2e and build
       pass; final diff/secret scan reviewed.
 
@@ -155,13 +157,18 @@ nhận diện cho receipt rail và copy chính xác về nơi dữ liệu đang 
       and Android `assembleDebug` pass with all four native adapters autolinked.
 - [x] 2026-08-17: published native integration commit `2b54b57`; GitHub CI run
       `31998881133` passed all six jobs including cold-start integration/build.
+- [x] 2026-08-17: Android 14/API 34 emulator UAT-01..04 pass against the synthetic
+      local API/ops feed; permission denial kept emergency calls and 112 opened
+      Dialer.
+- [x] 2026-08-17: fixed emulator-host HTTP opt-in and Android approximate-location
+      permission discovered during UAT; 36 mobile tests across 9 suites pass.
 
 ## Handoff
 
-- Changed files: RN native shell/entry/config tests, mobile package/lockfile,
+- Changed files: native config/transport/location permission adapters and tests,
   README, runbook, UAT and handoff.
-- Tests run/results: 31 mobile tests; Metro production bundle, Android debug APK
-  and full local repository gates pass; CI run `31998881133` is green.
-- Remaining risks: no attached Android target, iOS requires macOS, and production
-  application ID/API endpoint/signing remain intentionally unconfigured.
+- Tests run/results: 36 mobile tests; Metro production bundle, Android debug APK
+  and Android emulator UAT-01..04 pass. See final handoff for repository/CI gates.
+- Remaining risks: physical Android call/network behavior and iOS require real
+  targets; production application ID/API endpoint/signing remain unconfigured.
 - Rollback steps: remove T09 mobile bundle; retain secure queue/keychain entries.

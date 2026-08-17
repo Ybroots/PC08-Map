@@ -87,4 +87,22 @@ describe("FetchSosTransport", () => {
       () => new FetchSosTransport("http://api.atgt.example", jest.fn()),
     ).toThrow("SOS_API_BASE_URL_INVALID");
   });
+
+  it("allows the exact Android emulator host only when explicitly enabled", () => {
+    expect(
+      () =>
+        new FetchSosTransport("http://10.0.2.2:3000", jest.fn(), {
+          allowAndroidEmulatorHttp: true,
+        }),
+    ).not.toThrow();
+    expect(
+      () => new FetchSosTransport("http://10.0.2.2:3000", jest.fn()),
+    ).toThrow("SOS_API_BASE_URL_INVALID");
+    expect(
+      () =>
+        new FetchSosTransport("http://10.0.2.3:3000", jest.fn(), {
+          allowAndroidEmulatorHttp: true,
+        }),
+    ).toThrow("SOS_API_BASE_URL_INVALID");
+  });
 });

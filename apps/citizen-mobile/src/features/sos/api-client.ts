@@ -32,17 +32,30 @@ export type FetchPort = (
   },
 ) => Promise<FetchResponse>;
 
+export interface FetchSosTransportOptions {
+  /** Android Emulator's host-loopback alias; never enable for a release config. */
+  readonly allowAndroidEmulatorHttp?: boolean;
+}
+
 export class FetchSosTransport implements SosTransport {
   private readonly endpoint: string;
 
   constructor(
     apiBaseUrl: string,
     private readonly fetcher: FetchPort,
+    options: FetchSosTransportOptions = {},
   ) {
     const normalized = apiBaseUrl.trim().replace(/\/$/, "");
+    const isLocalHttp = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(
+      normalized,
+    );
+    const isAndroidEmulatorHttp =
+      options.allowAndroidEmulatorHttp === true &&
+      /^http:\/\/10\.0\.2\.2(:\d+)?$/.test(normalized);
     if (
       !/^https:\/\//.test(normalized) &&
-      !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized)
+      !isLocalHttp &&
+      !isAndroidEmulatorHttp
     ) {
       throw new Error("SOS_API_BASE_URL_INVALID");
     }

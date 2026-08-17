@@ -5,19 +5,19 @@
 
 ## Trạng thái hiện tại
 
-| Task | Trạng thái           | Kết quả có thể dùng tiếp                                            |
-| ---- | -------------------- | ------------------------------------------------------------------- |
-| T00  | DONE                 | Monorepo, CI, kiến trúc và quality gates                            |
-| T01  | DONE                 | Local Compose 8 service, roles/schemas/seed/telemetry               |
-| T02  | DONE                 | Executable contracts, Problem Details, trace, idempotency           |
-| T03  | DONE                 | Mock/OIDC identity, citizen session, deny-by-default policy         |
-| T04  | DONE                 | PostGIS schema, transaction/outbox/inbox, scoped repository         |
-| T05  | SAFE FOUNDATION DONE | Fake/resilience/API wiring xong; real VietMap BLOCKED bởi D-03      |
-| T06  | DONE                 | Versioned map, maker-checker, public bbox, lifecycle worker         |
-| T07  | DONE                 | Atomic SOS, replay, tracking, scoped feed, relay + ops shell        |
-| T08  | BLOCKED              | Chờ D-04 SLA/escalation và D-05 unit/service-area                   |
-| T09  | ANDROID BUILD PASS   | Native shell/APK xong; device UAT, iOS và production config pending |
-| T10+ | TODO                 | Theo thứ tự/phụ thuộc trong README và từng execution plan           |
+| Task | Trạng thái            | Kết quả có thể dùng tiếp                                       |
+| ---- | --------------------- | -------------------------------------------------------------- |
+| T00  | DONE                  | Monorepo, CI, kiến trúc và quality gates                       |
+| T01  | DONE                  | Local Compose 8 service, roles/schemas/seed/telemetry          |
+| T02  | DONE                  | Executable contracts, Problem Details, trace, idempotency      |
+| T03  | DONE                  | Mock/OIDC identity, citizen session, deny-by-default policy    |
+| T04  | DONE                  | PostGIS schema, transaction/outbox/inbox, scoped repository    |
+| T05  | SAFE FOUNDATION DONE  | Fake/resilience/API wiring xong; real VietMap BLOCKED bởi D-03 |
+| T06  | DONE                  | Versioned map, maker-checker, public bbox, lifecycle worker    |
+| T07  | DONE                  | Atomic SOS, replay, tracking, scoped feed, relay + ops shell   |
+| T08  | BLOCKED               | Chờ D-04 SLA/escalation và D-05 unit/service-area              |
+| T09  | ANDROID EMULATOR PASS | UAT-01..04 xong; physical/iOS và production config còn pending |
+| T10+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
 real HTTP adapter/contract fixtures và sandbox contract suite; xem
@@ -58,7 +58,7 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   resend vô hạn. Analytics chỉ phát tên event, không mang payload/toạ độ/code.
 - Mobile screen có confirm, stale/low-accuracy guidance, explicit receipt rail và
   `tel:112/113/114/115`. React Native 0.73 shell có Android/iOS permission config;
-  Android autolink/build pass nhưng chưa có device UAT nên chưa phải release.
+  Android emulator UAT-01..04 và Dialer intent pass nhưng đây chưa phải release.
 - Native release fail closed: `com.atgtlamdong.dev` và local HTTP endpoint chỉ hoạt
   động trong debug; release thiếu approved application ID, HTTPS endpoint và
   signing chỉ hiển thị trạng thái chưa gửi cùng bốn số gọi khẩn cấp.
@@ -78,7 +78,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: device UAT T09 hoặc decision gate T08
+## Bước tiếp theo đề xuất: physical/iOS gate T09 hoặc decision gate T08
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -86,11 +86,11 @@ service-area GeoJSON đã duyệt, đọc `docs/plans/T08-dispatch-sla.md` rồi
 execution plan trước code.
 
 T09 Android shell và debug APK đã build trên Windows bằng JDK 20/Android SDK 34.
-Không có device/emulator attached trong lần kiểm chứng, vì vậy bước kế tiếp là
-chạy UAT-01..04 với API synthetic local trên Android emulator/device, lưu evidence
-và kiểm tra thật permission, airplane mode/reconnect và `tel:`. iOS build/UAT phải
-chạy trên macOS. Trước release cần approved application ID, HTTPS API endpoint và
-signing; không tự suy đoán các giá trị này. D-09 vẫn là hard stop cho media/load.
+Pixel 6 Android 14 emulator đã pass UAT-01..04 với API synthetic local, gồm
+permission precise/approximate/deny, airplane-mode reconnect, double action và
+`tel:112` Dialer intent. Bước kế tiếp là physical Android network/call UAT và iOS
+build/UAT trên macOS. Trước release cần approved application ID, HTTPS API endpoint
+và signing; không tự suy đoán các giá trị này. D-09 vẫn khóa media/load.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -101,16 +101,15 @@ tests pass. HTTP smoke với `VIETMAP_USE_FAKE_ADAPTER=false` xác nhận accept
 tracking/metrics; OpenAPI drift, build 12 tasks và 3 visual viewport đều pass.
 Commit/CI chính thức được lưu trên nhánh `main` và lịch sử GitHub Actions.
 
-T09 hiện có 31 mobile tests qua 8 suite cho encrypted-store/native-shell boundary,
+T09 hiện có 36 mobile tests qua 9 suite cho encrypted-store/native-shell boundary,
 exact 202 contract, offline/reconnect, double action, restart, location quality,
 permission denial, queue concurrency, accessibility và release configuration
 block. Android autolink nhận đủ geolocation/NetInfo/keychain/random-values; debug
-APK build pass tại `android/app/build/outputs/apk/debug/app-debug.apk`. Không có
-thiết bị attached nên UAT-01..04 chưa có device evidence. Native integration đã
-publish tại commit `2b54b57`; GitHub CI run `31998881133` xanh đủ sáu job gồm
-secret scan, static gates, contract drift, unit, cold-start integration và build.
-Full local format/lint/typecheck/unit/coverage/contract/integration/e2e/build gate
-cũng đã pass.
+APK build pass tại `android/app/build/outputs/apk/debug/app-debug.apk`. Android
+emulator evidence cho UAT-01..04 được ghi tại `docs/uat/uat-scenarios.md`; hai lỗi
+thực tế được sửa là debug host alias `10.0.2.2` cần opt-in riêng và Android coarse
+location phải được chấp nhận như approximate. Native integration nền đã publish
+tại commit `2b54b57`; kết quả commit/CI của vòng UAT xem progress log T09.
 
 Từ repository root:
 

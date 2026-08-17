@@ -235,8 +235,28 @@ Before claiming UAT-01..04, `adb devices` must show a target. Start the syntheti
 local API, install the APK, then capture evidence for permission allow/deny, good
 and low-accuracy fixes, offline queue/reconnect, double action, server ACK/public
 code and all four `tel:` links. The emulator can reach the host API through
-`10.0.2.2`; a physical-device network endpoint is not committed. iOS Pods/build/
-UAT must run on macOS. Never mark T09 device-ready from Gradle/Jest alone.
+`10.0.2.2`; that cleartext alias is accepted only by the explicit Android debug
+bootstrap and remains rejected by the transport default/release path. A
+physical-device network endpoint is not committed. iOS Pods/build/UAT must run on
+macOS. Never mark T09 device-ready from Gradle/Jest alone.
+
+The 2026-08-17 Android 14/API 34 run used the synthetic stack and passed
+UAT-01..04. For repeatable approximate-location testing, use an emulator test
+provider only; never use this on a physical target or with real incident data.
+Exact `cmd location` options vary by Android image, so inspect `adb shell cmd
+location help` first. After testing, always restore connectivity and remove the
+provider/mock-location grant:
+
+```powershell
+adb shell cmd connectivity airplane-mode disable
+adb shell cmd location providers remove-test-provider network
+adb shell appops set 2000 android:mock_location default
+```
+
+Permission denial is acceptable degraded behavior only when the UI explicitly
+says location is unavailable and keeps 112/113/114/115 callable. On an emulator,
+verify a tap resolves to a Dialer intent (`dat=tel:112`); only a physical-device
+test can validate the complete call experience.
 
 ### Port conflict
 

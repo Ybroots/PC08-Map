@@ -16,6 +16,7 @@ describe("native SOS bootstrap config", () => {
     (platform, expected) => {
       expect(resolveNativeSosBootstrapConfig(true, platform)).toMatchObject({
         apiBaseUrl: expected,
+        allowAndroidEmulatorHttp: platform === "android",
       });
     },
   );

@@ -6,6 +6,7 @@ export const DEVELOPMENT_NATIVE_APPLICATION_ID = "com.atgtlamdong.dev";
 export interface NativeSosBootstrapConfig {
   readonly apiBaseUrl: string;
   readonly incidentTypes: readonly SosIncidentTypeOption[];
+  readonly allowAndroidEmulatorHttp?: boolean;
 }
 
 /**
@@ -27,5 +28,6 @@ export function resolveNativeSosBootstrapConfig(
   return {
     apiBaseUrl,
     incidentTypes: DEFAULT_SOS_INCIDENT_TYPES,
+    allowAndroidEmulatorHttp: platform === "android",
   };
 }

@@ -18,9 +18,15 @@ module.exports = {
   PermissionsAndroid: {
     PERMISSIONS: {
       ACCESS_FINE_LOCATION: "android.permission.ACCESS_FINE_LOCATION",
+      ACCESS_COARSE_LOCATION: "android.permission.ACCESS_COARSE_LOCATION",
     },
-    RESULTS: { GRANTED: "granted" },
+    RESULTS: { GRANTED: "granted", DENIED: "denied" },
+    check: async () => false,
     request: async () => "granted",
+    requestMultiple: async () => ({
+      "android.permission.ACCESS_FINE_LOCATION": "granted",
+      "android.permission.ACCESS_COARSE_LOCATION": "granted",
+    }),
   },
   Platform: {
     OS: "ios",
