@@ -8,6 +8,8 @@ export const EVENT_ROUTING_KEYS = {
   EVIDENCE_SCAN_REQUESTED: "evidence.scan_requested.v1",
   EVIDENCE_READY: "evidence.ready.v1",
   MAP_VERSION_PUBLISHED: "map.version.published.v1",
+  MAP_VERSION_EXPIRED: "map.version.expired.v1",
+  MAP_CACHE_INVALIDATE: "map.cache.invalidate.v1",
   NOTIFICATION_REQUESTED: "notification.requested.v1",
   PROVIDER_QUOTA_THRESHOLD: "provider.quota_threshold.v1",
 } as const;

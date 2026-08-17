@@ -9,5 +9,8 @@ export * from "./incidents/sos.dto";
 // Identity
 export * from "./identity/citizen-session.dto";
 
+// Versioned operational map data
+export * from "./map/map-data.dto";
+
 // Events
 export * from "./events/event-envelope";

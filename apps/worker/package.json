@@ -7,17 +7,21 @@
     "dev": "ts-node -r tsconfig-paths/register src/main.ts",
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "test:integration": "jest --config jest.integration.config.js --passWithNoTests"
   },
   "dependencies": {
     "@atgt/config": "workspace:*",
+    "@atgt/contracts": "workspace:*",
     "@atgt/observability": "workspace:*",
     "dotenv": "^16.4.5",
-    "reflect-metadata": "^0.2.0"
+    "reflect-metadata": "^0.2.0",
+    "pg": "^8.11.0"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
     "@types/node": "^20.0.0",
+    "@types/pg": "^8.11.10",
     "jest": "^29.0.0",
     "ts-jest": "^29.0.0",
     "ts-node": "^10.9.0",

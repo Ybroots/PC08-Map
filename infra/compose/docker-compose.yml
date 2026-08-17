@@ -57,7 +57,8 @@ services:
       - ./postgres/03-platform-tables.sql:/docker-entrypoint-initdb.d/03-platform-tables.sql:ro
       - ./postgres/04-identity-tables.sql:/docker-entrypoint-initdb.d/04-identity-tables.sql:ro
       - ./postgres/05-core-data-tables.sql:/docker-entrypoint-initdb.d/05-core-data-tables.sql:ro
-      - ./seed/01-dev-seed.sql:/docker-entrypoint-initdb.d/06-dev-seed.sql:ro
+      - ./postgres/06-map-data-lifecycle.sql:/docker-entrypoint-initdb.d/06-map-data-lifecycle.sql:ro
+      - ./seed/01-dev-seed.sql:/docker-entrypoint-initdb.d/07-dev-seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d atgt_dev"]
       interval: 5s

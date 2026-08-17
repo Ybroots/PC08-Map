@@ -109,6 +109,21 @@ pnpm dev:reset
 
 ## Troubleshooting
 
+### Map lifecycle worker
+
+The scheduler is fail-closed. Local API/map reads do not require it. To exercise
+automatic publish/expiry, set both values explicitly before starting the worker:
+
+```dotenv
+MAP_LIFECYCLE_WORKER_ENABLED=true
+MAP_LIFECYCLE_POLL_MS=5000
+```
+
+`MAP_LIFECYCLE_POLL_MS` has no default when the worker is enabled because D-09
+has no approved production load profile. Leave the feature disabled in an
+environment without an approved polling value. The job is idempotent and writes
+the lifecycle event plus `map.cache.invalidate.v1` in the same transaction.
+
 ### Port conflict
 
 ```bash

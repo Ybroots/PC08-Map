@@ -117,6 +117,8 @@
               "ATGT_EVIDENCE_HASH_MISMATCH",
               "ATGT_RATE_LIMIT_EXCEEDED",
               "ATGT_MAP_PROVIDER_UNAVAILABLE",
+              "ATGT_MAP_GEOMETRY_INVALID",
+              "ATGT_MAP_MAKER_CHECKER_REQUIRED",
               "ATGT_INTERNAL_ERROR"
             ]
           },
@@ -190,6 +192,8 @@
               "evidence.scan_requested.v1",
               "evidence.ready.v1",
               "map.version.published.v1",
+              "map.version.expired.v1",
+              "map.cache.invalidate.v1",
               "notification.requested.v1",
               "provider.quota_threshold.v1"
             ]
@@ -224,9 +228,495 @@
       "ProviderQuality": {
         "type": "string",
         "enum": ["LIVE", "CACHED", "DEGRADED", "UNAVAILABLE"]
-      }
+      },
+      "CreateMapVersion": {
+        "type": "object",
+        "properties": {
+          "schema_version": { "type": "integer", "exclusiveMinimum": 0 },
+          "parent_version_id": { "type": "string", "format": "uuid" },
+          "data_class": {
+            "type": "string",
+            "enum": ["public", "internal", "sensitive", "restricted"]
+          },
+          "valid_from": { "type": "string", "format": "date-time" },
+          "valid_to": { "type": "string", "format": "date-time" },
+          "feature_collection": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["FeatureCollection"] },
+              "features": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string", "enum": ["Feature"] },
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+                    },
+                    "geometry": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": { "type": "string", "enum": ["Point"] },
+                            "coordinates": {
+                              "type": "array",
+                              "prefixItems": [
+                                {
+                                  "type": "number",
+                                  "minimum": -180,
+                                  "maximum": 180
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": -90,
+                                  "maximum": 90
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["type", "coordinates"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": ["LineString"]
+                            },
+                            "coordinates": {
+                              "type": "array",
+                              "items": {
+                                "type": "array",
+                                "prefixItems": [
+                                  {
+                                    "type": "number",
+                                    "minimum": -180,
+                                    "maximum": 180
+                                  },
+                                  {
+                                    "type": "number",
+                                    "minimum": -90,
+                                    "maximum": 90
+                                  }
+                                ]
+                              },
+                              "minItems": 2
+                            }
+                          },
+                          "required": ["type", "coordinates"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": { "type": "string", "enum": ["Polygon"] },
+                            "coordinates": {
+                              "type": "array",
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "type": "array",
+                                  "prefixItems": [
+                                    {
+                                      "type": "number",
+                                      "minimum": -180,
+                                      "maximum": 180
+                                    },
+                                    {
+                                      "type": "number",
+                                      "minimum": -90,
+                                      "maximum": 90
+                                    }
+                                  ]
+                                },
+                                "minItems": 4
+                              },
+                              "minItems": 1
+                            }
+                          },
+                          "required": ["type", "coordinates"],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "properties": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": ["type", "id", "geometry", "properties"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["type", "features"],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "schema_version",
+          "data_class",
+          "valid_from",
+          "feature_collection"
+        ],
+        "additionalProperties": false
+      },
+      "MapVersion": {
+        "type": "object",
+        "properties": {
+          "version_id": { "type": "string", "format": "uuid" },
+          "layer_id": { "type": "string", "format": "uuid" },
+          "version_number": { "type": "integer", "exclusiveMinimum": 0 },
+          "area_id": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "data_class": {
+            "type": "string",
+            "enum": ["public", "internal", "sensitive", "restricted"]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "IN_REVIEW",
+              "APPROVED",
+              "PUBLISHED",
+              "EXPIRED",
+              "WITHDRAWN",
+              "ARCHIVED"
+            ]
+          },
+          "valid_from": { "type": "string", "format": "date-time" },
+          "valid_to": { "type": ["string", "null"], "format": "date-time" },
+          "change_summary": {
+            "type": "object",
+            "properties": {
+              "added": { "type": "integer", "minimum": 0 },
+              "updated": { "type": "integer", "minimum": 0 },
+              "removed": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["added", "updated", "removed"]
+          }
+        },
+        "required": [
+          "version_id",
+          "layer_id",
+          "version_number",
+          "area_id",
+          "data_class",
+          "state",
+          "valid_from",
+          "valid_to",
+          "change_summary"
+        ],
+        "additionalProperties": false
+      },
+      "MapImportPreviewRequest": {
+        "type": "object",
+        "properties": {
+          "schema_version": { "type": "integer", "exclusiveMinimum": 0 },
+          "feature_collection": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["FeatureCollection"] },
+              "features": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string", "enum": ["Feature"] },
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+                    },
+                    "geometry": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": { "type": "string", "enum": ["Point"] },
+                            "coordinates": {
+                              "type": "array",
+                              "prefixItems": [
+                                {
+                                  "type": "number",
+                                  "minimum": -180,
+                                  "maximum": 180
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": -90,
+                                  "maximum": 90
+                                }
+                              ]
+                            }
+                          },
+                          "required": ["type", "coordinates"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": ["LineString"]
+                            },
+                            "coordinates": {
+                              "type": "array",
+                              "items": {
+                                "type": "array",
+                                "prefixItems": [
+                                  {
+                                    "type": "number",
+                                    "minimum": -180,
+                                    "maximum": 180
+                                  },
+                                  {
+                                    "type": "number",
+                                    "minimum": -90,
+                                    "maximum": 90
+                                  }
+                                ]
+                              },
+                              "minItems": 2
+                            }
+                          },
+                          "required": ["type", "coordinates"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": { "type": "string", "enum": ["Polygon"] },
+                            "coordinates": {
+                              "type": "array",
+                              "items": {
+                                "type": "array",
+                                "items": {
+                                  "type": "array",
+                                  "prefixItems": [
+                                    {
+                                      "type": "number",
+                                      "minimum": -180,
+                                      "maximum": 180
+                                    },
+                                    {
+                                      "type": "number",
+                                      "minimum": -90,
+                                      "maximum": 90
+                                    }
+                                  ]
+                                },
+                                "minItems": 4
+                              },
+                              "minItems": 1
+                            }
+                          },
+                          "required": ["type", "coordinates"],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "properties": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": ["type", "id", "geometry", "properties"],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": ["type", "features"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["schema_version", "feature_collection"],
+        "additionalProperties": false
+      },
+      "MapImportPreview": {
+        "type": "object",
+        "properties": {
+          "accepted": { "type": "integer", "minimum": 0 },
+          "rejected": { "type": "integer", "minimum": 0 },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "feature_index": { "type": "integer", "minimum": 0 },
+                "feature_id": { "type": "string" },
+                "code": {
+                  "type": "string",
+                  "enum": [
+                    "GEOMETRY_INVALID",
+                    "GEOMETRY_TYPE_MISMATCH",
+                    "PROPERTIES_INVALID"
+                  ]
+                },
+                "detail": { "type": "string", "minLength": 1, "maxLength": 500 }
+              },
+              "required": ["feature_index", "code", "detail"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["accepted", "rejected", "issues"],
+        "additionalProperties": false
+      },
+      "MapTransition": {
+        "type": "object",
+        "properties": {
+          "reason": { "type": "string", "minLength": 1, "maxLength": 500 }
+        },
+        "additionalProperties": false
+      },
+      "PublicMapFeatureCollection": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["FeatureCollection"] },
+          "layer_key": { "type": "string" },
+          "version": { "type": "integer", "exclusiveMinimum": 0 },
+          "effective_at": { "type": "string", "format": "date-time" },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "enum": ["Feature"] },
+                "id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+                },
+                "geometry": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string", "enum": ["Point"] },
+                        "coordinates": {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            },
+                            { "type": "number", "minimum": -90, "maximum": 90 }
+                          ]
+                        }
+                      },
+                      "required": ["type", "coordinates"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string", "enum": ["LineString"] },
+                        "coordinates": {
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "prefixItems": [
+                              {
+                                "type": "number",
+                                "minimum": -180,
+                                "maximum": 180
+                              },
+                              {
+                                "type": "number",
+                                "minimum": -90,
+                                "maximum": 90
+                              }
+                            ]
+                          },
+                          "minItems": 2
+                        }
+                      },
+                      "required": ["type", "coordinates"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string", "enum": ["Polygon"] },
+                        "coordinates": {
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "prefixItems": [
+                                {
+                                  "type": "number",
+                                  "minimum": -180,
+                                  "maximum": 180
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": -90,
+                                  "maximum": 90
+                                }
+                              ]
+                            },
+                            "minItems": 4
+                          },
+                          "minItems": 1
+                        }
+                      },
+                      "required": ["type", "coordinates"],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "properties": { "type": "object", "additionalProperties": {} }
+              },
+              "required": ["type", "id", "geometry", "properties"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "type",
+          "layer_key",
+          "version",
+          "effective_at",
+          "features"
+        ],
+        "additionalProperties": false
+      },
+      "MapLayerKey": { "type": "string" },
+      "MapAreaId": { "type": "string" },
+      "MapLayerId": { "type": "string", "format": "uuid" },
+      "MapVersionId": { "type": "string", "format": "uuid" }
     },
-    "parameters": {}
+    "parameters": {
+      "MapLayerKey": {
+        "schema": { "$ref": "#/components/schemas/MapLayerKey" },
+        "required": true,
+        "name": "key",
+        "in": "path"
+      },
+      "MapAreaId": {
+        "schema": { "$ref": "#/components/schemas/MapAreaId" },
+        "required": true,
+        "name": "areaId",
+        "in": "path"
+      },
+      "MapLayerId": {
+        "schema": { "$ref": "#/components/schemas/MapLayerId" },
+        "required": true,
+        "name": "layerId",
+        "in": "path"
+      },
+      "MapVersionId": {
+        "schema": { "$ref": "#/components/schemas/MapVersionId" },
+        "required": true,
+        "name": "versionId",
+        "in": "path"
+      }
+    }
   },
   "paths": {
     "/api/v1/incidents/sos": {
@@ -261,6 +751,257 @@
           },
           "409": {
             "description": "Idempotency conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/map/layers/{key}/features": {
+      "get": {
+        "summary": "Read the currently effective public map version inside a bbox",
+        "tags": ["Map data"],
+        "parameters": [
+          { "$ref": "#/components/parameters/MapLayerKey" },
+          {
+            "schema": {
+              "type": "string",
+              "example": "108.40,11.90,108.50,11.98"
+            },
+            "required": true,
+            "name": "bbox",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["integer", "null"],
+              "minimum": 0,
+              "maximum": 22,
+              "example": 13
+            },
+            "required": false,
+            "name": "zoom",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Published, public, currently effective features only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMapFeatureCollection"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No effective public version",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/map/areas/{areaId}/layers/{layerId}/versions/preview": {
+      "post": {
+        "summary": "Validate a GeoJSON import without writing it",
+        "tags": ["Map data"],
+        "parameters": [
+          { "$ref": "#/components/parameters/MapAreaId" },
+          { "$ref": "#/components/parameters/MapLayerId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MapImportPreviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Per-feature validation report",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MapImportPreview" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/map/areas/{areaId}/layers/{layerId}/versions": {
+      "post": {
+        "summary": "Create an immutable-on-submit map version draft",
+        "tags": ["Map data"],
+        "parameters": [
+          { "$ref": "#/components/parameters/MapAreaId" },
+          { "$ref": "#/components/parameters/MapLayerId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateMapVersion" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Draft created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MapVersion" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/map/areas/{areaId}/versions/{versionId}/submit": {
+      "post": {
+        "summary": "Submit a map version",
+        "tags": ["Map data"],
+        "parameters": [
+          { "$ref": "#/components/parameters/MapAreaId" },
+          { "$ref": "#/components/parameters/MapVersionId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MapTransition" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lifecycle transition accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MapVersion" }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid state or maker-checker conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/map/areas/{areaId}/versions/{versionId}/approve": {
+      "post": {
+        "summary": "Approve a map version",
+        "tags": ["Map data"],
+        "parameters": [
+          { "$ref": "#/components/parameters/MapAreaId" },
+          { "$ref": "#/components/parameters/MapVersionId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MapTransition" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lifecycle transition accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MapVersion" }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid state or maker-checker conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/map/areas/{areaId}/versions/{versionId}/publish": {
+      "post": {
+        "summary": "Publish a map version",
+        "tags": ["Map data"],
+        "parameters": [
+          { "$ref": "#/components/parameters/MapAreaId" },
+          { "$ref": "#/components/parameters/MapVersionId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MapTransition" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lifecycle transition accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MapVersion" }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid state or maker-checker conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/map/areas/{areaId}/versions/{versionId}/withdraw": {
+      "post": {
+        "summary": "Withdraw a map version",
+        "tags": ["Map data"],
+        "parameters": [
+          { "$ref": "#/components/parameters/MapAreaId" },
+          { "$ref": "#/components/parameters/MapVersionId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MapTransition" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lifecycle transition accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MapVersion" }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid state or maker-checker conflict",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetails" }

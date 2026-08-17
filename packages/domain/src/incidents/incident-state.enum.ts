@@ -34,13 +34,3 @@ export enum ReportState {
   CLOSED = "CLOSED",
   ARCHIVED = "ARCHIVED",
 }
-
-export enum MapVersionState {
-  DRAFT = "DRAFT",
-  IN_REVIEW = "IN_REVIEW",
-  APPROVED = "APPROVED",
-  PUBLISHED = "PUBLISHED",
-  EXPIRED = "EXPIRED",
-  WITHDRAWN = "WITHDRAWN",
-  ARCHIVED = "ARCHIVED",
-}

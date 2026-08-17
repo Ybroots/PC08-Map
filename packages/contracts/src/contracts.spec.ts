@@ -6,6 +6,8 @@ import {
   EVENT_ROUTING_KEYS,
   EmergencyContactSchema,
   EventEnvelopeSchema,
+  MapFeatureCollectionInputSchema,
+  PublicMapQuerySchema,
   ProblemDetailsSchema,
   ProviderQuality,
   ProviderQualitySchema,
@@ -138,6 +140,60 @@ describe("executable contracts", () => {
       CreateCitizenSessionSchema.parse({
         device_class: "mobile",
         ip_address: "127.0.0.1",
+      }),
+    ).toThrow();
+  });
+
+  it("accepts ordered EPSG:4326 map input and normalizes bbox query values", () => {
+    expect(
+      MapFeatureCollectionInputSchema.parse({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            id: "dp-dalat-01",
+            geometry: { type: "Point", coordinates: [108.4384, 11.9404] },
+            properties: { severity: "HIGH" },
+          },
+        ],
+      }).features[0]?.geometry,
+    ).toMatchObject({ type: "Point" });
+    expect(
+      PublicMapQuerySchema.parse({
+        bbox: "108.40,11.90,108.50,11.98",
+        zoom: "13",
+      }),
+    ).toEqual({ bbox: [108.4, 11.9, 108.5, 11.98], zoom: 13 });
+  });
+
+  it("rejects an open polygon ring and an inverted bbox", () => {
+    expect(() =>
+      MapFeatureCollectionInputSchema.parse({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            id: "open-ring",
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [108.4, 11.9],
+                  [108.5, 11.9],
+                  [108.5, 12],
+                  [108.4, 12],
+                ],
+              ],
+            },
+            properties: {},
+          },
+        ],
+      }),
+    ).toThrow();
+    expect(() =>
+      PublicMapQuerySchema.parse({
+        bbox: "108.50,11.90,108.40,11.98",
+        zoom: 13,
       }),
     ).toThrow();
   });

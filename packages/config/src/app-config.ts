@@ -56,6 +56,7 @@ export interface AppConfig {
     featureEnabled: boolean;
   };
   retention: { policyVersion: string; autoDeleteEnabled: false };
+  mapLifecycle: { enabled: boolean; pollMs?: number };
   telemetry: { otlpEndpoint: string; serviceName: string };
 }
 
@@ -206,6 +207,15 @@ export function loadAndValidateConfig(
       "RETENTION_AUTO_DELETE_ENABLED cannot be enabled before D-06 approval",
     );
   }
+  const mapLifecycleEnabled = boolean(
+    source,
+    "MAP_LIFECYCLE_WORKER_ENABLED",
+    false,
+  );
+  if (mapLifecycleEnabled) required(source, "MAP_LIFECYCLE_POLL_MS");
+  const mapLifecyclePollMs = source["MAP_LIFECYCLE_POLL_MS"]?.trim()
+    ? integer(source, "MAP_LIFECYCLE_POLL_MS", 0, 1000, 3_600_000)
+    : undefined;
 
   const oidcIssuer = url(
     required(source, "OIDC_ISSUER"),
@@ -352,6 +362,10 @@ export function loadAndValidateConfig(
     retention: {
       policyVersion: source["RETENTION_POLICY_VERSION"]?.trim() || "PENDING",
       autoDeleteEnabled: false,
+    },
+    mapLifecycle: {
+      enabled: mapLifecycleEnabled,
+      pollMs: mapLifecyclePollMs,
     },
     telemetry: {
       otlpEndpoint: url(

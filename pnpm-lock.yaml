@@ -49,6 +49,9 @@ importers:
       "@atgt/contracts":
         specifier: workspace:*
         version: link:../../packages/contracts
+      "@atgt/domain":
+        specifier: workspace:*
+        version: link:../../packages/domain
       "@atgt/observability":
         specifier: workspace:*
         version: link:../../packages/observability
@@ -194,12 +197,18 @@ importers:
       "@atgt/config":
         specifier: workspace:*
         version: link:../../packages/config
+      "@atgt/contracts":
+        specifier: workspace:*
+        version: link:../../packages/contracts
       "@atgt/observability":
         specifier: workspace:*
         version: link:../../packages/observability
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
+      pg:
+        specifier: ^8.11.0
+        version: 8.23.0
       reflect-metadata:
         specifier: ^0.2.0
         version: 0.2.2
@@ -210,6 +219,9 @@ importers:
       "@types/node":
         specifier: ^20.0.0
         version: 20.19.43
+      "@types/pg":
+        specifier: ^8.11.10
+        version: 8.21.0
       jest:
         specifier: ^29.0.0
         version: 29.7.0(@types/node@20.19.43)(ts-node@10.9.2(@types/node@20.19.43)(typescript@5.9.3))

@@ -47,16 +47,47 @@ INSERT INTO map.layers (layer_key, layer_name, layer_type, description, is_publi
   ('temp_events',       N'Sự kiện tạm thời',         'POINT',   N'Sự kiện ảnh hưởng giao thông', true)
 ON CONFLICT (layer_key) DO NOTHING;
 
+INSERT INTO map.layer_schemas
+  (layer_id, schema_version, geometry_type, schema_json, is_active, created_by)
+SELECT l.layer_id, 1, l.layer_type,
+  '{"type":"object","additionalProperties":true}'::jsonb, true, 'seed'
+FROM map.layers l
+ON CONFLICT (layer_id, schema_version) DO NOTHING;
+
 -- Seed fake dangerous points around Da Lat
-INSERT INTO map.features (layer_id, geom, properties, publish_state, created_by)
-SELECT
-  l.layer_id,
+INSERT INTO map.layer_schemas
+  (layer_id, schema_version, geometry_type, schema_json, is_active, created_by)
+SELECT l.layer_id, 1, l.layer_type,
+  '{"type":"object","required":["name","severity"],"properties":{"name":{"type":"string"},"accident_count":{"type":"integer","minimum":0},"severity":{"type":"string","enum":["LOW","MEDIUM","HIGH"]}},"additionalProperties":false}'::jsonb,
+  true, 'seed'
+FROM map.layers l WHERE l.layer_key = 'dangerous_points'
+ON CONFLICT (layer_id, schema_version) DO UPDATE SET schema_json = EXCLUDED.schema_json;
+
+INSERT INTO map.layer_versions
+  (version_id, layer_id, version_number, schema_version, area_id, data_class, state,
+   valid_from, change_summary, created_by, submitted_by, submitted_at,
+   approved_by, approved_at, published_at)
+SELECT '00000000-0000-4000-8000-000000000601'::uuid, l.layer_id, 1, 1,
+  'area-dalat', 'public', 'DRAFT', '2026-01-01T00:00:00Z',
+  '{"added":1,"updated":0,"removed":0}'::jsonb, 'seed-maker', 'seed-maker', NOW(),
+  'seed-checker', NOW(), NOW()
+FROM map.layers l WHERE l.layer_key = 'dangerous_points'
+ON CONFLICT (version_id) DO NOTHING;
+
+INSERT INTO map.features
+  (feature_id, feature_key, layer_id, version_id, geom, properties, valid_from, publish_state, created_by)
+SELECT '00000000-0000-4000-8000-000000000602'::uuid, 'danger-hoabinh-fake', l.layer_id,
+  '00000000-0000-4000-8000-000000000601'::uuid,
   ST_SetSRID(ST_MakePoint(108.4384, 11.9404), 4326),
   '{"name": "Ngã tư Hòa Bình (FAKE)", "accident_count": 12, "severity": "HIGH"}'::jsonb,
-  'PUBLISHED',
-  'seed'
+  '2026-01-01T00:00:00Z', 'DRAFT', 'seed-maker'
 FROM map.layers l WHERE l.layer_key = 'dangerous_points'
-ON CONFLICT DO NOTHING;
+ON CONFLICT (feature_id) DO NOTHING;
+
+UPDATE map.layer_versions SET state = 'PUBLISHED'
+WHERE version_id = '00000000-0000-4000-8000-000000000601'::uuid;
+UPDATE map.features SET publish_state = 'PUBLISHED'
+WHERE version_id = '00000000-0000-4000-8000-000000000601'::uuid;
 
 COMMENT ON TABLE incident.incident_type_catalog IS 'Fake seed - replace with approved catalog before UAT';
 COMMENT ON TABLE dispatch.units IS 'Fake seed - import real GeoJSON + capability catalog before T08/UAT (D-05)';

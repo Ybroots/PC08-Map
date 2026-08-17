@@ -1,6 +1,6 @@
 # ATGT Platform - Ban do so va ung dung an toan giao thong tinh Lam Dong
 
-> **Phiên bản**: 0.0.1 — T00 đến T04 hoàn thành; nền an toàn T05 hoàn thành, real VietMap bị khóa bởi D-03
+> **Phiên bản**: 0.0.1 — T00 đến T06 hoàn thành; real VietMap vẫn bị khóa bởi D-03
 > **Nguon tai lieu**: Ke_hoach_trien_khai_Code_Codex_ATGT_Lam_Dong.docx (v1.0, 16/08/2026)
 
 ## Gioi thieu
@@ -121,7 +121,7 @@ pnpm build
 | T03  | Identity và authorization nền           | T02 + mock IdP local  | DONE                           |
 | T04  | Nen tang du lieu va PostGIS             | T01-T03               | DONE                           |
 | T05  | VietMap Adapter                         | T02 + VietMap sandbox | SAFE FOUNDATION / D-03 BLOCKED |
-| T06  | Map data lifecycle                      | T03-T04               | TODO                           |
+| T06  | Map data lifecycle                      | T03-T04               | DONE                           |
 | T07  | SOS incident vertical slice             | T02-T04               | TODO                           |
 | T08  | Dispatch engine va SLA                  | T05+T07+SLA rules     | TODO                           |
 | T09  | Citizen mobile SOS                      | T07 + UI prototype    | TODO                           |

@@ -9,6 +9,7 @@ import type { AppConfig } from "@atgt/config";
 import { HealthModule } from "./modules/health/health.module";
 import { IdentityModule } from "./modules/identity/identity.module";
 import { MapProviderModule } from "./modules/map-provider/map-provider.module";
+import { MapDataModule } from "./modules/map-data/map-data.module";
 import { DatabaseModule } from "./platform/database";
 import { ProblemDetailsFilter } from "./platform/problem-details.filter";
 import { RequestContextMiddleware } from "./platform/request-context.middleware";
@@ -33,6 +34,7 @@ export class AppModule implements NestModule {
         HealthModule,
         IdentityModule.register(config),
         MapProviderModule.register(config),
+        MapDataModule,
       ],
       providers: [{ provide: APP_FILTER, useClass: ProblemDetailsFilter }],
     };

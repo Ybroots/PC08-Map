@@ -75,11 +75,14 @@ revokes UPDATE/DELETE/TRUNCATE.
 
 ### map schema
 
-| Table     | Key columns                                                                 | Notes                                |
-| --------- | --------------------------------------------------------------------------- | ------------------------------------ |
-| layers    | layer_key, layer_name, layer_type, is_public                                | Base catalog; workflow remains T06   |
-| features  | layer_id, version_id, geom, properties, valid_from, valid_to, publish_state | Valid EPSG:4326 geometry; GiST index |
-| approvals | version_id, submitter, approver, decision, comment                          | Planned T06 maker-checker            |
+| Table               | Key columns                                                                 | Notes                                |
+| ------------------- | --------------------------------------------------------------------------- | ------------------------------------ |
+| layers              | layer_key, layer_name, layer_type, is_public                                | Base catalog                         |
+| features            | layer_id, version_id, geom, properties, valid_from, valid_to, publish_state | Valid EPSG:4326 geometry; GiST index |
+| layer_schemas       | layer_id, schema_version, geometry_type, schema_json, is_active             | Versioned import/property registry   |
+| layer_versions      | version_number, schema_version, area_id, data_class, state, validity        | T06 lifecycle aggregate              |
+| approvals           | version_id, decision, actor_ref, trace_id, decided_at                       | Append-only maker-checker decision   |
+| version_transitions | version_id, from_state, to_state, actor_ref, trace_id                       | Append-only lifecycle audit          |
 
 ### platform schema
 

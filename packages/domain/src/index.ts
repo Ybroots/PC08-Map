@@ -4,5 +4,6 @@ export { GeoPoint } from "./geo/geo-point";
 // Common value objects
 export { PublicCode } from "./common/public-code";
 
-// State machine types (stubs - filled in T07, T11, T06)
+// State machine types
 export * from "./incidents/incident-state.enum";
+export * from "./map/map-version";

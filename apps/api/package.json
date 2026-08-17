@@ -14,6 +14,7 @@
     "@atgt/authorization": "workspace:*",
     "@atgt/config": "workspace:*",
     "@atgt/contracts": "workspace:*",
+    "@atgt/domain": "workspace:*",
     "@atgt/observability": "workspace:*",
     "@atgt/vietmap-client": "workspace:*",
     "@nestjs/common": "^10.0.0",

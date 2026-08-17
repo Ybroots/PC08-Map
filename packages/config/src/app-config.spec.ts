@@ -141,6 +141,25 @@ describe("loadAndValidateConfig", () => {
     );
   });
 
+  it("keeps the map lifecycle scheduler fail-closed", () => {
+    expect(loadAndValidateConfig(validEnvironment()).mapLifecycle.enabled).toBe(
+      false,
+    );
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        MAP_LIFECYCLE_WORKER_ENABLED: "true",
+      }),
+    ).toThrow("MAP_LIFECYCLE_POLL_MS is required");
+    expect(
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        MAP_LIFECYCLE_WORKER_ENABLED: "true",
+        MAP_LIFECYCLE_POLL_MS: "5000",
+      }).mapLifecycle.pollMs,
+    ).toBe(5000);
+  });
+
   it("does not include a secret value in URL validation errors", () => {
     const secret = "super-secret-password";
     let message = "";
