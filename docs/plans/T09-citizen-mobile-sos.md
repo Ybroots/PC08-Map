@@ -153,13 +153,15 @@ nhận diện cho receipt rail và copy chính xác về nơi dữ liệu đang 
       `com.atgtlamdong.dev`, location permissions and release-blocked fallback.
 - [x] 2026-08-17: 31 mobile tests pass across 8 suites; Metro production bundle
       and Android `assembleDebug` pass with all four native adapters autolinked.
+- [x] 2026-08-17: published native integration commit `2b54b57`; GitHub CI run
+      `31998881133` passed all six jobs including cold-start integration/build.
 
 ## Handoff
 
 - Changed files: RN native shell/entry/config tests, mobile package/lockfile,
   README, runbook, UAT and handoff.
 - Tests run/results: 31 mobile tests; Metro production bundle, Android debug APK
-  and full local repository gates pass. CI evidence follows the integration commit.
+  and full local repository gates pass; CI run `31998881133` is green.
 - Remaining risks: no attached Android target, iOS requires macOS, and production
   application ID/API endpoint/signing remain intentionally unconfigured.
 - Rollback steps: remove T09 mobile bundle; retain secure queue/keychain entries.

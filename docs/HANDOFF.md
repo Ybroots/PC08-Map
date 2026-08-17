@@ -106,11 +106,11 @@ exact 202 contract, offline/reconnect, double action, restart, location quality,
 permission denial, queue concurrency, accessibility và release configuration
 block. Android autolink nhận đủ geolocation/NetInfo/keychain/random-values; debug
 APK build pass tại `android/app/build/outputs/apk/debug/app-debug.apk`. Không có
-thiết bị attached nên UAT-01..04 chưa có device evidence. Baseline đã publish là
-feature commit `a8c8772`, handoff commit `0cd2365`; GitHub CI run `31997036937`
-xanh đủ sáu job. Full local format/lint/typecheck/unit/coverage/contract/
-integration/e2e/build gate đã pass; native-shell commit/CI phải được cập nhật sau
-khi publish.
+thiết bị attached nên UAT-01..04 chưa có device evidence. Native integration đã
+publish tại commit `2b54b57`; GitHub CI run `31998881133` xanh đủ sáu job gồm
+secret scan, static gates, contract drift, unit, cold-start integration và build.
+Full local format/lint/typecheck/unit/coverage/contract/integration/e2e/build gate
+cũng đã pass.
 
 Từ repository root:
 
