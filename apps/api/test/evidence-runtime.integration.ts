@@ -67,7 +67,6 @@ describe("T10B1 evidence initiate/finalize runtime", () => {
       "quarantine/00000000-0000-4000-8000-000000000102/00000000-0000-4000-8000-000000000103";
     const body = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
     const sha256 = createHash("sha256").update(body).digest("hex");
-    const now = new Date();
     try {
       await client.query("BEGIN");
       const repository = new PostgresEvidenceRepository(
@@ -85,7 +84,7 @@ describe("T10B1 evidence initiate/finalize runtime", () => {
           uploadUrlTtlSeconds: 300,
           capabilitySecret: "local-test-capability-secret-32-characters",
         },
-        () => new Date(now),
+        () => new Date(),
         nextId,
       );
       const initiated = await service.initiate(
