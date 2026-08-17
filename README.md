@@ -1,6 +1,6 @@
 # ATGT Platform - Ban do so va ung dung an toan giao thong tinh Lam Dong
 
-> **Phiên bản**: 0.0.1 — T00 đến T07 hoàn thành; real VietMap vẫn bị khóa bởi D-03
+> **Phiên bản**: 0.0.1 — T00 đến T07 hoàn thành; T09 mobile core đã có, native shell còn chờ toolchain
 > **Nguon tai lieu**: Ke_hoach_trien_khai_Code_Codex_ATGT_Lam_Dong.docx (v1.0, 16/08/2026)
 
 ## Gioi thieu
@@ -124,31 +124,46 @@ pnpm build
 - Intake area/idempotency TTL và relay poll/batch là config bắt buộc khi bật;
   không có production default trong khi D-05/D-06/D-09 còn pending.
 
+## Citizen mobile SOS foundation
+
+- React Native feature lưu queue versioned trong OS keychain trước khi thử gửi;
+  không fallback sang AsyncStorage/plaintext và không tự xóa payload hỏng.
+- Mỗi thao tác có client event UUID và `Idempotency-Key` UUID ổn định qua retry/
+  restart. Reconnect chỉ tự retry lỗi mạng/5xx; 4xx/contract error được giữ lại
+  nhưng không gửi lặp vô hạn.
+- UI phân biệt rõ trên thiết bị, đang gửi, server acknowledged và gửi lỗi. Public
+  code chỉ xuất hiện sau response `202` hợp lệ theo `SosAcceptedSchema`.
+- Permission denied, stale/low-accuracy warning, confirm step và các link
+  `tel:112/113/114/115` đã có test accessibility.
+- Repository chưa có native `android/ios` shell và máy hiện tại không có Android
+  SDK/Xcode, nên platform manifest, simulator/device UAT và signed build vẫn là
+  gate bắt buộc; không coi TypeScript build là native release.
+
 ## Backlog trien khai (Codex tasks)
 
-| Task | Ten                                     | Phu thuoc             | Trang thai                     |
-| ---- | --------------------------------------- | --------------------- | ------------------------------ |
-| T00  | Khởi tạo repository và chuẩn chất lượng | ADR stack tham chiếu  | DONE                           |
-| T01  | Local development infrastructure        | T00                   | DONE                           |
-| T02  | Contract và error platform              | T00-T01               | DONE                           |
-| T03  | Identity và authorization nền           | T02 + mock IdP local  | DONE                           |
-| T04  | Nen tang du lieu va PostGIS             | T01-T03               | DONE                           |
-| T05  | VietMap Adapter                         | T02 + VietMap sandbox | SAFE FOUNDATION / D-03 BLOCKED |
-| T06  | Map data lifecycle                      | T03-T04               | DONE                           |
-| T07  | SOS incident vertical slice             | T02-T04               | DONE                           |
-| T08  | Dispatch engine va SLA                  | T05+T07+SLA rules     | BLOCKED D-04/D-05              |
-| T09  | Citizen mobile SOS                      | T07 + UI prototype    | TODO                           |
-| T10  | Evidence pipeline                       | T04 + S3/AV decision  | TODO                           |
-| T11  | Citizen reports va chong lam dung       | T09-T10               | TODO                           |
-| T12  | Privacy vault va break-glass            | T03-T04 + quy che     | TODO                           |
-| T13  | Canh bao giao thong                     | T05-T06               | TODO                           |
-| T14  | Ops workspace hoan chinh                | T07-T10               | TODO                           |
-| T15  | Notifications va contact fallback       | T02-T03 + provider    | TODO                           |
-| T16  | Audit, KPI va dashboard lanh dao        | T04 + core flows      | TODO                           |
-| T17  | Production infrastructure as code       | T00-T16 + ha tang cap | TODO                           |
-| T18  | Security hardening va release candidate | Feature complete      | TODO                           |
-| T19  | Performance, HA/DR va chaos rehearsal   | T17-T18               | TODO                           |
-| T20  | UAT, pilot release va rollback          | T18-T19 + legal gates | TODO                           |
+| Task | Ten                                     | Phu thuoc             | Trang thai                       |
+| ---- | --------------------------------------- | --------------------- | -------------------------------- |
+| T00  | Khởi tạo repository và chuẩn chất lượng | ADR stack tham chiếu  | DONE                             |
+| T01  | Local development infrastructure        | T00                   | DONE                             |
+| T02  | Contract và error platform              | T00-T01               | DONE                             |
+| T03  | Identity và authorization nền           | T02 + mock IdP local  | DONE                             |
+| T04  | Nen tang du lieu va PostGIS             | T01-T03               | DONE                             |
+| T05  | VietMap Adapter                         | T02 + VietMap sandbox | SAFE FOUNDATION / D-03 BLOCKED   |
+| T06  | Map data lifecycle                      | T03-T04               | DONE                             |
+| T07  | SOS incident vertical slice             | T02-T04               | DONE                             |
+| T08  | Dispatch engine va SLA                  | T05+T07+SLA rules     | BLOCKED D-04/D-05                |
+| T09  | Citizen mobile SOS                      | T07 + UI prototype    | SAFE FOUNDATION / NATIVE PENDING |
+| T10  | Evidence pipeline                       | T04 + S3/AV decision  | TODO                             |
+| T11  | Citizen reports va chong lam dung       | T09-T10               | TODO                             |
+| T12  | Privacy vault va break-glass            | T03-T04 + quy che     | TODO                             |
+| T13  | Canh bao giao thong                     | T05-T06               | TODO                             |
+| T14  | Ops workspace hoan chinh                | T07-T10               | TODO                             |
+| T15  | Notifications va contact fallback       | T02-T03 + provider    | TODO                             |
+| T16  | Audit, KPI va dashboard lanh dao        | T04 + core flows      | TODO                             |
+| T17  | Production infrastructure as code       | T00-T16 + ha tang cap | TODO                             |
+| T18  | Security hardening va release candidate | Feature complete      | TODO                             |
+| T19  | Performance, HA/DR va chaos rehearsal   | T17-T18               | TODO                             |
+| T20  | UAT, pilot release va rollback          | T18-T19 + legal gates | TODO                             |
 
 ## Diem dung bat buoc (khong tu suy doan)
 

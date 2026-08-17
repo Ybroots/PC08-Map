@@ -14,6 +14,11 @@
 | UAT-06 | ETA with live VietMap      | ETA shown as LIVE; dispatch candidate list accurate            |
 | UAT-07 | ETA with VietMap fallback  | ETA shown as DEGRADED/CACHED; operator clearly informed        |
 
+T09 has deterministic application/UI coverage for UAT-01..04 boundaries
+(validated ACK, low accuracy, offline/reconnect, stable retry). This is not
+device UAT evidence: native shell, permission manifests, airplane mode and real
+`tel:` verification remain pending.
+
 ## Dispatch (UAT-08 to UAT-10)
 
 | ID     | Scenario                    | Expected result                                          |

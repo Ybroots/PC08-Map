@@ -159,6 +159,51 @@ resume feed, tracking enumeration and relay failure/retry:
 pnpm exec turbo run test:integration --force
 ```
 
+### Citizen mobile SOS foundation
+
+T09 exports a fail-closed native composition from `apps/citizen-mobile`. The API
+base URL is mandatory and production URLs must use HTTPS; only localhost may use
+HTTP. Do not hard-code a production endpoint or secret in the bundle:
+
+```tsx
+const runtime = createNativeSosRuntime({
+  apiBaseUrl,
+  incidentTypes: approvedIncidentTypes,
+});
+return <SosScreen {...runtime} />;
+```
+
+The queue uses the device-only keychain service
+`vn.gov.lamdong.atgt.sos.queue.v1`. There is deliberately no AsyncStorage or
+plaintext fallback. Do not clear this keychain entry during rollback, logout,
+upgrade or troubleshooting: it may contain an SOS that the server has not yet
+acknowledged or a tracking code the citizen still needs.
+
+`incidentTypes` is mandatory and must come from the deployment's approved
+incident catalog. `DEFAULT_SOS_INCIDENT_TYPES` is a reference/local fixture, not
+a silent production fallback; an empty, duplicate or malformed catalog fails
+closed before runtime composition.
+
+T09's named client UX defaults are 30 seconds for stale-location warning,
+100 metres for low-accuracy warning, and 15 seconds for the OS position request.
+They only change guidance; they never reject an SOS. D-09 remains pending and no
+media/load limit is implemented.
+
+Run the platform-independent mobile gates from repository root:
+
+```bash
+pnpm --filter @atgt/citizen-mobile lint
+pnpm --filter @atgt/citizen-mobile typecheck
+pnpm --filter @atgt/citizen-mobile test
+pnpm --filter @atgt/citizen-mobile build
+```
+
+This repository does not yet contain `android/` or `ios/`. Before device UAT,
+create a React Native 0.73-compatible native shell, configure Android fine
+location permission and iOS `NSLocationWhenInUseUsageDescription`, link keychain/
+NetInfo/geolocation, inject the HTTPS API URL and verify `tel:` on real devices.
+Never mark T09 native-ready from Jest/TypeScript results alone.
+
 ### Port conflict
 
 ```bash

@@ -5,19 +5,19 @@
 
 ## Trạng thái hiện tại
 
-| Task | Trạng thái           | Kết quả có thể dùng tiếp                                       |
-| ---- | -------------------- | -------------------------------------------------------------- |
-| T00  | DONE                 | Monorepo, CI, kiến trúc và quality gates                       |
-| T01  | DONE                 | Local Compose 8 service, roles/schemas/seed/telemetry          |
-| T02  | DONE                 | Executable contracts, Problem Details, trace, idempotency      |
-| T03  | DONE                 | Mock/OIDC identity, citizen session, deny-by-default policy    |
-| T04  | DONE                 | PostGIS schema, transaction/outbox/inbox, scoped repository    |
-| T05  | SAFE FOUNDATION DONE | Fake/resilience/API wiring xong; real VietMap BLOCKED bởi D-03 |
-| T06  | DONE                 | Versioned map, maker-checker, public bbox, lifecycle worker    |
-| T07  | DONE                 | Atomic SOS, replay, tracking, scoped feed, relay + ops shell   |
-| T08  | BLOCKED              | Chờ D-04 SLA/escalation và D-05 unit/service-area              |
-| T09  | SAFE NEXT            | Mobile SOS text/coordinate + offline ACK UX; giữ D-09 boundary |
-| T10+ | TODO                 | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
+| Task | Trạng thái           | Kết quả có thể dùng tiếp                                          |
+| ---- | -------------------- | ----------------------------------------------------------------- |
+| T00  | DONE                 | Monorepo, CI, kiến trúc và quality gates                          |
+| T01  | DONE                 | Local Compose 8 service, roles/schemas/seed/telemetry             |
+| T02  | DONE                 | Executable contracts, Problem Details, trace, idempotency         |
+| T03  | DONE                 | Mock/OIDC identity, citizen session, deny-by-default policy       |
+| T04  | DONE                 | PostGIS schema, transaction/outbox/inbox, scoped repository       |
+| T05  | SAFE FOUNDATION DONE | Fake/resilience/API wiring xong; real VietMap BLOCKED bởi D-03    |
+| T06  | DONE                 | Versioned map, maker-checker, public bbox, lifecycle worker       |
+| T07  | DONE                 | Atomic SOS, replay, tracking, scoped feed, relay + ops shell      |
+| T08  | BLOCKED              | Chờ D-04 SLA/escalation và D-05 unit/service-area                 |
+| T09  | SAFE FOUNDATION      | Keychain queue/retry/ACK UX xong; native shell/device UAT pending |
+| T10+ | TODO                 | Theo thứ tự/phụ thuộc trong README và từng execution plan         |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
 real HTTP adapter/contract fixtures và sandbox contract suite; xem
@@ -52,6 +52,13 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   bảo vệ khỏi overwrite.
 - Metrics chỉ có aggregate accepted/replayed/failure/duration, không gắn incident,
   public code, tọa độ hoặc identity label.
+- Mobile SOS persist vào device-only keychain trước khi gửi, giữ UUID idempotency
+  qua restart, single-flight double action và chỉ hiện code sau validated 202 ACK.
+- Reconnect chỉ tự retry network/5xx; rejected/invalid ACK được giữ nhưng không
+  resend vô hạn. Analytics chỉ phát tên event, không mang payload/toạ độ/code.
+- Mobile screen có confirm, stale/low-accuracy guidance, explicit receipt rail và
+  `tel:112/113/114/115`. Native `android/ios` shell chưa tồn tại; không gọi đây là
+  device-tested release.
 
 ## Hard stops còn mở
 
@@ -68,17 +75,19 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: decision gate T08 hoặc safe T09
+## Bước tiếp theo đề xuất: native integration gate T09 hoặc decision gate T08
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
 service-area GeoJSON đã duyệt, đọc `docs/plans/T08-dispatch-sla.md` rồi viết
 execution plan trước code.
 
-Trong khi chờ, có thể làm T09 theo lát cắt an toàn: mobile SOS text/coordinate,
-encrypted offline queue, stable idempotency key, trạng thái local/sending/server
-ack rõ ràng và `tel:112/113/114/115` fallback. Không thêm media size/load limit
-hoặc tuyên bố delivery nếu chưa có server acknowledgement; D-09 vẫn là hard stop.
+T09 application/UI foundation đã hoàn thành nhưng máy Windows hiện tại không có
+Android SDK/ADB/Gradle và repository chưa có native `android/ios` shell. Bước kế
+tiếp an toàn là tạo shell đúng React Native 0.73, thêm permission manifests,
+compose runtime với HTTPS API URL và chạy UAT-01..04 trên device/emulator. Xcode/
+iOS verification phải chạy trên macOS. Không thêm media size/load limit; D-09
+vẫn là hard stop.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -88,6 +97,13 @@ unit/contract tests có coverage, 42 API integration và 3 worker integration
 tests pass. HTTP smoke với `VIETMAP_USE_FAKE_ADAPTER=false` xác nhận accept/replay/
 tracking/metrics; OpenAPI drift, build 12 tasks và 3 visual viewport đều pass.
 Commit/CI chính thức được lưu trên nhánh `main` và lịch sử GitHub Actions.
+
+T09 foundation có 23 mobile tests qua 5 suite cho encrypted-store boundary,
+exact 202 contract, offline/reconnect, double action, restart, location quality,
+permission denial, queue concurrency và accessibility. Full local gate pass: 167 covered tests,
+45 integration, 19 contract/OpenAPI drift, e2e prerequisite và 13 package builds.
+Native device build chưa chạy vì thiếu shell/toolchain; commit/CI nằm trên nhánh
+`main` và GitHub Actions sau khi task được push.
 
 Từ repository root:
 
