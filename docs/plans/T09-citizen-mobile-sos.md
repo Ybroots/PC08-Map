@@ -162,13 +162,17 @@ nhận diện cho receipt rail và copy chính xác về nơi dữ liệu đang 
       Dialer.
 - [x] 2026-08-17: fixed emulator-host HTTP opt-in and Android approximate-location
       permission discovered during UAT; 36 mobile tests across 9 suites pass.
+- [x] 2026-08-17: published UAT fixes/evidence at commit `8cc7e88`; GitHub CI run
+      `32002194610` passed all six jobs including secret scan and cold-start
+      integration.
 
 ## Handoff
 
 - Changed files: native config/transport/location permission adapters and tests,
   README, runbook, UAT and handoff.
 - Tests run/results: 36 mobile tests; Metro production bundle, Android debug APK
-  and Android emulator UAT-01..04 pass. See final handoff for repository/CI gates.
+  and Android emulator UAT-01..04 pass; full local gates and CI `32002194610`
+  pass.
 - Remaining risks: physical Android call/network behavior and iOS require real
   targets; production application ID/API endpoint/signing remain unconfigured.
 - Rollback steps: remove T09 mobile bundle; retain secure queue/keychain entries.

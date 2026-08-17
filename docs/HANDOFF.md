@@ -109,7 +109,10 @@ APK build pass tại `android/app/build/outputs/apk/debug/app-debug.apk`. Androi
 emulator evidence cho UAT-01..04 được ghi tại `docs/uat/uat-scenarios.md`; hai lỗi
 thực tế được sửa là debug host alias `10.0.2.2` cần opt-in riêng và Android coarse
 location phải được chấp nhận như approximate. Native integration nền đã publish
-tại commit `2b54b57`; kết quả commit/CI của vòng UAT xem progress log T09.
+tại commit `2b54b57`; UAT fixes/evidence đã publish tại `8cc7e88`. GitHub CI run
+`32002194610` xanh đủ sáu job gồm secret scan, static gates, contract drift, unit,
+cold-start integration và build. Full local frozen-install, format/lint/typecheck,
+unit/coverage/contract/integration/e2e/build và Android `assembleDebug` cũng pass.
 
 Từ repository root:
 
