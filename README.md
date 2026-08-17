@@ -1,6 +1,6 @@
 # ATGT Platform - Ban do so va ung dung an toan giao thong tinh Lam Dong
 
-> **Phiên bản**: 0.0.1 — T00 đến T06 hoàn thành; real VietMap vẫn bị khóa bởi D-03
+> **Phiên bản**: 0.0.1 — T00 đến T07 hoàn thành; real VietMap vẫn bị khóa bởi D-03
 > **Nguon tai lieu**: Ke_hoach_trien_khai_Code_Codex_ATGT_Lam_Dong.docx (v1.0, 16/08/2026)
 
 ## Gioi thieu
@@ -111,6 +111,19 @@ pnpm build
 - Tắt fake không gọi dịch vụ thật: provider call fail-closed trong khi core
   health vẫn hoạt động. Real HTTP adapter/sandbox tests chờ D-03 phê duyệt.
 
+## SOS vertical slice
+
+- `POST /api/v1/public/sos` lấy `Idempotency-Key` từ header và commit incident,
+  initial history, audit, outbox cùng stored response trong một transaction.
+- Retry đồng thời tạo đúng một incident; cùng payload replay đúng acknowledgement,
+  payload khác với cùng key trả stable idempotency conflict.
+- Ops feed theo area dùng cursor append-only; repository đánh giá lại actual data
+  class và scope. Public tracking chỉ trả trạng thái tổng quát theo ADR-010.
+- RabbitMQ relay là at-least-once qua publisher port; publisher lỗi chỉ để outbox
+  pending. SOS acknowledgement không gọi VietMap hoặc notification provider.
+- Intake area/idempotency TTL và relay poll/batch là config bắt buộc khi bật;
+  không có production default trong khi D-05/D-06/D-09 còn pending.
+
 ## Backlog trien khai (Codex tasks)
 
 | Task | Ten                                     | Phu thuoc             | Trang thai                     |
@@ -122,8 +135,8 @@ pnpm build
 | T04  | Nen tang du lieu va PostGIS             | T01-T03               | DONE                           |
 | T05  | VietMap Adapter                         | T02 + VietMap sandbox | SAFE FOUNDATION / D-03 BLOCKED |
 | T06  | Map data lifecycle                      | T03-T04               | DONE                           |
-| T07  | SOS incident vertical slice             | T02-T04               | TODO                           |
-| T08  | Dispatch engine va SLA                  | T05+T07+SLA rules     | TODO                           |
+| T07  | SOS incident vertical slice             | T02-T04               | DONE                           |
+| T08  | Dispatch engine va SLA                  | T05+T07+SLA rules     | BLOCKED D-04/D-05              |
 | T09  | Citizen mobile SOS                      | T07 + UI prototype    | TODO                           |
 | T10  | Evidence pipeline                       | T04 + S3/AV decision  | TODO                           |
 | T11  | Citizen reports va chong lam dung       | T09-T10               | TODO                           |

@@ -12,6 +12,9 @@ import {
   ProviderQuality,
   ProviderQualitySchema,
   SosAcceptedSchema,
+  SosIdempotencyHeadersSchema,
+  IncidentReceivedEventDataSchema,
+  OpsIncidentFeedQuerySchema,
 } from "./index";
 
 const traceId = "0123456789abcdef0123456789abcdef";
@@ -23,7 +26,6 @@ describe("executable contracts", () => {
       coordinateLongitude: 108.4384,
       coordinateLatitude: 11.9404,
       accuracyMeters: 12.5,
-      idempotencyKey: uuid,
       incidentType: "TRAFFIC_ACCIDENT",
       description: "Can ho tro",
       clientEventAt: "2026-08-16T10:00:00.000Z",
@@ -36,7 +38,6 @@ describe("executable contracts", () => {
     { coordinateLongitude: 181 },
     { coordinateLatitude: -91 },
     { accuracyMeters: -1 },
-    { idempotencyKey: "predictable-key" },
     { incidentType: "traffic accident" },
     { description: "x".repeat(501) },
   ])("rejects an invalid SOS boundary: %o", (override) => {
@@ -45,7 +46,6 @@ describe("executable contracts", () => {
         coordinateLongitude: 108.4384,
         coordinateLatitude: 11.9404,
         accuracyMeters: 12.5,
-        idempotencyKey: uuid,
         incidentType: "TRAFFIC_ACCIDENT",
         clientEventAt: "2026-08-16T10:00:00.000Z",
         ...override,
@@ -59,10 +59,30 @@ describe("executable contracts", () => {
         coordinateLongitude: 108.4384,
         coordinateLatitude: 11.9404,
         accuracyMeters: 12.5,
-        idempotencyKey: uuid,
         incidentType: "TRAFFIC_ACCIDENT",
         clientEventAt: "2026-08-16T10:00:00.000Z",
         citizenIdentity: "must-not-enter-incident-contract",
+      }),
+    ).toThrow();
+  });
+
+  it("keeps idempotency in the transport header, not the SOS body", () => {
+    expect(
+      SosIdempotencyHeadersSchema.parse({ "idempotency-key": uuid }),
+    ).toEqual({ "idempotency-key": uuid });
+    expect(() =>
+      SosIdempotencyHeadersSchema.parse({
+        "idempotency-key": "predictable-key",
+      }),
+    ).toThrow();
+    expect(() =>
+      CreateSosSchema.parse({
+        coordinateLongitude: 108.4384,
+        coordinateLatitude: 11.9404,
+        accuracyMeters: 12.5,
+        incidentType: "TRAFFIC_ACCIDENT",
+        clientEventAt: "2026-08-16T10:00:00.000Z",
+        idempotencyKey: uuid,
       }),
     ).toThrow();
   });
@@ -92,6 +112,24 @@ describe("executable contracts", () => {
       data: { public_code: "A3KX9M2P7Q4R" },
     });
     expect(event.type).toBe(EVENT_ROUTING_KEYS.INCIDENT_RECEIVED);
+  });
+
+  it("keeps the incident received event free of public codes and coordinates", () => {
+    const data = IncidentReceivedEventDataSchema.parse({
+      incident_id: uuid,
+      incident_type: "TRAFFIC_ACCIDENT",
+      priority: "CRITICAL",
+      area_id: "lam-dong",
+      state: "RECEIVED",
+    });
+    expect(data).not.toHaveProperty("public_code");
+    expect(data).not.toHaveProperty("coordinate");
+  });
+
+  it("normalizes a bounded resume cursor query", () => {
+    expect(
+      OpsIncidentFeedQuerySchema.parse({ after: "42", limit: "25" }),
+    ).toEqual({ after: "42", limit: 25 });
   });
 
   it("keeps provider quality runtime and TypeScript values aligned", () => {

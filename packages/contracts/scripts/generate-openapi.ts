@@ -20,14 +20,37 @@ import {
   MapTransitionRequestSchema,
   MapVersionSchema,
   PublicMapFeatureCollectionSchema,
+  PublicIncidentTrackingSchema,
   ProblemDetailsSchema,
   ProviderQualitySchema,
   SosAcceptedSchema,
+  SosIdempotencyHeadersSchema,
+  OpsIncidentFeedQuerySchema,
+  OpsIncidentFeedSchema,
+  OpsIncidentSchema,
+  OpsIncidentTransitionRequestSchema,
 } from "../src";
 
 const registry = new OpenAPIRegistry();
 const createSos = registry.register("CreateSos", CreateSosSchema);
 const sosAccepted = registry.register("SosAccepted", SosAcceptedSchema);
+const sosHeaders = registry.register(
+  "SosIdempotencyHeaders",
+  SosIdempotencyHeadersSchema,
+);
+const publicIncidentTracking = registry.register(
+  "PublicIncidentTracking",
+  PublicIncidentTrackingSchema,
+);
+const opsIncident = registry.register("OpsIncident", OpsIncidentSchema);
+const opsIncidentFeed = registry.register(
+  "OpsIncidentFeed",
+  OpsIncidentFeedSchema,
+);
+const opsIncidentTransition = registry.register(
+  "OpsIncidentTransitionRequest",
+  OpsIncidentTransitionRequestSchema,
+);
 const problemDetails = registry.register(
   "ProblemDetails",
   ProblemDetailsSchema,
@@ -70,11 +93,13 @@ const publicMap = registry.register(
 
 registry.registerPath({
   method: "post",
-  path: "/api/v1/incidents/sos",
+  path: "/api/v1/public/sos",
   summary: "Submit an SOS incident",
-  description: "Contract-first endpoint scheduled for implementation in T07.",
+  description:
+    "Atomically accepts an SOS without calling map, routing or notification providers.",
   tags: ["Incidents"],
   request: {
+    headers: sosHeaders,
     body: {
       required: true,
       content: { "application/json": { schema: createSos } },
@@ -91,6 +116,93 @@ registry.registerPath({
     },
     409: {
       description: "Idempotency conflict",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/v1/public/cases/{publicCode}",
+  summary: "Read the generalized public status for a tracking code",
+  tags: ["Incidents"],
+  request: {
+    params: z.object({
+      publicCode: z.string().openapi({
+        param: { name: "publicCode", in: "path" },
+        example: "A3KX9M2P7Q4R",
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      description: "Generalized status only",
+      content: {
+        "application/json": { schema: publicIncidentTracking },
+      },
+    },
+    404: {
+      description: "Invalid and unknown codes use the same response",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+const incidentAreaParameter = registry.registerParameter(
+  "IncidentAreaId",
+  z.string().openapi({ param: { name: "areaId", in: "path" } }),
+);
+const incidentIdParameter = registry.registerParameter(
+  "IncidentId",
+  z
+    .string()
+    .uuid()
+    .openapi({ param: { name: "incidentId", in: "path" } }),
+);
+
+registry.registerPath({
+  method: "get",
+  path: "/api/v1/ops/areas/{areaId}/incidents/feed",
+  summary: "Resume the scoped operations incident feed",
+  tags: ["Incidents"],
+  request: {
+    params: z.object({ areaId: incidentAreaParameter }),
+    query: OpsIncidentFeedQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Scoped append-only feed page",
+      content: { "application/json": { schema: opsIncidentFeed } },
+    },
+    403: {
+      description: "Area or data-class scope denied",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/ops/areas/{areaId}/incidents/{incidentId}/transitions",
+  summary: "Apply an authorized incident transition",
+  tags: ["Incidents"],
+  request: {
+    params: z.object({
+      areaId: incidentAreaParameter,
+      incidentId: incidentIdParameter,
+    }),
+    body: {
+      required: true,
+      content: { "application/json": { schema: opsIncidentTransition } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Transition applied",
+      content: { "application/json": { schema: opsIncident } },
+    },
+    409: {
+      description: "State precondition or optimistic version conflict",
       content: { "application/problem+json": { schema: problemDetails } },
     },
   },

@@ -14,11 +14,13 @@
     "@atgt/config": "workspace:*",
     "@atgt/contracts": "workspace:*",
     "@atgt/observability": "workspace:*",
+    "amqplib": "^0.10.4",
     "dotenv": "^16.4.5",
-    "reflect-metadata": "^0.2.0",
-    "pg": "^8.11.0"
+    "pg": "^8.11.0",
+    "reflect-metadata": "^0.2.0"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.5",
     "@types/jest": "^29.0.0",
     "@types/node": "^20.0.0",
     "@types/pg": "^8.11.10",

@@ -3,7 +3,7 @@
   "users": [
     {
       "name": "atgt",
-      "password_hash": "V6PO5AAIY8iHjABECoibr0KnYBqSaJaFTRUgGnSNhkd9jLx7",
+      "password_hash": "JKThXhiGjnWp5eQguBX/t7Ld/R6OaAVWZMtL5kHDQmLXshfc",
       "hashing_algorithm": "rabbit_password_hashing_sha256",
       "tags": ["administrator"],
       "limits": {}

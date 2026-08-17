@@ -14,8 +14,10 @@
 | T04  | DONE                 | PostGIS schema, transaction/outbox/inbox, scoped repository    |
 | T05  | SAFE FOUNDATION DONE | Fake/resilience/API wiring xong; real VietMap BLOCKED bởi D-03 |
 | T06  | DONE                 | Versioned map, maker-checker, public bbox, lifecycle worker    |
-| T07  | NEXT                 | SOS vertical slice; không phụ thuộc provider để accept         |
-| T08+ | TODO                 | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
+| T07  | DONE                 | Atomic SOS, replay, tracking, scoped feed, relay + ops shell   |
+| T08  | BLOCKED              | Chờ D-04 SLA/escalation và D-05 unit/service-area              |
+| T09  | SAFE NEXT            | Mobile SOS text/coordinate + offline ACK UX; giữ D-09 boundary |
+| T10+ | TODO                 | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
 real HTTP adapter/contract fixtures và sandbox contract suite; xem
@@ -39,6 +41,17 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   PostGIS GiST index được xác nhận trong integration plan.
 - Worker publish/expire idempotent, mặc định tắt và fail-closed nếu thiếu poll
   interval; không có retention auto-delete.
+- SOS public contract lấy idempotency key từ header. Incident, initial history,
+  audit, `incident.received.v1` và stored 202 response commit cùng transaction;
+  concurrent retry chỉ tạo một incident.
+- Accepted SOS không gọi VietMap, RabbitMQ hoặc notification. Relay dùng
+  publisher port, advisory lock và at-least-once retry; lỗi publish để outbox
+  pending với error code không chứa provider detail.
+- Ops incident feed có monotonic cursor và recheck area/actual data class;
+  public tracking chỉ trả projection tổng quát. Accepted payload được DB trigger
+  bảo vệ khỏi overwrite.
+- Metrics chỉ có aggregate accepted/replayed/failure/duration, không gắn incident,
+  public code, tọa độ hoặc identity label.
 
 ## Hard stops còn mở
 
@@ -55,25 +68,26 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: T07
+## Bước tiếp theo đề xuất: decision gate T08 hoặc safe T09
 
-1. Đọc `docs/plans/T07-sos-vertical-slice.md`, requirements SOS và state machine.
-2. Viết execution plan trước code, giữ incident business table không chứa IP,
-   session token, fingerprint hoặc linkage identity.
-3. Triển khai vertical slice contract/domain/use case/repository/API/outbox trước
-   khi nối UI/mobile.
-4. SOS acceptance phải commit được khi VietMap, map lifecycle hoặc notification
-   lỗi; enrichment là downstream/degraded path.
-5. D-04/D-05/D-06/D-09 vẫn là hard stop: không tự đặt SLA, unit/service area,
-   retention hay load limit.
+T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
+D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
+service-area GeoJSON đã duyệt, đọc `docs/plans/T08-dispatch-sla.md` rồi viết
+execution plan trước code.
+
+Trong khi chờ, có thể làm T09 theo lát cắt an toàn: mobile SOS text/coordinate,
+encrypted offline queue, stable idempotency key, trạng thái local/sending/server
+ack rõ ràng và `tel:112/113/114/115` fallback. Không thêm media size/load limit
+hoặc tuyên bố delivery nếu chưa có server acknowledgement; D-09 vẫn là hard stop.
 
 ## Kiểm chứng và lệnh chuẩn
 
-Lần kiểm chứng T06 local (2026-08-17): cold start volume rỗng lên đủ 8 service;
-130 unit tests có coverage, 35 API integration tests và 1 worker integration
-test pass; public HTTP bbox trả đúng seed synthetic; OpenAPI drift/e2e prerequisite
-và 12 build tasks pass. Bốn visual viewport không lỗi console hay overflow. Cập
-nhật commit và GitHub CI vào cuối handoff sau khi push.
+Lần kiểm chứng T07 local (2026-08-17): cold start volume rỗng lên đủ 8 service;
+migration 07 tạo feed cursor/immutability trigger và seed 6 incident types. 144
+unit/contract tests có coverage, 42 API integration và 3 worker integration
+tests pass. HTTP smoke với `VIETMAP_USE_FAKE_ADAPTER=false` xác nhận accept/replay/
+tracking/metrics; OpenAPI drift, build 12 tasks và 3 visual viewport đều pass.
+Commit/CI chính thức được lưu trên nhánh `main` và lịch sử GitHub Actions.
 
 Từ repository root:
 
@@ -110,6 +124,14 @@ Deploy rollback theo thứ tự web/worker/API; giữ migration T06 dormant vì 
 expand-only và chứa approval/audit history. Tắt worker bằng
 `MAP_LIFECYCLE_WORKER_ENABLED=false`. Không drop version/history và không sửa
 feature đã submit. Seed/local volume có thể reset vì chỉ chứa dữ liệu synthetic.
+
+## Rollback T07
+
+Tắt `SOS_INGEST_ENABLED=false` và `OUTBOX_RELAY_ENABLED=false`, sau đó rollback
+ops web/worker/API theo thứ tự ngược deploy. Giữ migration 07 dormant: không drop
+`feed_sequence`, trigger, accepted incident, status history, audit, outbox hoặc
+idempotency response. Relay là at-least-once nên consumer tiếp theo vẫn phải dùng
+inbox dedupe. Không sửa/xóa bản ghi SOS đã được server acknowledgement.
 
 ## Rollback T05
 

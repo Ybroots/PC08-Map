@@ -67,6 +67,7 @@ const ROLE_ACTIONS: Readonly<Record<OfficerRole, ReadonlySet<PolicyAction>>> = {
   [OfficerRole.DISPATCHER]: new Set([
     PolicyAction.INCIDENT_READ,
     PolicyAction.INCIDENT_ASSIGN,
+    PolicyAction.INCIDENT_UPDATE_STATUS,
     PolicyAction.EVIDENCE_VIEW,
   ]),
   [OfficerRole.FIELD_OFFICER]: new Set([
@@ -94,7 +95,8 @@ function requiresArea(action: PolicyAction, role: OfficerRole): boolean {
   if (role === OfficerRole.DISPATCHER) {
     return (
       action === PolicyAction.INCIDENT_READ ||
-      action === PolicyAction.INCIDENT_ASSIGN
+      action === PolicyAction.INCIDENT_ASSIGN ||
+      action === PolicyAction.INCIDENT_UPDATE_STATUS
     );
   }
   return (

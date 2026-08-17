@@ -124,6 +124,41 @@ has no approved production load profile. Leave the feature disabled in an
 environment without an approved polling value. The job is idempotent and writes
 the lifecycle event plus `map.cache.invalidate.v1` in the same transaction.
 
+### SOS intake and outbox relay
+
+Both paths are fail-closed. For synthetic local development only, add explicit
+values to the ignored `.env.local`:
+
+```dotenv
+SOS_INGEST_ENABLED=true
+SOS_INTAKE_AREA_ID=lam-dong
+SOS_IDEMPOTENCY_TTL_MINUTES=60
+
+OUTBOX_RELAY_ENABLED=false
+# When intentionally exercising the relay, both are mandatory:
+# OUTBOX_RELAY_POLL_MS=1000
+# OUTBOX_RELAY_BATCH_SIZE=25
+```
+
+The local values are test fixtures, not approved production policy. D-05 owns
+the real intake area; D-06 owns retention (there is no cleanup job); D-09 owns
+relay/load tuning. SOS acceptance never calls VietMap, RabbitMQ or notification.
+To verify the HTTP boundary with the map adapter configuration-blocked, set
+`VIETMAP_USE_FAKE_ADAPTER=false`, start the built API, then run:
+
+```bash
+python scripts/t07_api_smoke.py
+```
+
+The smoke checks 202 acknowledgement, exact idempotent replay, generalized
+tracking and aggregate metrics. Restore the intended local adapter setting
+after the test. The forced integration suite covers concurrent submit, scoped
+resume feed, tracking enumeration and relay failure/retry:
+
+```bash
+pnpm exec turbo run test:integration --force
+```
+
 ### Port conflict
 
 ```bash
@@ -198,5 +233,7 @@ All seed data is FAKE synthetic data for Lam Dong area. See `infra/compose/seed/
 - 5 map layers (dangerous_points, road_closures, parking_zones, no_parking, temp_events)
 - 1 fake dangerous point at Da Lat city center
 - Fake incident type catalog
+- No fake SOS business records are seeded; integration and HTTP smoke fixtures
+  clean up their own records.
 
 NEVER import real incident data, real personal data, or real unit operational data into local dev.

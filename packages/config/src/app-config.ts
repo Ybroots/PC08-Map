@@ -57,6 +57,12 @@ export interface AppConfig {
   };
   retention: { policyVersion: string; autoDeleteEnabled: false };
   mapLifecycle: { enabled: boolean; pollMs?: number };
+  sosIntake: {
+    enabled: boolean;
+    intakeAreaId?: string;
+    idempotencyTtlMinutes?: number;
+  };
+  outboxRelay: { enabled: boolean; pollMs?: number; batchSize?: number };
   telemetry: { otlpEndpoint: string; serviceName: string };
 }
 
@@ -216,6 +222,28 @@ export function loadAndValidateConfig(
   const mapLifecyclePollMs = source["MAP_LIFECYCLE_POLL_MS"]?.trim()
     ? integer(source, "MAP_LIFECYCLE_POLL_MS", 0, 1000, 3_600_000)
     : undefined;
+  const sosIntakeEnabled = boolean(source, "SOS_INGEST_ENABLED", false);
+  const sosIntakeAreaId = sosIntakeEnabled
+    ? required(source, "SOS_INTAKE_AREA_ID")
+    : undefined;
+  if (sosIntakeAreaId && !/^[a-z0-9][a-z0-9-]{1,99}$/.test(sosIntakeAreaId)) {
+    throw new Error("SOS_INTAKE_AREA_ID has an invalid format");
+  }
+  if (sosIntakeEnabled) required(source, "SOS_IDEMPOTENCY_TTL_MINUTES");
+  const sosIdempotencyTtlMinutes = source["SOS_IDEMPOTENCY_TTL_MINUTES"]?.trim()
+    ? integer(source, "SOS_IDEMPOTENCY_TTL_MINUTES", 0, 1, 525_600)
+    : undefined;
+  const outboxRelayEnabled = boolean(source, "OUTBOX_RELAY_ENABLED", false);
+  if (outboxRelayEnabled) {
+    required(source, "OUTBOX_RELAY_POLL_MS");
+    required(source, "OUTBOX_RELAY_BATCH_SIZE");
+  }
+  const outboxRelayPollMs = source["OUTBOX_RELAY_POLL_MS"]?.trim()
+    ? integer(source, "OUTBOX_RELAY_POLL_MS", 0, 100, 3_600_000)
+    : undefined;
+  const outboxRelayBatchSize = source["OUTBOX_RELAY_BATCH_SIZE"]?.trim()
+    ? integer(source, "OUTBOX_RELAY_BATCH_SIZE", 0, 1, 1000)
+    : undefined;
 
   const oidcIssuer = url(
     required(source, "OIDC_ISSUER"),
@@ -366,6 +394,16 @@ export function loadAndValidateConfig(
     mapLifecycle: {
       enabled: mapLifecycleEnabled,
       pollMs: mapLifecyclePollMs,
+    },
+    sosIntake: {
+      enabled: sosIntakeEnabled,
+      intakeAreaId: sosIntakeAreaId,
+      idempotencyTtlMinutes: sosIdempotencyTtlMinutes,
+    },
+    outboxRelay: {
+      enabled: outboxRelayEnabled,
+      pollMs: outboxRelayPollMs,
+      batchSize: outboxRelayBatchSize,
     },
     telemetry: {
       otlpEndpoint: url(

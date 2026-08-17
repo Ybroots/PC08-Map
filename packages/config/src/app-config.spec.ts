@@ -160,6 +160,57 @@ describe("loadAndValidateConfig", () => {
     ).toBe(5000);
   });
 
+  it("keeps SOS intake fail-closed until its deployment policy is explicit", () => {
+    expect(loadAndValidateConfig(validEnvironment()).sosIntake.enabled).toBe(
+      false,
+    );
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        SOS_INGEST_ENABLED: "true",
+      }),
+    ).toThrow("SOS_INTAKE_AREA_ID is required");
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        SOS_INGEST_ENABLED: "true",
+        SOS_INTAKE_AREA_ID: "lam-dong",
+      }),
+    ).toThrow("SOS_IDEMPOTENCY_TTL_MINUTES is required");
+    expect(
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        SOS_INGEST_ENABLED: "true",
+        SOS_INTAKE_AREA_ID: "lam-dong",
+        SOS_IDEMPOTENCY_TTL_MINUTES: "60",
+      }).sosIntake,
+    ).toEqual({
+      enabled: true,
+      intakeAreaId: "lam-dong",
+      idempotencyTtlMinutes: 60,
+    });
+  });
+
+  it("requires explicit outbox relay poll and batch values when enabled", () => {
+    expect(loadAndValidateConfig(validEnvironment()).outboxRelay.enabled).toBe(
+      false,
+    );
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        OUTBOX_RELAY_ENABLED: "true",
+      }),
+    ).toThrow("OUTBOX_RELAY_POLL_MS is required");
+    expect(
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        OUTBOX_RELAY_ENABLED: "true",
+        OUTBOX_RELAY_POLL_MS: "1000",
+        OUTBOX_RELAY_BATCH_SIZE: "25",
+      }).outboxRelay,
+    ).toEqual({ enabled: true, pollMs: 1000, batchSize: 25 });
+  });
+
   it("does not include a secret value in URL validation errors", () => {
     const secret = "super-secret-password";
     let message = "";

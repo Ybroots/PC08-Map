@@ -26,20 +26,25 @@
 | incidents | created_at  | TIMESTAMPTZ           | Created in UTC                        | NOT NULL, DEFAULT NOW() |
 | incidents | updated_at  | TIMESTAMPTZ           | Last mutation in UTC                  | >= created_at           |
 
-| Table          | Column      | Type        | Description             |
-| -------------- | ----------- | ----------- | ----------------------- |
-| status_history | id          | UUID        | PK                      |
-| status_history | incident_id | UUID        | FK incidents.id         |
-| status_history | from_state  | VARCHAR(30) |                         |
-| status_history | to_state    | VARCHAR(30) |                         |
-| status_history | actor_ref   | VARCHAR     | Hashed/opaque actor ref |
-| status_history | reason      | TEXT        |                         |
-| status_history | trace_id    | TEXT        | 32-char trace ID        |
-| status_history | created_at  | TIMESTAMPTZ | Append-only             |
+| Table          | Column        | Type            | Description                          |
+| -------------- | ------------- | --------------- | ------------------------------------ |
+| status_history | id            | UUID            | PK                                   |
+| status_history | incident_id   | UUID            | FK incidents.id                      |
+| status_history | from_state    | VARCHAR(30)     |                                      |
+| status_history | to_state      | VARCHAR(30)     |                                      |
+| status_history | actor_ref     | VARCHAR         | Hashed/opaque actor ref              |
+| status_history | reason        | TEXT            |                                      |
+| status_history | trace_id      | TEXT            | 32-char trace ID                     |
+| status_history | created_at    | TIMESTAMPTZ     | Append-only                          |
+| status_history | feed_sequence | BIGINT IDENTITY | Internal monotonic ops resume cursor |
 
 `incident.incidents` has no citizen session, IP, fingerprint, account, token or
 identity-link column. `incident.status_history` grants the app INSERT/SELECT but
-revokes UPDATE/DELETE/TRUNCATE.
+revokes UPDATE/DELETE/TRUNCATE. T07 protects accepted `public_code`, type,
+priority, coordinate, accuracy, description, occurred time and source with a
+database trigger; corrections must be append-only rather than overwriting the
+citizen-submitted payload. `feed_sequence` is internal and is never returned by
+public tracking.
 
 ### dispatch schema
 
@@ -86,10 +91,11 @@ revokes UPDATE/DELETE/TRUNCATE.
 
 ### platform schema
 
-| Table          | Key columns                                                                    | Notes                                      |
-| -------------- | ------------------------------------------------------------------------------ | ------------------------------------------ |
-| outbox         | event_id, aggregate, event_type/version, payload, trace_id, occurred/published | Same transaction as aggregate state change |
-| inbox_messages | consumer_name, message_id, event_type, trace_id, processed_at                  | Composite PK; duplicate claim loses        |
+| Table            | Key columns                                                                    | Notes                                           |
+| ---------------- | ------------------------------------------------------------------------------ | ----------------------------------------------- |
+| outbox           | event_id, aggregate, event_type/version, payload, trace_id, occurred/published | Same transaction as aggregate state change      |
+| inbox_messages   | consumer_name, message_id, event_type, trace_id, processed_at                  | Composite PK; duplicate claim loses             |
+| idempotency_keys | key, request_hash, state, response, expires_at                                 | SOS claim/response completes in the incident TX |
 
 ### integration schema
 
