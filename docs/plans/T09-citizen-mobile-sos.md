@@ -25,11 +25,12 @@ người dùng vẫn có thể gọi trực tiếp `112/113/114/115`.
 
 - T07 đã nhận SOS atomically, replay idempotent, không phụ thuộc VietMap/
   notification và trả public tracking code sau server acknowledgement.
-- `apps/citizen-mobile` chỉ có package/tsconfig và tên ứng dụng; chưa có feature,
-  native adapter, queue hoặc test.
-- Repository chưa chứa `android/`/`ios/`, vì vậy T09 tạo feature/composition
-  boundary có thể nhúng vào native shell; native simulator/build signing không
-  được giả vờ đã kiểm chứng.
+- Feature/composition, encrypted queue, tests và React Native 0.73 Android/iOS
+  shell đã tồn tại trong `apps/citizen-mobile`.
+- Android debug APK build pass với application ID development
+  `com.atgtlamdong.dev`; không có attached device/emulator và iOS không thể build
+  trên Windows, nên permission/deep-link UAT và release signing chưa được giả vờ
+  đã kiểm chứng.
 
 ## Decisions and blockers
 
@@ -83,6 +84,7 @@ nhận diện cho receipt rail và copy chính xác về nơi dữ liệu đang 
 | Mobile application | `submission-service.ts`, `api-client.ts`              | Persist-before-send, serialized drain, exact 202 contract | Duplicate/lost retry               |
 | Native adapters    | `keychain-store.ts`, `location.ts`, `connectivity.ts` | OS secure storage, permission/GPS, reconnect              | Plaintext fallback/native drift    |
 | Mobile UI          | `SosScreen.tsx`, `styles.ts`                          | Confirm, warnings, receipt rail, calls/accessibility      | Stress UX/accessibility            |
+| Native shell       | `android/`, `ios/`, `App.tsx`, `native-config.ts`     | Permissions, autolink, debug config, release block        | Bundle/signing/config drift        |
 | Tests              | `apps/citizen-mobile/src/features/sos/*.spec.ts(x)`   | Offline/restart/double tap/ACK/location/a11y              | False confidence without simulator |
 | Docs               | README, runbook, UAT, handoff                         | Configuration, test evidence and native-shell boundary    | Operational ambiguity              |
 
@@ -96,6 +98,8 @@ nhận diện cho receipt rail và copy chính xác về nơi dữ liệu đang 
    analytics ports.
 5. Build the SOS screen and explicit confirmation/receipt/call fallback.
 6. Add deterministic tests, docs and full repository gates.
+7. Generate the RN 0.73 native shell, lock debug-only identifiers/configuration,
+   autolink native adapters and verify an installable Android APK build.
 
 ## Test plan
 
@@ -108,9 +112,9 @@ nhận diện cho receipt rail và copy chính xác về nơi dữ liệu đang 
 - Contract: request header/body match T07 and only validated `202` creates receipt.
 - UI/accessibility: labeled controls, 48px targets, live delivery status, call
   links, confirm step and public code hidden before ACK.
-- Native limitation: CI runs TypeScript/Jest; Android/iOS simulator, permission
-  manifests and deep-link device verification remain required when the native
-  shell is added.
+- Native: Metro release bundle and Android debug APK build are automated locally;
+  permission prompts, airplane-mode reconnect and `tel:` still require attached
+  Android device/emulator. iOS build/UAT requires macOS.
 
 ## Rollout and rollback
 
@@ -129,6 +133,9 @@ nhận diện cho receipt rail và copy chính xác về nơi dữ liệu đang 
 - [x] UI never claims server receipt or reveals code before validated `202` ACK.
 - [x] Permission/accuracy/staleness guidance and four tel fallbacks exist.
 - [x] Accessibility assertions and privacy-safe analytics tests pass.
+- [x] RN 0.73 Android/iOS shell, permissions and fail-closed release entry exist.
+- [x] Android native modules autolink and an installable debug APK builds.
+- [ ] UAT-01..04 pass on an attached Android target; iOS build/UAT passes on macOS.
 - [x] `format:check`, lint, typecheck, tests, contract, integration, e2e and build
       pass; final diff/secret scan reviewed.
 
@@ -142,12 +149,17 @@ nhận diện cho receipt rail và copy chính xác về nơi dữ liệu đang 
       19 contract tests and 13 package builds.
 - [x] 2026-08-17: published feature commit `a8c8772`; GitHub CI run
       `31996841150` passed all six jobs including cold-start integration.
+- [x] 2026-08-17: generated RN 0.73 Android/iOS shell with dev-only
+      `com.atgtlamdong.dev`, location permissions and release-blocked fallback.
+- [x] 2026-08-17: 31 mobile tests pass across 8 suites; Metro production bundle
+      and Android `assembleDebug` pass with all four native adapters autolinked.
 
 ## Handoff
 
-- Changed files: mobile SOS feature/tests/package, README, runbook, UAT and handoff.
-- Tests run/results: 23 mobile/167 covered total, 45 integration, 19 contract;
-  format/lint/typecheck/e2e/build pass.
-- Remaining risks: native shell/simulator and production API endpoint config;
-  current Windows host has no Android SDK/ADB/Gradle or Xcode.
+- Changed files: RN native shell/entry/config tests, mobile package/lockfile,
+  README, runbook, UAT and handoff.
+- Tests run/results: 31 mobile tests; Metro production bundle, Android debug APK
+  and full local repository gates pass. CI evidence follows the integration commit.
+- Remaining risks: no attached Android target, iOS requires macOS, and production
+  application ID/API endpoint/signing remain intentionally unconfigured.
 - Rollback steps: remove T09 mobile bundle; retain secure queue/keychain entries.

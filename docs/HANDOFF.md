@@ -5,19 +5,19 @@
 
 ## Trạng thái hiện tại
 
-| Task | Trạng thái           | Kết quả có thể dùng tiếp                                          |
-| ---- | -------------------- | ----------------------------------------------------------------- |
-| T00  | DONE                 | Monorepo, CI, kiến trúc và quality gates                          |
-| T01  | DONE                 | Local Compose 8 service, roles/schemas/seed/telemetry             |
-| T02  | DONE                 | Executable contracts, Problem Details, trace, idempotency         |
-| T03  | DONE                 | Mock/OIDC identity, citizen session, deny-by-default policy       |
-| T04  | DONE                 | PostGIS schema, transaction/outbox/inbox, scoped repository       |
-| T05  | SAFE FOUNDATION DONE | Fake/resilience/API wiring xong; real VietMap BLOCKED bởi D-03    |
-| T06  | DONE                 | Versioned map, maker-checker, public bbox, lifecycle worker       |
-| T07  | DONE                 | Atomic SOS, replay, tracking, scoped feed, relay + ops shell      |
-| T08  | BLOCKED              | Chờ D-04 SLA/escalation và D-05 unit/service-area                 |
-| T09  | SAFE FOUNDATION      | Keychain queue/retry/ACK UX xong; native shell/device UAT pending |
-| T10+ | TODO                 | Theo thứ tự/phụ thuộc trong README và từng execution plan         |
+| Task | Trạng thái           | Kết quả có thể dùng tiếp                                            |
+| ---- | -------------------- | ------------------------------------------------------------------- |
+| T00  | DONE                 | Monorepo, CI, kiến trúc và quality gates                            |
+| T01  | DONE                 | Local Compose 8 service, roles/schemas/seed/telemetry               |
+| T02  | DONE                 | Executable contracts, Problem Details, trace, idempotency           |
+| T03  | DONE                 | Mock/OIDC identity, citizen session, deny-by-default policy         |
+| T04  | DONE                 | PostGIS schema, transaction/outbox/inbox, scoped repository         |
+| T05  | SAFE FOUNDATION DONE | Fake/resilience/API wiring xong; real VietMap BLOCKED bởi D-03      |
+| T06  | DONE                 | Versioned map, maker-checker, public bbox, lifecycle worker         |
+| T07  | DONE                 | Atomic SOS, replay, tracking, scoped feed, relay + ops shell        |
+| T08  | BLOCKED              | Chờ D-04 SLA/escalation và D-05 unit/service-area                   |
+| T09  | ANDROID BUILD PASS   | Native shell/APK xong; device UAT, iOS và production config pending |
+| T10+ | TODO                 | Theo thứ tự/phụ thuộc trong README và từng execution plan           |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
 real HTTP adapter/contract fixtures và sandbox contract suite; xem
@@ -57,8 +57,11 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
 - Reconnect chỉ tự retry network/5xx; rejected/invalid ACK được giữ nhưng không
   resend vô hạn. Analytics chỉ phát tên event, không mang payload/toạ độ/code.
 - Mobile screen có confirm, stale/low-accuracy guidance, explicit receipt rail và
-  `tel:112/113/114/115`. Native `android/ios` shell chưa tồn tại; không gọi đây là
-  device-tested release.
+  `tel:112/113/114/115`. React Native 0.73 shell có Android/iOS permission config;
+  Android autolink/build pass nhưng chưa có device UAT nên chưa phải release.
+- Native release fail closed: `com.atgtlamdong.dev` và local HTTP endpoint chỉ hoạt
+  động trong debug; release thiếu approved application ID, HTTPS endpoint và
+  signing chỉ hiển thị trạng thái chưa gửi cùng bốn số gọi khẩn cấp.
 
 ## Hard stops còn mở
 
@@ -75,19 +78,19 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: native integration gate T09 hoặc decision gate T08
+## Bước tiếp theo đề xuất: device UAT T09 hoặc decision gate T08
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
 service-area GeoJSON đã duyệt, đọc `docs/plans/T08-dispatch-sla.md` rồi viết
 execution plan trước code.
 
-T09 application/UI foundation đã hoàn thành nhưng máy Windows hiện tại không có
-Android SDK/ADB/Gradle và repository chưa có native `android/ios` shell. Bước kế
-tiếp an toàn là tạo shell đúng React Native 0.73, thêm permission manifests,
-compose runtime với HTTPS API URL và chạy UAT-01..04 trên device/emulator. Xcode/
-iOS verification phải chạy trên macOS. Không thêm media size/load limit; D-09
-vẫn là hard stop.
+T09 Android shell và debug APK đã build trên Windows bằng JDK 20/Android SDK 34.
+Không có device/emulator attached trong lần kiểm chứng, vì vậy bước kế tiếp là
+chạy UAT-01..04 với API synthetic local trên Android emulator/device, lưu evidence
+và kiểm tra thật permission, airplane mode/reconnect và `tel:`. iOS build/UAT phải
+chạy trên macOS. Trước release cần approved application ID, HTTPS API endpoint và
+signing; không tự suy đoán các giá trị này. D-09 vẫn là hard stop cho media/load.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -98,12 +101,16 @@ tests pass. HTTP smoke với `VIETMAP_USE_FAKE_ADAPTER=false` xác nhận accept
 tracking/metrics; OpenAPI drift, build 12 tasks và 3 visual viewport đều pass.
 Commit/CI chính thức được lưu trên nhánh `main` và lịch sử GitHub Actions.
 
-T09 foundation có 23 mobile tests qua 5 suite cho encrypted-store boundary,
+T09 hiện có 31 mobile tests qua 8 suite cho encrypted-store/native-shell boundary,
 exact 202 contract, offline/reconnect, double action, restart, location quality,
-permission denial, queue concurrency và accessibility. Full local gate pass: 167 covered tests,
-45 integration, 19 contract/OpenAPI drift, e2e prerequisite và 13 package builds.
-Native device build chưa chạy vì thiếu shell/toolchain; commit/CI nằm trên nhánh
-`main`: feature commit `a8c8772`, GitHub CI run `31996841150` xanh đủ sáu job.
+permission denial, queue concurrency, accessibility và release configuration
+block. Android autolink nhận đủ geolocation/NetInfo/keychain/random-values; debug
+APK build pass tại `android/app/build/outputs/apk/debug/app-debug.apk`. Không có
+thiết bị attached nên UAT-01..04 chưa có device evidence. Baseline đã publish là
+feature commit `a8c8772`, handoff commit `0cd2365`; GitHub CI run `31997036937`
+xanh đủ sáu job. Full local format/lint/typecheck/unit/coverage/contract/
+integration/e2e/build gate đã pass; native-shell commit/CI phải được cập nhật sau
+khi publish.
 
 Từ repository root:
 

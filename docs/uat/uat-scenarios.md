@@ -15,9 +15,10 @@
 | UAT-07 | ETA with VietMap fallback  | ETA shown as DEGRADED/CACHED; operator clearly informed        |
 
 T09 has deterministic application/UI coverage for UAT-01..04 boundaries
-(validated ACK, low accuracy, offline/reconnect, stable retry). This is not
-device UAT evidence: native shell, permission manifests, airplane mode and real
-`tel:` verification remain pending.
+(validated ACK, low accuracy, offline/reconnect, stable retry). Android/iOS
+permission manifests now exist and Android debug APK builds, but no target was
+attached during verification. Airplane mode, OS permission prompts, end-to-end
+API/ops observation and real `tel:` behavior remain pending device UAT evidence.
 
 ## Dispatch (UAT-08 to UAT-10)
 

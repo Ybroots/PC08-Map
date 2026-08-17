@@ -132,7 +132,7 @@ importers:
         specifier: 18.2.0
         version: 18.2.0
       react-native:
-        specifier: ^0.73.0
+        specifier: 0.73.11
         version: 0.73.11(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react@18.2.0)
       react-native-get-random-values:
         specifier: 1.11.0
@@ -147,6 +147,24 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      "@babel/core":
+        specifier: ^7.20.0
+        version: 7.29.7
+      "@babel/runtime":
+        specifier: ^7.20.0
+        version: 7.29.7
+      "@react-native-community/cli-platform-android":
+        specifier: 12.3.7
+        version: 12.3.7
+      "@react-native/babel-preset":
+        specifier: 0.73.21
+        version: 0.73.21(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))
+      "@react-native/gradle-plugin":
+        specifier: 0.73.5
+        version: 0.73.5
+      "@react-native/metro-config":
+        specifier: 0.73.5
+        version: 0.73.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))
       "@types/jest":
         specifier: ^29.0.0
         version: 29.5.14
@@ -156,12 +174,12 @@ importers:
       "@types/react":
         specifier: ^18.0.0
         version: 18.3.31
-      "@types/react-native":
-        specifier: ^0.73.0
-        version: 0.73.0(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react@18.2.0)
       "@types/react-test-renderer":
         specifier: ^18.0.0
         version: 18.3.1
+      babel-jest:
+        specifier: ^29.6.3
+        version: 29.7.0(@babel/core@7.29.7)
       react-test-renderer:
         specifier: 18.2.0
         version: 18.2.0(react@18.2.0)
@@ -2534,6 +2552,13 @@ packages:
     peerDependencies:
       "@babel/core": "*"
 
+  "@react-native/metro-config@0.73.5":
+    resolution:
+      {
+        integrity: sha512-3bNWoHzOzP/+qoLJtRhOVXrnxKmSY3i4y5PXyMQlIvvOI/GQbXulPpEZxK/yUrf1MmeXHLLFufFbQWlfDEDoxA==,
+      }
+    engines: { node: ">=18" }
+
   "@react-native/normalize-colors@0.73.2":
     resolution:
       {
@@ -2839,13 +2864,6 @@ packages:
       }
     peerDependencies:
       "@types/react": ^18.0.0
-
-  "@types/react-native@0.73.0":
-    resolution:
-      {
-        integrity: sha512-6ZRPQrYM72qYKGWidEttRe6M5DZBEV5F+MHMHqd4TTYx0tfkcdrUFGdef6CCxY0jXU7wldvd/zA/b0A/kTeJmA==,
-      }
-    deprecated: This is a stub types definition. react-native provides its own type definitions, so you do not need this installed.
 
   "@types/react-test-renderer@18.3.1":
     resolution:
@@ -9789,6 +9807,19 @@ snapshots:
       - "@babel/preset-env"
       - supports-color
 
+  "@react-native/metro-config@0.73.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))":
+    dependencies:
+      "@react-native/js-polyfills": 0.73.1
+      "@react-native/metro-babel-transformer": 0.73.15(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))
+      metro-config: 0.80.12
+      metro-runtime: 0.80.12
+    transitivePeerDependencies:
+      - "@babel/core"
+      - "@babel/preset-env"
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
   "@react-native/normalize-colors@0.73.2": {}
 
   "@react-native/virtualized-lists@0.73.4(react-native@0.73.11(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react@18.2.0))":
@@ -9962,18 +9993,6 @@ snapshots:
   "@types/react-dom@18.3.7(@types/react@18.3.31)":
     dependencies:
       "@types/react": 18.3.31
-
-  "@types/react-native@0.73.0(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react@18.2.0)":
-    dependencies:
-      react-native: 0.73.11(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react@18.2.0)
-    transitivePeerDependencies:
-      - "@babel/core"
-      - "@babel/preset-env"
-      - bufferutil
-      - encoding
-      - react
-      - supports-color
-      - utf-8-validate
 
   "@types/react-test-renderer@18.3.1":
     dependencies:

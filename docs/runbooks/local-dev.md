@@ -159,11 +159,12 @@ resume feed, tracking enumeration and relay failure/retry:
 pnpm exec turbo run test:integration --force
 ```
 
-### Citizen mobile SOS foundation
+### Citizen mobile SOS native shell
 
-T09 exports a fail-closed native composition from `apps/citizen-mobile`. The API
-base URL is mandatory and production URLs must use HTTPS; only localhost may use
-HTTP. Do not hard-code a production endpoint or secret in the bundle:
+T09 exports a fail-closed native composition from `apps/citizen-mobile`. API base
+URL is mandatory and production URLs must use HTTPS. The committed shell uses
+the development-only application ID `com.atgtlamdong.dev`; it must not be reused
+for production or a VietMap key. Do not hard-code a production endpoint or secret:
 
 ```tsx
 const runtime = createNativeSosRuntime({
@@ -184,6 +185,13 @@ incident catalog. `DEFAULT_SOS_INCIDENT_TYPES` is a reference/local fixture, not
 a silent production fallback; an empty, duplicate or malformed catalog fails
 closed before runtime composition.
 
+The shell bootstrap deliberately enables the fixture catalog and local HTTP only
+under `__DEV__`: Android emulator uses `http://10.0.2.2:3000`; iOS simulator uses
+`http://localhost:3000`. A release bundle has no runtime configuration and renders
+the `KHÔNG CÓ DỮ LIỆU ĐÃ GỬI` fallback with direct `112/113/114/115` calls. Before
+release, replace this boundary with an approved application ID, HTTPS endpoint,
+incident catalog and signing process; missing values must continue to fail closed.
+
 T09's named client UX defaults are 30 seconds for stale-location warning,
 100 metres for low-accuracy warning, and 15 seconds for the OS position request.
 They only change guidance; they never reject an SOS. D-09 remains pending and no
@@ -198,11 +206,37 @@ pnpm --filter @atgt/citizen-mobile test
 pnpm --filter @atgt/citizen-mobile build
 ```
 
-This repository does not yet contain `android/` or `ios/`. Before device UAT,
-create a React Native 0.73-compatible native shell, configure Android fine
-location permission and iOS `NSLocationWhenInUseUsageDescription`, link keychain/
-NetInfo/geolocation, inject the HTTPS API URL and verify `tel:` on real devices.
-Never mark T09 native-ready from Jest/TypeScript results alone.
+The React Native 0.73 shell contains Android coarse/fine-location permissions and
+iOS `NSLocationWhenInUseUsageDescription`. Verify Android autolinking before a
+native build:
+
+```bash
+pnpm --filter @atgt/citizen-mobile exec react-native config
+```
+
+On Windows, use JDK 20 with Android SDK platform/build tools 34. Set these only in
+the active shell (paths vary by workstation), then build the installable debug APK:
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-20'
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
+$env:Path = "$env:JAVA_HOME\bin;$env:ANDROID_HOME\platform-tools;$env:Path"
+pnpm --filter @atgt/citizen-mobile native:build:android:debug
+```
+
+Expected artifact:
+`apps/citizen-mobile/android/app/build/outputs/apk/debug/app-debug.apk`. Build
+output is ignored and the repository contains no keystore. Release remains
+unsigned until the approved identifier/signing flow is supplied; never reuse the
+Android debug key.
+
+Before claiming UAT-01..04, `adb devices` must show a target. Start the synthetic
+local API, install the APK, then capture evidence for permission allow/deny, good
+and low-accuracy fixes, offline queue/reconnect, double action, server ACK/public
+code and all four `tel:` links. The emulator can reach the host API through
+`10.0.2.2`; a physical-device network endpoint is not committed. iOS Pods/build/
+UAT must run on macOS. Never mark T09 device-ready from Gradle/Jest alone.
 
 ### Port conflict
 

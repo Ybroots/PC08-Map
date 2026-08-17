@@ -11,3 +11,18 @@ coverage/
 *.log
 .DS_Store
 Thumbs.db
+
+# React Native native worktrees and machine-local build state
+apps/citizen-mobile/android/.gradle/
+apps/citizen-mobile/android/.cxx/
+apps/citizen-mobile/android/local.properties
+apps/citizen-mobile/android/**/build/
+apps/citizen-mobile/android/**/*.keystore
+apps/citizen-mobile/ios/Pods/
+apps/citizen-mobile/ios/build/
+apps/citizen-mobile/ios/DerivedData/
+apps/citizen-mobile/ios/**/xcuserdata/
+apps/citizen-mobile/ios/.xcode.env.local
+apps/citizen-mobile/vendor/bundle/
+apps/citizen-mobile/*.jsbundle
+.metro-health-check*
