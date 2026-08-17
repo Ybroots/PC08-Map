@@ -140,7 +140,8 @@ nhận diện cho receipt rail và copy chính xác về nơi dữ liệu đang 
 - [x] 2026-08-17: 23 tests pass across model/store/transport/service/screen suites.
 - [x] 2026-08-17: full local gates pass; 167 covered tests, 45 integration tests,
       19 contract tests and 13 package builds.
-- [ ] Publish commit and GitHub CI evidence.
+- [x] 2026-08-17: published feature commit `a8c8772`; GitHub CI run
+      `31996841150` passed all six jobs including cold-start integration.
 
 ## Handoff
 

@@ -103,7 +103,7 @@ exact 202 contract, offline/reconnect, double action, restart, location quality,
 permission denial, queue concurrency và accessibility. Full local gate pass: 167 covered tests,
 45 integration, 19 contract/OpenAPI drift, e2e prerequisite và 13 package builds.
 Native device build chưa chạy vì thiếu shell/toolchain; commit/CI nằm trên nhánh
-`main` và GitHub Actions sau khi task được push.
+`main`: feature commit `a8c8772`, GitHub CI run `31996841150` xanh đủ sáu job.
 
 Từ repository root:
 
