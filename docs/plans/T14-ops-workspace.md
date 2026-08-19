@@ -97,12 +97,14 @@ UAT operator duoc phe duyet va noi day du.
 - [x] Role-aware navigation model has negative tests and security disclaimer.
 - [x] Responsive keyboard-accessible synthetic workspace with screenshot evidence.
 - [x] Full local gates and browser smoke pass; T14B blockers remain explicit.
-- [ ] GitHub CI passes for the published T14A commit.
+- [x] GitHub CI passes for the published T14A commit.
 
 ## Progress log
 
 - [x] 2026-08-19: source/ADR/current-state review and T14A boundary complete.
 - [x] T14A implementation and focused browser/unit/build verification.
+- [x] T14A implementation `929c011`, CI stabilization `b682826` and GitHub run
+      `32237534237` passed all six jobs.
 
 ## Handoff
 
@@ -110,7 +112,8 @@ UAT operator duoc phe duyet va noi day du.
   Jest/browser tests, desktop/mobile evidence and operator docs.
 - Tests run/results: 10/10 focused unit; full frozen-install, format/lint/typecheck,
   283 unit tests with coverage, contract/e2e/build and browser desktop/mobile/
-  keyboard/reduced-motion smoke pass. GitHub CI pending.
+  keyboard/reduced-motion smoke pass. Clean Linux coverage passed 19/19 workspace
+  tasks; GitHub CI `32237534237` passed 6/6 jobs.
 - Remaining risks: no approved login, dispatch/SLA/service area, realtime cadence or
   operator UAT; T14 is not complete.
 - Rollback: keep existing static shell or revert ops-web-only changes.

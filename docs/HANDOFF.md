@@ -303,7 +303,7 @@ pass. T13B route/direction/cooldown và production enable vẫn blocked D-03/D-0
 Clock invariant fix ở commit `cd4c67e`; T13A implementation ở `34cf2e4`;
 GitHub CI run `32232926639` xanh đủ 6/6 job.
 
-T14A local verification (2026-08-19) có contract-validated incident feed client,
+T14A verification (2026-08-19) có contract-validated incident feed client,
 monotonic resume/dedupe model, explicit stale/auth/network/contract states và
 navigation tạo từ shared authorization policy. Ops UI là synthetic read-only
 shell, không poll, không lưu bearer, không mở assignment/SLA; desktop 1440x1000
@@ -312,7 +312,11 @@ ngang, reduced-motion không animation và 0 console error. Có 10/10 focused op
 unit test; full frozen-install, format/lint/typecheck, 283 unit tests + coverage,
 contract/e2e/build đều pass. Không chạy cold-start vì lát cắt không đổi API, DB,
 migration hay infra. Production/live vẫn bị khóa bởi D-02/D-04/D-05/D-09.
-Implementation commit và GitHub CI sẽ được ghi sau khi publish.
+Implementation ở commit `929c011`. CI remediation `b682826` giới hạn coverage
+concurrency, làm unit health deterministic và giữ secret scan theo push range cùng
+manual full-history scan; cả local TruffleHog range/full-history đều 0 finding.
+GitHub CI run `32237534237` xanh đủ 6/6 job. T14B vẫn chờ identity/dispatch/SLA,
+realtime cadence và operator UAT được phê duyệt.
 
 Từ repository root:
 
