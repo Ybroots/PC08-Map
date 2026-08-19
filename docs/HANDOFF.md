@@ -334,7 +334,8 @@ template registry/audit outage. Full frozen-install, format/lint/typecheck, unit
 coverage, contract/e2e/build và integration pass; integration giữ API 70/70,
 worker 9/9. Clean Linux Node 20/2 CPU coverage pass 19/19 workspace tasks. T15B
 vẫn blocked bởi D-02/D-04/D-08/D-09, provider security review, persistence,
-contact/deep-link và UAT. Implementation commit/CI sẽ được ghi sau publish.
+contact/deep-link và UAT. Implementation ở commit `e0ee0c0`; GitHub CI run
+`32239395995` xanh đủ 6/6 job.
 
 Từ repository root:
 

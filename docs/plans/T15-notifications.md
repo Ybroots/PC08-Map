@@ -82,12 +82,13 @@ noi day du.
 - [x] Versioned template/audience/preference policy is executable.
 - [x] Idempotent dispatcher ports classify duplicate/retry/permanent outcomes.
 - [x] Audit payload excludes recipient reference and rendered/template data.
-- [ ] Full local gates and GitHub CI pass; T15B blockers stay explicit.
+- [x] Full local gates and GitHub CI pass; T15B blockers stay explicit.
 
 ## Progress log
 
 - [x] 2026-08-19: source, ADR, current state and T15A boundary reviewed.
 - [x] T15A implementation and local/Linux verification.
+- [x] Implementation `e0ee0c0`; GitHub CI `32239395995` passed all six jobs.
 
 ## Handoff
 
@@ -95,7 +96,7 @@ noi day du.
   deterministic tests and project/handoff docs.
 - Tests run/results: contract 30/30; focused notification 9/9; full unit/coverage,
   contract/e2e/build, API integration 70/70, worker integration 9/9; clean Linux
-  coverage 19/19 workspace tasks. GitHub CI pending.
+  coverage 19/19 workspace tasks. GitHub CI `32239395995` passed 6/6 jobs.
 - Remaining risks: D-02/D-04/D-08/D-09, provider security review, persistence,
   contact directory/deep links and operator/citizen UAT.
 - Rollback: no runtime change; revert T15A foundation files.
