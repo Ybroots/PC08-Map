@@ -85,7 +85,7 @@ search/export, leader/auditor UI, completeness report va UAT duoc phe duyet/noi 
 - [x] 2026-08-19: source/current-state/decision review and T16A boundary complete.
 - [x] 2026-08-19: T16A implementation and full local verification complete.
 - [x] 2026-08-19: implementation `cd4c61b` published; CI run `32241122195`
-  green 6/6.
+      green 6/6.
 
 ## Handoff
 
