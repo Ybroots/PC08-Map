@@ -18,7 +18,7 @@
 | T08  | BLOCKED               | Chờ D-04 SLA/escalation và D-05 unit/service-area              |
 | T09  | ANDROID EMULATOR PASS | UAT-01..04 xong; physical/iOS và production config còn pending |
 | T10  | T10B3 VIEWER PASS     | Local controlled viewer xong; production/UAT còn bị khóa       |
-| T11  | T11B2A OPERATOR PASS  | Scoped manual verification + duplicate override; abuse TODO    |
+| T11  | T11B2B1 LOCAL PASS    | Exact-hash screening worker; abuse/heuristics vẫn bị khóa      |
 | T12+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
@@ -102,6 +102,13 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   `report.duplicate_false_positive.v1` outbox commit atomically. Event không mang
   public code, tọa độ, mô tả, plate, reason hay principal. Hai event lifecycle có
   durable queue + DLQ riêng, không trộn vào consumer screening.
+- T11B2B1 thêm consumer idempotent cho `report.received.v1` và
+  `report.evidence_linked.v1`. Worker chỉ chuyển RECEIVED -> SCREENING ->
+  PENDING_VERIFICATION, rồi tạo suggestion PENDING khi evidence READY có SHA-256
+  khớp chính xác với report cũ cùng area. Inbox, history, audit, candidate và
+  outbox commit atomically; overflow hoặc persisted-event mismatch rollback toàn
+  bộ. Không dùng time/space/plate, không ghi risk score và không tự kết luận
+  DUPLICATE/VERIFIED/REJECTED.
 
 ## Hard stops còn mở
 
@@ -118,7 +125,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: T11B2B screening/abuse ports
+## Bước tiếp theo đề xuất: T11B2B2 abuse/heuristic ports
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -138,13 +145,14 @@ profile, malware alert workflow và end-user UAT-11..14. Khi chưa có các quy�
 này, giữ `EVIDENCE_PIPELINE_ENABLED=false`; không dựng fake production, không đánh
 dấu pilot UAT pass và không thêm retention delete khi D-06 còn pending.
 
-T11B2A local/test đã hoàn tất nền operator: scoped queue, manual decision và
-confirm/false-positive override. Lát cắt tiếp theo là T11B2B: consumer chuyển
-RECEIVED -> SCREENING -> PENDING_VERIFICATION, cùng risk/rate-limit/captcha ports
-và producer candidate theo time/space/hash/plate. Phần này vẫn bị khóa bởi D-09:
-không tự điền threshold, rate, window hay score. Heuristic chỉ được tạo suggestion,
-không tự đổi report thành DUPLICATE/VERIFIED và không tạo enforcement decision.
-Production vẫn fail-closed cho đến khi T09/T10 provider/UAT/D-09 gates được duyệt.
+T11B2B1 local/test đã hoàn tất consumer chuyển RECEIVED -> SCREENING ->
+PENDING_VERIFICATION và exact-hash suggestion. `REPORT_SCREENING_WORKER_ENABLED`
+mặc định false, bị reject ở staging/production và khi bật phải truyền rõ poll,
+batch, max-candidate technical bounds. Lát cắt tiếp theo là T11B2B2 risk/rate-
+limit/captcha ports và producer time/space/plate. Phần này vẫn bị khóa bởi D-09:
+không tự điền threshold, rate, window hay score. Mọi heuristic chỉ được tạo
+suggestion; operator vẫn là nơi duy nhất kết luận. Production tiếp tục fail-closed
+cho đến khi T09/T10 provider/UAT/D-09 gates được duyệt.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -241,6 +249,19 @@ audit/outbox atomic không lộ dữ liệu nhạy cảm. Full frozen-install, f
 typecheck/unit/coverage/contract/e2e/build đều pass. Automatic screening/candidate
 generation và abuse controls vẫn blocked bởi D-09; production vẫn fail-closed.
 Implementation ở commit `4fedd92`; GitHub CI run `32228563065` xanh đủ 6/6 job.
+
+T11B2B1 local verification (2026-08-19) có strict received/evidence-linked input
+events và privacy-safe screening-completed/exact-hash-candidate output events,
+20 config tests, 27 contract tests và 16 worker unit tests. Cold-start đã xóa đúng
+6 volume synthetic `atgt-*`, chạy migration 13 trước seed 14, dựng 8 service,
+3 MinIO bucket private/original versioned và exact-hash index + hai lifecycle
+Rabbit bindings. Non-cached integration pass API 66/66 + worker 9/9. Integration
+xác nhận idempotent RECEIVED -> SCREENING -> PENDING_VERIFICATION, exact READY-
+evidence SHA suggestion không lộ checksum, persisted-event mismatch và candidate
+overflow rollback toàn transaction. Full frozen-install, format/lint/typecheck,
+unit/coverage/contract/e2e/build đều pass. Worker vẫn disabled mặc định và bị
+reject ở staging/production; risk/rate/captcha/time/space/plate vẫn blocked bởi
+D-09. Chưa ghi commit/GitHub CI tại thời điểm chốt bằng chứng local này.
 
 Từ repository root:
 

@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { IdempotencyKeySchema } from "../common/idempotency";
+import {
+  EVENT_ROUTING_KEYS,
+  eventEnvelopeSchema,
+} from "../events/event-envelope";
 
 export const ReportStateSchema = z.enum([
   "RECEIVED",
@@ -116,6 +120,19 @@ export const ReportEvidenceLinkedEventDataSchema = z
   .strict();
 export type ReportEvidenceLinkedEventData = z.infer<
   typeof ReportEvidenceLinkedEventDataSchema
+>;
+
+export const ReportReceivedEventSchema = eventEnvelopeSchema(
+  ReportReceivedEventDataSchema,
+).extend({ type: z.literal(EVENT_ROUTING_KEYS.REPORT_RECEIVED) });
+
+export const ReportEvidenceLinkedEventSchema = eventEnvelopeSchema(
+  ReportEvidenceLinkedEventDataSchema,
+).extend({ type: z.literal(EVENT_ROUTING_KEYS.REPORT_EVIDENCE_LINKED) });
+
+export type ReportReceivedEvent = z.infer<typeof ReportReceivedEventSchema>;
+export type ReportEvidenceLinkedEvent = z.infer<
+  typeof ReportEvidenceLinkedEventSchema
 >;
 
 export const DuplicateSignalSchema = z.enum(["TIME", "SPACE", "HASH", "PLATE"]);
@@ -263,4 +280,41 @@ export const ReportDuplicateFalsePositiveEventDataSchema = z
   .strict();
 export type ReportDuplicateFalsePositiveEventData = z.infer<
   typeof ReportDuplicateFalsePositiveEventDataSchema
+>;
+
+export const ReportScreeningCompletedEventDataSchema = z
+  .object({
+    report_id: z.string().uuid(),
+    area_id: z.string().min(1).max(100),
+    state: z.literal("PENDING_VERIFICATION"),
+    version: z.number().int().positive(),
+    mode: z.literal("MANUAL_REVIEW_ONLY"),
+  })
+  .strict();
+
+export const ReportDuplicateCandidateCreatedEventDataSchema = z
+  .object({
+    report_id: z.string().uuid(),
+    candidate_id: z.string().uuid(),
+    candidate_report_id: z.string().uuid(),
+    area_id: z.string().min(1).max(100),
+    signals: z.tuple([z.literal("HASH")]),
+  })
+  .strict();
+
+export const ReportScreeningCompletedEventSchema = eventEnvelopeSchema(
+  ReportScreeningCompletedEventDataSchema,
+).extend({ type: z.literal(EVENT_ROUTING_KEYS.REPORT_SCREENING_COMPLETED) });
+
+export const ReportDuplicateCandidateCreatedEventSchema = eventEnvelopeSchema(
+  ReportDuplicateCandidateCreatedEventDataSchema,
+).extend({
+  type: z.literal(EVENT_ROUTING_KEYS.REPORT_DUPLICATE_CANDIDATE_CREATED),
+});
+
+export type ReportScreeningCompletedEventData = z.infer<
+  typeof ReportScreeningCompletedEventDataSchema
+>;
+export type ReportDuplicateCandidateCreatedEventData = z.infer<
+  typeof ReportDuplicateCandidateCreatedEventDataSchema
 >;

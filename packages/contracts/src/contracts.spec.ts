@@ -35,6 +35,10 @@ import {
   ReportEvidenceLinkedEventDataSchema,
   ReportVerificationDecidedEventDataSchema,
   ReportDuplicateFalsePositiveEventDataSchema,
+  ReportReceivedEventSchema,
+  ReportEvidenceLinkedEventSchema,
+  ReportScreeningCompletedEventDataSchema,
+  ReportDuplicateCandidateCreatedEventDataSchema,
 } from "./index";
 
 const traceId = "0123456789abcdef0123456789abcdef";
@@ -87,6 +91,55 @@ describe("executable contracts", () => {
         area_id: "area-dalat",
         candidate_version: 2,
         reason: "must not leave the transaction boundary",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("keeps local screening events executable and exact-hash-only", () => {
+    const received = ReportReceivedEventSchema.parse({
+      event_id: uuid,
+      type: EVENT_ROUTING_KEYS.REPORT_RECEIVED,
+      version: 1,
+      occurred_at: "2026-08-19T00:00:00.000Z",
+      trace_id: traceId,
+      aggregate_id: uuid,
+      aggregate_type: "report",
+      data: {
+        report_id: uuid,
+        category_code: "ROAD_HAZARD",
+        area_id: "area-dalat",
+        state: "RECEIVED",
+      },
+    });
+    expect(received.data.state).toBe("RECEIVED");
+    expect(
+      ReportEvidenceLinkedEventSchema.safeParse({
+        ...received,
+        type: EVENT_ROUTING_KEYS.REPORT_EVIDENCE_LINKED,
+        data: {
+          report_id: uuid,
+          evidence_id: "75f84ae8-bf67-41d6-a25e-e5b601b3ba71",
+          area_id: "area-dalat",
+          sha256: "must-not-cross-the-event-boundary",
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      ReportScreeningCompletedEventDataSchema.parse({
+        report_id: uuid,
+        area_id: "area-dalat",
+        state: "PENDING_VERIFICATION",
+        version: 3,
+        mode: "MANUAL_REVIEW_ONLY",
+      }).mode,
+    ).toBe("MANUAL_REVIEW_ONLY");
+    expect(
+      ReportDuplicateCandidateCreatedEventDataSchema.safeParse({
+        report_id: uuid,
+        candidate_id: "75f84ae8-bf67-41d6-a25e-e5b601b3ba71",
+        candidate_report_id: "a6106443-b5cc-4f96-b163-df79664a1b45",
+        area_id: "area-dalat",
+        signals: ["HASH", "SPACE"],
       }).success,
     ).toBe(false);
   });

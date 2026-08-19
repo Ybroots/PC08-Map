@@ -70,9 +70,12 @@ may set an unowned `evidence.objects` owner to this report only after the object
 is READY and both HMAC capabilities plus a live citizen session are valid. The
 ownership cannot be reassigned. Raw report capability material is not stored in
 the business table or idempotency response. T11B2A duplicate candidates store only
-signal kinds (`TIME/SPACE/HASH/PLATE`) and never thresholds. Only a scoped
+signal kinds (`TIME/SPACE/HASH/PLATE`) and never thresholds. T11B2B1 generates
+only `HASH`, by exact equality against READY report evidence in the same area;
+migration 13 adds the supporting partial SHA-256/owner index. The worker does not
+write risk score and never concludes a report. Only a scoped
 dispatcher may resolve PENDING to CONFIRMED/FALSE_POSITIVE through an optimistic
-transaction; automatic candidate generation and risk scoring remain blocked.
+transaction; fuzzy candidate generation and risk scoring remain blocked.
 
 ### evidence schema
 

@@ -64,7 +64,8 @@ services:
       - ./postgres/10-citizen-report-intake.sql:/docker-entrypoint-initdb.d/10-citizen-report-intake.sql:ro
       - ./postgres/11-report-evidence-linking.sql:/docker-entrypoint-initdb.d/11-report-evidence-linking.sql:ro
       - ./postgres/12-report-operator-verification.sql:/docker-entrypoint-initdb.d/12-report-operator-verification.sql:ro
-      - ./seed/01-dev-seed.sql:/docker-entrypoint-initdb.d/13-dev-seed.sql:ro
+      - ./postgres/13-report-screening-worker.sql:/docker-entrypoint-initdb.d/13-report-screening-worker.sql:ro
+      - ./seed/01-dev-seed.sql:/docker-entrypoint-initdb.d/14-dev-seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d atgt_dev"]
       interval: 5s

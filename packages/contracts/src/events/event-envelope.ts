@@ -7,6 +7,8 @@ export const EVENT_ROUTING_KEYS = {
   REPORT_EVIDENCE_LINKED: "report.evidence_linked.v1",
   REPORT_VERIFICATION_DECIDED: "report.verification_decided.v1",
   REPORT_DUPLICATE_FALSE_POSITIVE: "report.duplicate_false_positive.v1",
+  REPORT_SCREENING_COMPLETED: "report.screening_completed.v1",
+  REPORT_DUPLICATE_CANDIDATE_CREATED: "report.duplicate_candidate_created.v1",
   ASSIGNMENT_CREATED: "assignment.created.v1",
   ASSIGNMENT_ACK_TIMED_OUT: "assignment.ack_timed_out.v1",
   EVIDENCE_SCAN_REQUESTED: "evidence.scan_requested.v1",

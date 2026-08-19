@@ -143,6 +143,22 @@ describe("T01: Local dev infrastructure smoke tests", () => {
       expect(result.rows[0]?.function_count).toBe(1);
     });
 
+    it("loads T11B2 operator candidates and exact-hash screening index", async () => {
+      if (SKIP) return;
+      const result = await client.query<{
+        candidate_table: string | null;
+        screening_index: string | null;
+      }>(`
+        SELECT
+          to_regclass('report.duplicate_candidates')::text candidate_table,
+          to_regclass('evidence.evidence_report_sha256_owner_idx')::text screening_index
+      `);
+      expect(result.rows[0]).toEqual({
+        candidate_table: "report.duplicate_candidates",
+        screening_index: "evidence.evidence_report_sha256_owner_idx",
+      });
+    });
+
     it("audit.audit_events table exists", async () => {
       if (SKIP) return;
       const result = await client.query(`
@@ -235,6 +251,8 @@ describe("T01: Local dev infrastructure smoke tests", () => {
         expect.arrayContaining([
           "report.verification_decided.v1",
           "report.duplicate_false_positive.v1",
+          "report.screening_completed.v1",
+          "report.duplicate_candidate_created.v1",
         ]),
       );
     });

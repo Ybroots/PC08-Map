@@ -993,6 +993,8 @@
               "report.evidence_linked.v1",
               "report.verification_decided.v1",
               "report.duplicate_false_positive.v1",
+              "report.screening_completed.v1",
+              "report.duplicate_candidate_created.v1",
               "assignment.created.v1",
               "assignment.ack_timed_out.v1",
               "evidence.scan_requested.v1",

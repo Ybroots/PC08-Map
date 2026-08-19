@@ -12,6 +12,9 @@ import { SharpEvidenceDerivativeAdapter } from "./evidence/sharp-evidence-deriva
 import { MapLifecycleJob } from "./map-lifecycle.job";
 import { OutboxRelayJob } from "./outbox-relay.job";
 import { RabbitMqEventPublisher } from "./rabbitmq-event.publisher";
+import { PostgresReportScreeningCoordinator } from "./reports/postgres-report-screening-coordinator";
+import { RabbitMqReportScreeningQueueAdapter } from "./reports/rabbitmq-report-screening-queue.adapter";
+import { ReportScreeningJob } from "./reports/report-screening.job";
 
 function schedule(
   name: string,
@@ -46,7 +49,17 @@ async function main() {
     runtime.storage.region !== undefined &&
     runtime.storage.accessKey !== undefined &&
     runtime.storage.secretKey !== undefined;
-  if (!mapEnabled && !relayEnabled && !evidenceEnabled) {
+  const reportScreeningEnabled =
+    runtime.reportScreening.enabled &&
+    runtime.reportScreening.pollMs !== undefined &&
+    runtime.reportScreening.batchSize !== undefined &&
+    runtime.reportScreening.maxCandidatesPerReport !== undefined;
+  if (
+    !mapEnabled &&
+    !relayEnabled &&
+    !evidenceEnabled &&
+    !reportScreeningEnabled
+  ) {
     console.log("ATGT Worker started; all schedulers are disabled");
     await new Promise(() => undefined);
     return;
@@ -103,8 +116,22 @@ async function main() {
       job.runOnce(),
     );
   }
+  if (reportScreeningEnabled) {
+    const job = new ReportScreeningJob(
+      new RabbitMqReportScreeningQueueAdapter(
+        runtime.queue.endpoints,
+        runtime.queue.vhost,
+      ),
+      new PostgresReportScreeningCoordinator(pool),
+      runtime.reportScreening.batchSize!,
+      runtime.reportScreening.maxCandidatesPerReport!,
+    );
+    schedule("Report screening", runtime.reportScreening.pollMs!, () =>
+      job.runOnce(),
+    );
+  }
   console.log(
-    `ATGT Worker started; map=${String(mapEnabled)} relay=${String(relayEnabled)} evidence=${String(evidenceEnabled)}`,
+    `ATGT Worker started; map=${String(mapEnabled)} relay=${String(relayEnabled)} evidence=${String(evidenceEnabled)} reportScreening=${String(reportScreeningEnabled)}`,
   );
 }
 

@@ -73,6 +73,12 @@ export interface AppConfig {
     evidenceLinkingEnabled: boolean;
     capabilitySecret?: string;
   };
+  reportScreening: {
+    enabled: boolean;
+    pollMs?: number;
+    batchSize?: number;
+    maxCandidatesPerReport?: number;
+  };
   outboxRelay: { enabled: boolean; pollMs?: number; batchSize?: number };
   evidence: {
     enabled: boolean;
@@ -305,6 +311,32 @@ export function loadAndValidateConfig(
   ) {
     throw new Error("REPORT_CAPABILITY_SECRET must be at least 32 characters");
   }
+  const reportScreeningEnabled = boolean(
+    source,
+    "REPORT_SCREENING_WORKER_ENABLED",
+    false,
+  );
+  if (reportScreeningEnabled && (env === "staging" || env === "production")) {
+    throw new Error(
+      "REPORT_SCREENING_WORKER_ENABLED is local/test only until D-09 screening policy approval",
+    );
+  }
+  if (reportScreeningEnabled) {
+    required(source, "REPORT_SCREENING_POLL_MS");
+    required(source, "REPORT_SCREENING_BATCH_SIZE");
+    required(source, "REPORT_SCREENING_MAX_CANDIDATES_PER_REPORT");
+  }
+  const reportScreeningPollMs = source["REPORT_SCREENING_POLL_MS"]?.trim()
+    ? integer(source, "REPORT_SCREENING_POLL_MS", 0, 100, 3_600_000)
+    : undefined;
+  const reportScreeningBatchSize = source["REPORT_SCREENING_BATCH_SIZE"]?.trim()
+    ? integer(source, "REPORT_SCREENING_BATCH_SIZE", 0, 1, 1000)
+    : undefined;
+  const reportScreeningMaxCandidates = source[
+    "REPORT_SCREENING_MAX_CANDIDATES_PER_REPORT"
+  ]?.trim()
+    ? integer(source, "REPORT_SCREENING_MAX_CANDIDATES_PER_REPORT", 0, 1, 1000)
+    : undefined;
   const outboxRelayEnabled = boolean(source, "OUTBOX_RELAY_ENABLED", false);
   if (outboxRelayEnabled) {
     required(source, "OUTBOX_RELAY_POLL_MS");
@@ -587,6 +619,12 @@ export function loadAndValidateConfig(
       idempotencyTtlMinutes: reportIdempotencyTtlMinutes,
       evidenceLinkingEnabled: reportEvidenceLinkingEnabled,
       capabilitySecret: reportCapabilitySecret,
+    },
+    reportScreening: {
+      enabled: reportScreeningEnabled,
+      pollMs: reportScreeningPollMs,
+      batchSize: reportScreeningBatchSize,
+      maxCandidatesPerReport: reportScreeningMaxCandidates,
     },
     outboxRelay: {
       enabled: outboxRelayEnabled,

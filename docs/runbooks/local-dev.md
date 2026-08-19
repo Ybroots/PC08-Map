@@ -320,6 +320,25 @@ live `X-Citizen-Session`, returned `X-Report-Capability` and original
 and returns a uniform 404 for invalid capability/non-READY/owner conflict. Never
 log either capability or reuse the evidence secret as the report secret.
 
+T11B2B1 report screening is also disabled by default. Enable it only in a
+deliberate local/test worker process and provide every scheduler safety bound:
+
+```dotenv
+REPORT_SCREENING_WORKER_ENABLED=true
+REPORT_SCREENING_POLL_MS=<explicit-positive-integer>
+REPORT_SCREENING_BATCH_SIZE=<explicit-positive-integer>
+REPORT_SCREENING_MAX_CANDIDATES_PER_REPORT=<explicit-positive-integer>
+```
+
+The worker consumes only `report.received.v1` and `report.evidence_linked.v1`,
+advances reports to the manual verification queue, and may create a PENDING
+candidate only for an exact READY-evidence SHA-256 match in the same area. The
+values above are required technical bounds, not approved rate/load/duplicate
+policy. A candidate-limit overflow or persisted-event mismatch rolls back the
+transaction and routes the message to the DLQ. Never bypass it by editing state,
+history, inbox or candidate rows. Staging and production configuration rejects
+this worker while D-09 remains pending.
+
 There is no retention cleanup path. Do not manually delete quarantine/original
 objects or evidence rows to “unstick” a test; inspect append-only history and keep
 the feature disabled. Integration verification:
@@ -329,6 +348,7 @@ pnpm --filter @atgt/api exec jest --config jest.integration.config.js --runInBan
 pnpm --filter @atgt/api exec jest --config jest.integration.config.js --runInBand evidence-runtime.integration.ts
 pnpm --filter @atgt/api exec jest --config jest.integration.config.js --runInBand evidence-access.integration.ts
 pnpm --filter @atgt/worker exec jest --config jest.integration.config.js --runInBand evidence-media.integration.ts
+pnpm --filter @atgt/worker exec jest --config jest.integration.config.js --runInBand report-screening.integration.ts
 ```
 
 ### Port conflict

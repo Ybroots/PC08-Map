@@ -62,6 +62,14 @@ audit or outbox rows. Invalid capability, non-READY media and owner conflict are
 intentionally indistinguishable. Production remains fail-closed pending the
 T10/D-09 gates.
 
+T11B2B1 narrows T13 locally: the idempotent screening consumer can only create a
+PENDING suggestion for exact READY-evidence SHA-256 equality in the same area.
+It never publishes checksums, writes risk score, or changes a report to a terminal
+state. Candidate overflow and persisted-event mismatch roll back inbox, history,
+candidate, audit and outbox together. Exact equality can still be a false positive,
+so operator confirmation remains mandatory. Time/space/plate/risk/rate/captcha
+controls and production enable remain blocked by D-09.
+
 ## Pentest scope (T18)
 
 - OWASP API Security Top 10

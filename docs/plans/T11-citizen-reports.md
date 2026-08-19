@@ -12,7 +12,9 @@ chia nho de khong vuot cac cong production dang mo:
   rieng biet; local/test only, production fail-closed.
 - T11B2A: area-scoped operator verification queue, optimistic manual decision,
   duplicate confirm va false-positive override; khong can tu dat D-09 threshold.
-- T11B2B: risk/rate-limit/captcha ports va automatic duplicate candidate producer
+- T11B2B1: local/test screening worker va exact-SHA suggestion, khong co fuzzy
+  threshold va khong auto-conclude.
+- T11B2B2: risk/rate-limit/captcha ports va time/space/plate candidate producer
   sau khi cac gate T09/T10/D-09 lien quan duoc phe duyet.
 
 ## Source requirements
@@ -34,7 +36,9 @@ chia nho de khong vuot cac cong production dang mo:
   vao report atomically, nhung production/UAT con bi khoa boi provider/secret
   resolver/D-09.
 - Domain da co lifecycle rules; T11B2A da noi manual dispatcher decision.
-- Intake/tracking/evidence-link/operator contracts, runtime va tests da co.
+- T11B2B1 da noi idempotent screening consumer va exact READY-evidence SHA
+  suggestion; worker mac dinh tat va chi duoc bat local/test.
+- Intake/tracking/evidence-link/operator/screening contracts, runtime va tests da co.
 
 ## Decisions and blockers
 
@@ -42,8 +46,9 @@ chia nho de khong vuot cac cong production dang mo:
 - D-06: khong auto-delete/retention job; history va report duoc giu dormant khi
   rollback.
 - D-07: khong thu identity, khong unmask, khong co default join privacy vault.
-- D-09: khong tu dat media/load/rate/duplicate thresholds. T11B bi khoa den khi
-  co tham so test/phe duyet.
+- D-09: khong tu dat media/load/rate/duplicate thresholds. Exact SHA equality
+  khong dung threshold va chi tao suggestion; cac heuristic/rate/risk con lai bi
+  khoa den khi co tham so test/phe duyet.
 - `REPORT_INTAKE_ENABLED=false` mac dinh; neu bat phai co area + idempotency TTL.
   Staging/production bi chan den khi T11B production gates hoan tat.
 
@@ -53,8 +58,8 @@ chia nho de khong vuot cac cong production dang mo:
 | ---------- | ----------------------------------------- | ----------------------------------------------------- | ---------------------------- |
 | Contract   | `packages/contracts/src/reports`, OpenAPI | Strict submit/accepted/tracking/event schemas         | Public data leak             |
 | Domain     | `packages/domain/src/reports`             | State machine + general status projection             | Invalid automatic conclusion |
-| Database   | migration 10 + synthetic seed             | PII-free report, catalog, append-only history         | Identity/retention leak      |
-| Config/API | config + `apps/api/src/modules/reports`   | Fail-closed intake, session guard, idempotency/outbox | Replay/auth bypass           |
+| Database   | migrations 10-13 + synthetic seed         | PII-free report, history, candidate, exact-hash index | Identity/retention leak      |
+| Runtime    | config + API + worker report modules      | Fail-closed intake/screening, inbox/outbox atomicity  | Replay/auth/auto-conclusion  |
 | Tests/docs | unit/contract/integration/HANDOFF         | Verify atomicity, privacy, tracking                   | False confidence             |
 
 ## Implementation sequence
@@ -67,8 +72,9 @@ chia nho de khong vuot cac cong production dang mo:
 4. T11A test gates, cold start, docs and disabled-by-default rollout.
 5. T11B1 READY evidence ownership/linking local/test, capability protected.
 6. T11B2A operator queue/manual decision/duplicate override, khong sinh heuristic.
-7. T11B2B only after explicit values/gates: abuse ports va duplicate candidate
-   producer. No heuristic may auto-conclude a violation.
+7. T11B2B1 local/test idempotent screening + exact READY-evidence SHA suggestion.
+8. T11B2B2 only after explicit values/gates: abuse ports va time/space/plate
+   candidate producer. No heuristic may auto-conclude a violation.
 
 ## Test plan
 
@@ -88,10 +94,11 @@ chia nho de khong vuot cac cong production dang mo:
 
 - Feature flag: `REPORT_INTAKE_ENABLED=false`; staging/production enable is
   rejected until T11B production gates are explicitly completed.
-- Migration compatibility: migrations 10-12 are expand-only; migration 11 adds
+- Migration compatibility: migrations 10-13 are expand-only; migration 11 adds
   a narrow attachment function and does not rewrite existing rows/events.
-  Migration 12 adds suggestion-only candidates and queue cursor assigned on entry.
-- Deploy order: migration -> API -> clients. Rollback API/config first and keep
+  Migration 12 adds suggestion-only candidates and queue cursor assigned on entry;
+  migration 13 adds an exact SHA/owner lookup index without rewriting evidence.
+- Deploy order: migration -> API/worker -> clients. Rollback worker/config first and keep
   report/history/outbox data dormant; do not drop or delete acknowledged data.
 
 ## Definition of done
@@ -115,21 +122,23 @@ chia nho de khong vuot cac cong production dang mo:
 - [x] T11B1 GitHub CI run `32223513120` green 6/6.
 - [x] T11B2A operator queue/manual verification/duplicate override local + cold start.
 - [x] T11B2A GitHub CI run `32228563065` green 6/6.
-- [ ] T11B2B automatic screening/abuse/candidate producer (blocked by D-09).
+- [x] T11B2B1 local exact-hash screening/candidate producer + cold start; API
+      integration 66/66, worker integration 9/9.
+- [ ] T11B2B2 risk/rate-limit/captcha/time-space-plate heuristics (blocked by D-09).
 
 ## Handoff
 
-- Changed files: executable report ops contracts/OpenAPI/events, dispatcher policy,
-  migration 12, report ops repository/controller, lifecycle Rabbit queue, tests
-  and handoff/security/data docs.
-- Tests run/results: T11B2A cold-start/final non-cached integration passes API
-  65/65 and worker 5/5. Queue/decision/override integration covers scope denial,
-  cursor entry timing, optimistic versions, atomic audit/outbox and privacy-safe
-  events. Full local gates are recorded in HANDOFF.
-- Remaining risks: no captcha/rate/risk port or automatic candidate producer.
-  Production enable remains rejected. Candidate signals in local tests are
-  fixtures, not approved heuristic policy.
-- Rollback steps: set `REPORT_EVIDENCE_LINKING_ENABLED=false` and
+- Changed files: executable screening event contracts/OpenAPI, fail-closed worker
+  config, migration 13 exact-hash index, Rabbit bindings, coordinator/queue/job,
+  integration tests and handoff/security/data/runbook docs.
+- Tests run/results: focused screening integration proves idempotent state/history/
+  audit/outbox/inbox, privacy-safe exact-hash candidate, event mismatch rollback
+  and candidate-cap overflow rollback. Full local gates are recorded in HANDOFF.
+- Remaining risks: no captcha/rate/risk or time/space/plate producer. Exact hash is
+  suggestion-only and may still be a false positive. Production enable remains
+  rejected; technical scheduler bounds are explicit deployment input, not policy.
+- Rollback steps: set `REPORT_SCREENING_WORKER_ENABLED=false`,
+  `REPORT_EVIDENCE_LINKING_ENABLED=false` and
   `REPORT_INTAKE_ENABLED=false`, roll back API/client code and keep migrations
-  10-12/report/evidence ownership/candidate/audit/outbox/idempotency data dormant. Do not
+  10-13/report/evidence ownership/candidate/audit/outbox/inbox data dormant. Do not
   detach evidence or delete acknowledged records while D-06 is pending.

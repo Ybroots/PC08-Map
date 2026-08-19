@@ -294,6 +294,55 @@ describe("loadAndValidateConfig", () => {
     });
   });
 
+  it("keeps report screening local/test and requires every scheduler bound", () => {
+    expect(loadAndValidateConfig(validEnvironment()).reportScreening).toEqual({
+      enabled: false,
+      pollMs: undefined,
+      batchSize: undefined,
+      maxCandidatesPerReport: undefined,
+    });
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        REPORT_SCREENING_WORKER_ENABLED: "true",
+      }),
+    ).toThrow("REPORT_SCREENING_POLL_MS is required");
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        REPORT_SCREENING_WORKER_ENABLED: "true",
+        REPORT_SCREENING_POLL_MS: "1000",
+        REPORT_SCREENING_BATCH_SIZE: "10",
+      }),
+    ).toThrow("REPORT_SCREENING_MAX_CANDIDATES_PER_REPORT is required");
+    expect(
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        REPORT_SCREENING_WORKER_ENABLED: "true",
+        REPORT_SCREENING_POLL_MS: "1000",
+        REPORT_SCREENING_BATCH_SIZE: "10",
+        REPORT_SCREENING_MAX_CANDIDATES_PER_REPORT: "5",
+      }).reportScreening,
+    ).toEqual({
+      enabled: true,
+      pollMs: 1000,
+      batchSize: 10,
+      maxCandidatesPerReport: 5,
+    });
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        APP_ENV: "production",
+        LOG_LEVEL: "info",
+        OIDC_ISSUER: "https://identity.example.test/realms/atgt",
+        OIDC_JWKS_URI: "https://identity.example.test/realms/atgt/certs",
+        REPORT_SCREENING_WORKER_ENABLED: "true",
+      }),
+    ).toThrow(
+      "REPORT_SCREENING_WORKER_ENABLED is local/test only until D-09 screening policy approval",
+    );
+  });
+
   it("keeps the evidence pipeline disabled without implicit media policy", () => {
     expect(loadAndValidateConfig(validEnvironment()).evidence).toEqual({
       enabled: false,
