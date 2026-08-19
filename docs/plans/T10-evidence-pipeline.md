@@ -146,6 +146,8 @@ production provider gate và UAT-11..14 hoàn tất.
 - Tests run/results: focused access integration and clock-skew regression pass.
   Full frozen install, format/lint/typecheck, unit/coverage, contract, e2e/build
   pass; cold-start API integration is 47/47 and worker integration is 5/5.
+  Implementation commit `1544b1a` passes GitHub CI run `32219225891` with all
+  six jobs green.
 - Remaining risks: production provider/secret resolution, media limits, real AV/CDR,
-  malware alert workflow and end-user/physical UAT. Record commit/CI after push.
+  malware alert workflow and end-user/physical UAT.
 - Rollback: keep all evidence rows/objects; disable feature and worker.

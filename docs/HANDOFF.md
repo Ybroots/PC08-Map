@@ -175,7 +175,9 @@ deny và audit không chứa URL/key/hash. Cold-start đã xóa đúng các volu
 47/47 và worker integration 5/5 pass. Full frozen-install, format/lint/typecheck,
 unit/coverage/contract/e2e/build pass. Full integration còn phát hiện host clock
 chậm hơn PostgreSQL; finalize timestamp giờ được clamp theo persisted `created_at`
-và có regression fixture -1 giây. Commit/CI sẽ được ghi sau khi push.
+và có regression fixture -1 giây. Implementation ở commit `1544b1a`; GitHub CI
+run `32219225891` xanh đủ 6/6 job, gồm secret scan, static gates, contract drift,
+coverage, cold-start integration và build.
 
 Từ repository root:
 
