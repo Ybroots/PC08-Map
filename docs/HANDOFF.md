@@ -288,7 +288,8 @@ pass API 70/70 + worker 9/9. Full frozen-install, format/lint/typecheck/unit/cov
 contract/e2e/build đều pass. Cold-run còn bắt được microsecond clock skew ở T11B2A;
 report decision giờ clamp bằng PostgreSQL `GREATEST` và regression `new Date(0)`
 pass. T13B route/direction/cooldown và production enable vẫn blocked D-03/D-09.
-Implementation commit/CI: pending push.
+Clock invariant fix ở commit `cd4c67e`; T13A implementation ở `34cf2e4`;
+GitHub CI run `32232926639` xanh đủ 6/6 job.
 
 Từ repository root:
 
