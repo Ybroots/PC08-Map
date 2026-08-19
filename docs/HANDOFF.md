@@ -240,6 +240,7 @@ không kết luận report, confirm DUPLICATE kiểm tra cả report/candidate v
 audit/outbox atomic không lộ dữ liệu nhạy cảm. Full frozen-install, format/lint/
 typecheck/unit/coverage/contract/e2e/build đều pass. Automatic screening/candidate
 generation và abuse controls vẫn blocked bởi D-09; production vẫn fail-closed.
+Implementation ở commit `4fedd92`; GitHub CI run `32228563065` xanh đủ 6/6 job.
 
 Từ repository root:
 

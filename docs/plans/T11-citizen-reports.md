@@ -114,7 +114,7 @@ chia nho de khong vuot cac cong production dang mo:
 - [x] T11B1 READY evidence ownership/linking local implementation + cold start.
 - [x] T11B1 GitHub CI run `32223513120` green 6/6.
 - [x] T11B2A operator queue/manual verification/duplicate override local + cold start.
-- [ ] T11B2A GitHub CI green 6/6 (pending push).
+- [x] T11B2A GitHub CI run `32228563065` green 6/6.
 - [ ] T11B2B automatic screening/abuse/candidate producer (blocked by D-09).
 
 ## Handoff
