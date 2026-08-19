@@ -21,5 +21,8 @@ export * from "./map/map-data.dto";
 // Public traffic-alert projection
 export * from "./alerts/traffic-alert.dto";
 
+// Internal-only notification request boundary
+export * from "./notifications/notification.dto";
+
 // Events
 export * from "./events/event-envelope";

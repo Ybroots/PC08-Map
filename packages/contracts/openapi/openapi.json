@@ -1034,6 +1034,148 @@
         ],
         "additionalProperties": false
       },
+      "NotificationRequestedEvent": {
+        "type": "object",
+        "properties": {
+          "event_id": { "type": "string", "format": "uuid" },
+          "type": { "type": "string", "enum": ["notification.requested.v1"] },
+          "version": { "type": "number", "enum": [1] },
+          "occurred_at": { "type": "string", "format": "date-time" },
+          "trace_id": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+          "aggregate_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "aggregate_type": { "type": "string", "enum": ["notification"] },
+          "data": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "notification_id": { "type": "string", "format": "uuid" },
+                  "dedupe_key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "recipient_ref": { "type": "string", "format": "uuid" },
+                  "channel": { "type": "string", "enum": ["INTERNAL"] },
+                  "template_key": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+                  },
+                  "template_version": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "delivery_class": {
+                    "type": "string",
+                    "enum": ["OPTIONAL", "MANDATORY"]
+                  },
+                  "audience": { "type": "string", "enum": ["CITIZEN"] },
+                  "template_data": {
+                    "type": "object",
+                    "properties": {
+                      "public_code": {
+                        "type": "string",
+                        "pattern": "^[0-9ABCDEFGHJKMNPQRSTVWXYZ]{12}$"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "RECEIVED",
+                          "IN_PROGRESS",
+                          "COMPLETED",
+                          "INSUFFICIENT_BASIS"
+                        ]
+                      },
+                      "observed_at": { "type": "string", "format": "date-time" }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "notification_id",
+                  "dedupe_key",
+                  "recipient_ref",
+                  "channel",
+                  "template_key",
+                  "template_version",
+                  "delivery_class",
+                  "audience",
+                  "template_data"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "notification_id": { "type": "string", "format": "uuid" },
+                  "dedupe_key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+                  },
+                  "recipient_ref": { "type": "string", "format": "uuid" },
+                  "channel": { "type": "string", "enum": ["INTERNAL"] },
+                  "template_key": {
+                    "type": "string",
+                    "pattern": "^[A-Z][A-Z0-9_]{2,63}$"
+                  },
+                  "template_version": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "delivery_class": {
+                    "type": "string",
+                    "enum": ["OPTIONAL", "MANDATORY"]
+                  },
+                  "audience": {
+                    "type": "string",
+                    "enum": ["INTERNAL_OPERATOR"]
+                  },
+                  "template_data": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "anyOf": [
+                        { "type": "string", "maxLength": 200 },
+                        { "type": "number" },
+                        { "type": "boolean" }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "notification_id",
+                  "dedupe_key",
+                  "recipient_ref",
+                  "channel",
+                  "template_key",
+                  "template_version",
+                  "delivery_class",
+                  "audience",
+                  "template_data"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "event_id",
+          "type",
+          "version",
+          "occurred_at",
+          "trace_id",
+          "aggregate_id",
+          "aggregate_type",
+          "data"
+        ],
+        "additionalProperties": false
+      },
       "ProviderQuality": {
         "type": "string",
         "enum": ["LIVE", "CACHED", "DEGRADED", "UNAVAILABLE"]

@@ -42,6 +42,7 @@ import {
   TrafficAlertCollectionSchema,
   TrafficAlertQuerySchema,
   TrafficAlertSourcePropertiesSchema,
+  NotificationRequestedEventSchema,
 } from "./index";
 
 const traceId = "0123456789abcdef0123456789abcdef";
@@ -528,6 +529,95 @@ describe("executable contracts", () => {
         vehicle_type: "CAR",
       }),
     ).toThrow();
+  });
+
+  it("keeps notification requests internal-only and recipient references opaque", () => {
+    const event = NotificationRequestedEventSchema.parse({
+      event_id: uuid,
+      type: EVENT_ROUTING_KEYS.NOTIFICATION_REQUESTED,
+      version: 1,
+      occurred_at: "2026-08-19T10:00:00.000Z",
+      trace_id: traceId,
+      aggregate_id: uuid,
+      aggregate_type: "notification",
+      data: {
+        notification_id: uuid,
+        dedupe_key: "notification.synthetic.v1",
+        recipient_ref: "650e8400-e29b-41d4-a716-446655440000",
+        audience: "CITIZEN",
+        channel: "INTERNAL",
+        template_key: "SYNTHETIC_STATUS",
+        template_version: 1,
+        delivery_class: "OPTIONAL",
+        template_data: {
+          public_code: "A3KX9M2P7Q4R",
+          status: "IN_PROGRESS",
+          observed_at: "2026-08-19T10:00:00.000Z",
+        },
+      },
+    });
+    expect(event.data.recipient_ref).toMatch(/^[0-9a-f-]{36}$/);
+    expect(JSON.stringify(event)).not.toMatch(/email|phone|push_token/);
+    expect(
+      NotificationRequestedEventSchema.safeParse({
+        ...event,
+        data: { ...event.data, channel: "SMS" },
+      }).success,
+    ).toBe(false);
+  });
+
+  it("blocks operational detail from citizen notification data", () => {
+    const base = {
+      event_id: uuid,
+      type: EVENT_ROUTING_KEYS.NOTIFICATION_REQUESTED,
+      version: 1,
+      occurred_at: "2026-08-19T10:00:00.000Z",
+      trace_id: traceId,
+      aggregate_id: uuid,
+      aggregate_type: "notification",
+      data: {
+        notification_id: uuid,
+        dedupe_key: "notification.synthetic.v1",
+        recipient_ref: "650e8400-e29b-41d4-a716-446655440000",
+        audience: "CITIZEN",
+        channel: "INTERNAL",
+        template_key: "SYNTHETIC_STATUS",
+        template_version: 1,
+        delivery_class: "OPTIONAL",
+        template_data: { status: "IN_PROGRESS" },
+      },
+    } as const;
+    for (const forbidden of [
+      { unit_id: "unit-1" },
+      { case_notes: "operational note" },
+      { coordinate_longitude: 108.4 },
+      { evidence_url: "https://example.test/evidence" },
+    ]) {
+      expect(
+        NotificationRequestedEventSchema.safeParse({
+          ...base,
+          data: {
+            ...base.data,
+            template_data: { ...base.data.template_data, ...forbidden },
+          },
+        }).success,
+      ).toBe(false);
+    }
+    expect(
+      NotificationRequestedEventSchema.safeParse({
+        ...base,
+        aggregate_id: "750e8400-e29b-41d4-a716-446655440000",
+      }).success,
+    ).toBe(false);
+    expect(
+      NotificationRequestedEventSchema.safeParse({
+        ...base,
+        data: {
+          ...base.data,
+          template_data: { status: "ESCALATED" },
+        },
+      }).success,
+    ).toBe(false);
   });
 
   it("rejects an open polygon ring and an inverted bbox", () => {

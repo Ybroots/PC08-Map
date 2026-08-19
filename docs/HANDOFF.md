@@ -22,7 +22,8 @@
 | T12  | BLOCKED               | Chờ D-06 retention/legal hold và D-07 break-glass              |
 | T13  | T13A LOCAL PASS       | Published bbox alert projection; T13B chờ D-03/D-09            |
 | T14  | T14A LOCAL PASS       | Read-only resume workspace; live/dispatch chờ D-02/04/05/09    |
-| T15+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
+| T15  | T15A LOCAL PASS       | Internal-only contract/ports; provider/runtime chờ D-08        |
+| T16+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
 real HTTP adapter/contract fixtures và sandbox contract suite; xem
@@ -122,6 +123,11 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   contract failure không xóa dữ liệu đã validate. Navigation dùng shared policy.
   Ops UI vẫn explicit synthetic/read-only, không poll, không giữ bearer và không
   mở assignment/SLA.
+- T15A thêm strict `notification.requested.v1`: opaque recipient UUID, versioned
+  template, channel `INTERNAL` duy nhất và citizen data allowlist không có chi tiết
+  tác nghiệp. Pure dispatcher dùng injected claim/template/preference/provider/
+  audit ports; duplicate, opt-out, mandatory, retryable/permanent provider failure
+  đều có deterministic test. Không có adapter, migration hay bootstrap wiring.
 
 ## Hard stops còn mở
 
@@ -138,7 +144,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất sau T14A: T15 safe notification contracts
+## Bước tiếp theo đề xuất sau T15A: T16 audit/KPI safe foundation
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -170,15 +176,16 @@ cho đến khi T09/T10 provider/UAT/D-09 gates được duyệt.
 T12 không được tạo identity collection, retention hoặc break-glass workflow khi
 D-06/D-07 còn pending. T13A chỉ là nền public bbox từ dữ liệu đã duyệt; giữ
 `TRAFFIC_ALERTS_ENABLED=false` ngoài local/test và không mô tả là route-aware.
-T13B proximity/direction/cooldown vẫn bị khóa bởi D-03/D-09. Sau khi T13A full
-gate/cold-start/CI xanh, lát cắt khả thi kế tiếp là rà plan T14 và triển khai phần
-ops workspace không phụ thuộc SLA/provider/policy chưa duyệt.
+T13B proximity/direction/cooldown vẫn bị khóa bởi D-03/D-09.
 
 T14A chỉ hoàn thành read-only UX foundation. Live OIDC/session wiring chờ D-02;
 assignment/SLA/service area chờ D-04/D-05; realtime cadence/load chờ D-09. Không
 đổi synthetic shell thành live bằng cách hard-code bearer hoặc poll interval.
-Sau full gate/CI T14A, rà T15 để tách phần executable notification contracts/ports
-khỏi provider/channel selection D-08; runtime delivery vẫn phải fail closed.
+T15A đã tách executable internal-only contract/ports khỏi provider selection.
+Không nối dispatcher vào bootstrap, tạo production template, retry count/backoff,
+SMS/email/push hay contact endpoint trước D-08/D-09. Lát cắt khả thi kế tiếp là rà
+T16 để thêm audit/KPI foundation chỉ từ aggregate, không suy đoán baseline hoặc
+đọc privacy vault.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -317,6 +324,17 @@ concurrency, làm unit health deterministic và giữ secret scan theo push rang
 manual full-history scan; cả local TruffleHog range/full-history đều 0 finding.
 GitHub CI run `32237534237` xanh đủ 6/6 job. T14B vẫn chờ identity/dispatch/SLA,
 realtime cadence và operator UAT được phê duyệt.
+
+T15A local verification (2026-08-19) có strict internal-only requested event,
+opaque recipient, versioned template và citizen-safe allowlist. Dispatcher chỉ là
+application foundation với injected ports; không được register trong worker main.
+Contract 30/30 và worker notification 9/9 pass, gồm duplicate, wrong audience,
+unsafe template, optional opt-out, mandatory class, 429/outage, permanent reject,
+template registry/audit outage. Full frozen-install, format/lint/typecheck, unit,
+coverage, contract/e2e/build và integration pass; integration giữ API 70/70,
+worker 9/9. Clean Linux Node 20/2 CPU coverage pass 19/19 workspace tasks. T15B
+vẫn blocked bởi D-02/D-04/D-08/D-09, provider security review, persistence,
+contact/deep-link và UAT. Implementation commit/CI sẽ được ghi sau publish.
 
 Từ repository root:
 

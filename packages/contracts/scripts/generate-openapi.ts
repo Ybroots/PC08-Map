@@ -49,6 +49,7 @@ import {
   OpsReportVerificationDecisionSchema,
   DuplicateFalsePositiveRequestSchema,
   TrafficAlertCollectionSchema,
+  NotificationRequestedEventSchema,
 } from "../src";
 
 const registry = new OpenAPIRegistry();
@@ -157,6 +158,10 @@ const citizenSessionHeader = registry.register(
   CitizenSessionHeaderSchema,
 );
 registry.register("EventEnvelope", EventEnvelopeSchema);
+registry.register(
+  "NotificationRequestedEvent",
+  NotificationRequestedEventSchema,
+);
 registry.register("ProviderQuality", ProviderQualitySchema);
 const createMapVersion = registry.register(
   "CreateMapVersion",

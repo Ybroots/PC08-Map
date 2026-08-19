@@ -181,6 +181,19 @@ pnpm build
   responsive layout và resume rail. Không có poll interval mặc định, assignment,
   SLA hay realtime claim khi D-02/D-04/D-05/D-09 còn pending.
 
+## Notification foundation
+
+- T15A có strict `notification.requested.v1` event: channel duy nhất là
+  `INTERNAL`, recipient chỉ là opaque UUID và template bắt buộc có version.
+- Citizen template data chỉ nhận `public_code`, trạng thái tổng quát và
+  `observed_at`; operational detail, contact endpoint và unknown field bị reject.
+- Worker có injected template/preference/claim/provider/audit ports và dispatcher
+  idempotent. Duplicate không gửi; optional opt-out được tôn trọng; mandatory class
+  chỉ hoạt động khi definition injected khớp chính xác.
+- Rate-limit/outage được phân loại retryable; permanent reject không retry. Audit
+  không chứa recipient hoặc template data. Chưa có adapter, migration, consumer
+  registration hay production template; D-08 vẫn khóa T15B.
+
 ## Backlog trien khai (Codex tasks)
 
 | Task | Ten                                     | Phu thuoc             | Trang thai                      |
@@ -200,7 +213,7 @@ pnpm build
 | T12  | Privacy vault va break-glass            | T03-T04 + quy che     | BLOCKED D-06/D-07               |
 | T13  | Canh bao giao thong                     | T05-T06               | T13A LOCAL / T13B BLOCKED       |
 | T14  | Ops workspace hoan chinh                | T07-T10               | T14A LOCAL / T14B BLOCKED       |
-| T15  | Notifications va contact fallback       | T02-T03 + provider    | TODO                            |
+| T15  | Notifications va contact fallback       | T02-T03 + provider    | T15A LOCAL / T15B BLOCKED       |
 | T16  | Audit, KPI va dashboard lanh dao        | T04 + core flows      | TODO                            |
 | T17  | Production infrastructure as code       | T00-T16 + ha tang cap | TODO                            |
 | T18  | Security hardening va release candidate | Feature complete      | TODO                            |
