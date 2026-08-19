@@ -103,7 +103,7 @@ chia nho de khong vuot cac cong production dang mo:
 - [x] Source/ADR/current-state review complete.
 - [x] T11A implementation.
 - [x] T11A full local gates and cold start.
-- [ ] T11A GitHub CI.
+- [x] T11A GitHub CI run `32221632793` green 6/6.
 - [ ] T11B evidence/abuse/duplicate/operator workflow (blocked by gates above).
 
 ## Handoff

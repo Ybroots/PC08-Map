@@ -205,7 +205,8 @@ private. Non-cached integration pass API 56/56 + worker 5/5; HTTP test xác nh�
 missing session 401, anonymous session -> 202, exact replay và tracking tối giản.
 Full format/lint/typecheck/unit/coverage/contract/e2e/build đều pass. Production
 intake vẫn bị config reject; xem `docs/plans/T11-citizen-reports.md` để tiếp tục
-T11B mà không suy đoán D-09.
+T11B mà không suy đoán D-09. Implementation ở commit `4541c9b`; GitHub CI run
+`32221632793` xanh đủ 6/6 job.
 
 Từ repository root:
 
