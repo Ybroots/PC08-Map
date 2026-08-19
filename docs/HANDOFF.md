@@ -220,6 +220,7 @@ service healthy và 3 MinIO bucket private/versioned; non-cached integration pas
 API 59/59 + worker 5/5. HTTP test xác nhận thiếu citizen session bị 401, đủ hai
 capability + READY thì link 200 và report vẫn RECEIVED. Production linking/intake
 vẫn fail-closed; T11B2 không được tự đặt threshold khi D-09 còn pending.
+Implementation ở commit `2b72255`; GitHub CI run `32223513120` xanh đủ 6/6 job.
 
 Từ repository root:
 

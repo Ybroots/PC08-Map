@@ -109,6 +109,7 @@ chia nho de khong vuot cac cong production dang mo:
 - [x] T11A full local gates and cold start.
 - [x] T11A GitHub CI run `32221632793` green 6/6.
 - [x] T11B1 READY evidence ownership/linking local implementation + cold start.
+- [x] T11B1 GitHub CI run `32223513120` green 6/6.
 - [ ] T11B2 abuse/duplicate/operator workflow (blocked by explicit gates above).
 
 ## Handoff
