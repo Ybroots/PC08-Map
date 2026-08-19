@@ -43,6 +43,7 @@ Five user groups: citizen/tourist, dispatcher, field officer, leader, system adm
 | T11 | Info disclosure        | Evidence IDOR/signed URL  | Area+case ABAC, repository recheck, short TTL, access audit                                    | Medium        |
 | T12 | Spoofing/tampering     | Attach another upload     | Live session + separate report/upload HMAC capabilities + READY-only atomic owner assignment   | Medium        |
 | T13 | Tampering              | Heuristic auto-conclusion | Suggestion-only candidate + scoped manual confirm/override + optimistic version + audit/outbox | Medium        |
+| T14 | Tampering/disclosure   | Unsafe or stale alert     | Current public/PUBLISHED version + validity + strict nested source + allowlisted projection    | Medium        |
 
 T10B2 implements the T2/T10 controls only for explicit local/test JPEG/PNG values
 and a fake EICAR detector. Production remains fail-closed until the AV/storage
@@ -69,6 +70,14 @@ state. Candidate overflow and persisted-event mismatch roll back inbox, history,
 candidate, audit and outbox together. Exact equality can still be a false positive,
 so operator confirmation remains mandatory. Time/space/plate/risk/rate/captcha
 controls and production enable remain blocked by D-09.
+
+T13A narrows T14 locally: the public endpoint reads only the latest current
+PUBLISHED version of explicitly eligible public layers, checks effective feature
+and version validity, validates the complete nested alert source, and returns an
+allowlisted projection. A malformed current source or configured bound overflow
+fails closed. Bbox overlap may still produce alerts that are not on the user's
+route; the response states `BBOX_ONLY`, and route/direction/cooldown controls plus
+production enablement remain blocked by D-03/D-09.
 
 ## Pentest scope (T18)
 

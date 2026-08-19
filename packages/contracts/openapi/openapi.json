@@ -921,6 +921,7 @@
               "ATGT_INCIDENT_TYPE_UNAVAILABLE",
               "ATGT_REPORT_CATEGORY_UNAVAILABLE",
               "ATGT_REPORT_EVIDENCE_UNAVAILABLE",
+              "ATGT_TRAFFIC_ALERT_QUERY_TOO_BROAD",
               "ATGT_INTERNAL_ERROR"
             ]
           },
@@ -1491,6 +1492,181 @@
           "version",
           "effective_at",
           "features"
+        ],
+        "additionalProperties": false
+      },
+      "TrafficAlertCollection": {
+        "type": "object",
+        "properties": {
+          "effective_at": { "type": "string", "format": "date-time" },
+          "source": { "type": "string", "enum": ["PUBLISHED_MAP_DATA"] },
+          "quality": { "type": "string", "enum": ["PUBLISHED"] },
+          "capability": { "type": "string", "enum": ["BBOX_ONLY"] },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "alert_id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"
+                },
+                "layer_key": {
+                  "type": "string",
+                  "enum": [
+                    "dangerous_points",
+                    "road_closures",
+                    "no_parking",
+                    "temp_events"
+                  ]
+                },
+                "feature_key": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+                },
+                "source_version": { "type": "integer", "exclusiveMinimum": 0 },
+                "geometry": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string", "enum": ["Point"] },
+                        "coordinates": {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "type": "number",
+                              "minimum": -180,
+                              "maximum": 180
+                            },
+                            { "type": "number", "minimum": -90, "maximum": 90 }
+                          ]
+                        }
+                      },
+                      "required": ["type", "coordinates"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string", "enum": ["LineString"] },
+                        "coordinates": {
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "prefixItems": [
+                              {
+                                "type": "number",
+                                "minimum": -180,
+                                "maximum": 180
+                              },
+                              {
+                                "type": "number",
+                                "minimum": -90,
+                                "maximum": 90
+                              }
+                            ]
+                          },
+                          "minItems": 2
+                        }
+                      },
+                      "required": ["type", "coordinates"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string", "enum": ["Polygon"] },
+                        "coordinates": {
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "array",
+                              "prefixItems": [
+                                {
+                                  "type": "number",
+                                  "minimum": -180,
+                                  "maximum": 180
+                                },
+                                {
+                                  "type": "number",
+                                  "minimum": -90,
+                                  "maximum": 90
+                                }
+                              ]
+                            },
+                            "minItems": 4
+                          },
+                          "minItems": 1
+                        }
+                      },
+                      "required": ["type", "coordinates"],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": ["INFO", "WARNING", "CRITICAL"]
+                },
+                "warning_vi": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "action_vi": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "vehicle_types": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "ALL",
+                      "CAR",
+                      "MOTORCYCLE",
+                      "TRUCK",
+                      "BUS",
+                      "BICYCLE",
+                      "PEDESTRIAN",
+                      "EMERGENCY"
+                    ]
+                  },
+                  "minItems": 1,
+                  "maxItems": 8
+                },
+                "valid_from": { "type": "string", "format": "date-time" },
+                "valid_to": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "alert_id",
+                "layer_key",
+                "feature_key",
+                "source_version",
+                "geometry",
+                "priority",
+                "warning_vi",
+                "action_vi",
+                "vehicle_types",
+                "valid_from",
+                "valid_to"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "effective_at",
+          "source",
+          "quality",
+          "capability",
+          "alerts"
         ],
         "additionalProperties": false
       },
@@ -2297,6 +2473,69 @@
           },
           "404": {
             "description": "No effective public version",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/traffic-alerts": {
+      "get": {
+        "summary": "Read current published traffic alerts inside a bbox",
+        "description": "T13A bbox-only projection. It does not claim route, direction or anti-repeat capability.",
+        "tags": ["Traffic alerts"],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "108.40,11.90,108.50,11.98"
+            },
+            "required": true,
+            "name": "bbox",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CAR",
+                "MOTORCYCLE",
+                "TRUCK",
+                "BUS",
+                "BICYCLE",
+                "PEDESTRIAN",
+                "EMERGENCY"
+              ]
+            },
+            "required": true,
+            "name": "vehicle_type",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sanitized alerts from current published map data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrafficAlertCollection"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Bounding box exceeds explicit deployment safety bounds",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          },
+          "503": {
+            "description": "Projection disabled or a published source is malformed",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetails" }

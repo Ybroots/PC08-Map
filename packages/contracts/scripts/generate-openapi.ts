@@ -48,6 +48,7 @@ import {
   OpsReportVerificationQueueSchema,
   OpsReportVerificationDecisionSchema,
   DuplicateFalsePositiveRequestSchema,
+  TrafficAlertCollectionSchema,
 } from "../src";
 
 const registry = new OpenAPIRegistry();
@@ -177,6 +178,10 @@ const mapTransition = registry.register(
 const publicMap = registry.register(
   "PublicMapFeatureCollection",
   PublicMapFeatureCollectionSchema,
+);
+const trafficAlerts = registry.register(
+  "TrafficAlertCollection",
+  TrafficAlertCollectionSchema,
 );
 
 registry.registerPath({
@@ -658,6 +663,48 @@ registry.registerPath({
     },
     404: {
       description: "No effective public version",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/v1/public/traffic-alerts",
+  summary: "Read current published traffic alerts inside a bbox",
+  description:
+    "T13A bbox-only projection. It does not claim route, direction or anti-repeat capability.",
+  tags: ["Traffic alerts"],
+  request: {
+    query: z.object({
+      bbox: z.string().openapi({
+        param: { name: "bbox", in: "query" },
+        example: "108.40,11.90,108.50,11.98",
+      }),
+      vehicle_type: z
+        .enum([
+          "CAR",
+          "MOTORCYCLE",
+          "TRUCK",
+          "BUS",
+          "BICYCLE",
+          "PEDESTRIAN",
+          "EMERGENCY",
+        ])
+        .openapi({ param: { name: "vehicle_type", in: "query" } }),
+    }),
+  },
+  responses: {
+    200: {
+      description: "Sanitized alerts from current published map data",
+      content: { "application/json": { schema: trafficAlerts } },
+    },
+    422: {
+      description: "Bounding box exceeds explicit deployment safety bounds",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+    503: {
+      description: "Projection disabled or a published source is malformed",
       content: { "application/problem+json": { schema: problemDetails } },
     },
   },

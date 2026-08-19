@@ -343,6 +343,50 @@ describe("loadAndValidateConfig", () => {
     );
   });
 
+  it("keeps bbox traffic alerts local/test with explicit technical bounds", () => {
+    expect(loadAndValidateConfig(validEnvironment()).trafficAlerts).toEqual({
+      enabled: false,
+      maxCandidates: undefined,
+      maxResults: undefined,
+    });
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        TRAFFIC_ALERTS_ENABLED: "true",
+      }),
+    ).toThrow("TRAFFIC_ALERTS_MAX_CANDIDATES is required");
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        TRAFFIC_ALERTS_ENABLED: "true",
+        TRAFFIC_ALERTS_MAX_CANDIDATES: "10",
+        TRAFFIC_ALERTS_MAX_RESULTS: "20",
+      }),
+    ).toThrow(
+      "TRAFFIC_ALERTS_MAX_CANDIDATES must be greater than or equal to TRAFFIC_ALERTS_MAX_RESULTS",
+    );
+    expect(
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        TRAFFIC_ALERTS_ENABLED: "true",
+        TRAFFIC_ALERTS_MAX_CANDIDATES: "100",
+        TRAFFIC_ALERTS_MAX_RESULTS: "25",
+      }).trafficAlerts,
+    ).toEqual({ enabled: true, maxCandidates: 100, maxResults: 25 });
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        APP_ENV: "production",
+        LOG_LEVEL: "info",
+        OIDC_ISSUER: "https://identity.example.test/realms/atgt",
+        OIDC_JWKS_URI: "https://identity.example.test/realms/atgt/certs",
+        TRAFFIC_ALERTS_ENABLED: "true",
+      }),
+    ).toThrow(
+      "TRAFFIC_ALERTS_ENABLED is local/test only until T13 route and alert-fatigue gates are approved",
+    );
+  });
+
   it("keeps the evidence pipeline disabled without implicit media policy", () => {
     expect(loadAndValidateConfig(validEnvironment()).evidence).toEqual({
       enabled: false,

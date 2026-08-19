@@ -339,6 +339,24 @@ transaction and routes the message to the DLQ. Never bypass it by editing state,
 history, inbox or candidate rows. Staging and production configuration rejects
 this worker while D-09 remains pending.
 
+T13A traffic alerts are disabled by default. To exercise the bbox-only projection
+from synthetic published map data, enable it only in a deliberate local/test API
+process and supply both technical bounds:
+
+```dotenv
+TRAFFIC_ALERTS_ENABLED=true
+TRAFFIC_ALERTS_MAX_CANDIDATES=<explicit-positive-integer>
+TRAFFIC_ALERTS_MAX_RESULTS=<explicit-positive-integer-not-greater-than-candidates>
+```
+
+Query `GET /api/v1/public/traffic-alerts?bbox=108.3,11.8,108.6,12.1&vehicle_type=CAR`.
+The response declares `source=PUBLISHED_MAP_DATA`, `quality=PUBLISHED`, and
+`capability=BBOX_ONLY`. It is not route-aware and does not perform provider calls,
+direction filtering, proximity scoring, or cooldown. An invalid current source or
+an exceeded candidate/result bound returns a stable fail-closed error instead of
+silently dropping alerts. Staging and production reject enablement until T13B and
+the D-03/D-09 decisions are complete.
+
 There is no retention cleanup path. Do not manually delete quarantine/original
 objects or evidence rows to “unstick” a test; inspect append-only history and keep
 the feature disabled. Integration verification:

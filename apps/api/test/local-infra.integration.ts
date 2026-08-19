@@ -159,6 +159,25 @@ describe("T01: Local dev infrastructure smoke tests", () => {
       });
     });
 
+    it("loads the synthetic T13A alert fixture as explicit dev-only data", async () => {
+      if (SKIP) return;
+      const result = await client.query<{
+        warning: string | null;
+        action: string | null;
+        vehicles: unknown;
+      }>(`
+        SELECT properties->'alert'->>'warning_vi' warning,
+               properties->'alert'->>'action_vi' action,
+               properties->'alert'->'vehicle_types' vehicles
+          FROM map.features
+         WHERE feature_key='danger-hoabinh-fake'
+           AND version_id='00000000-0000-4000-8000-000000000601'::uuid
+      `);
+      expect(result.rows[0]?.warning).toContain("FAKE - dev only");
+      expect(result.rows[0]?.action).toContain("FAKE - dev only");
+      expect(result.rows[0]?.vehicles).toEqual(["ALL"]);
+    });
+
     it("audit.audit_events table exists", async () => {
       if (SKIP) return;
       const result = await client.query(`

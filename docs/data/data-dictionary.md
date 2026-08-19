@@ -123,6 +123,14 @@ viewer lookup requires exact `area_id + owner_id(case) + evidence_id`, a linked
 | approvals           | version_id, decision, actor_ref, trace_id, decided_at                       | Append-only maker-checker decision   |
 | version_transitions | version_id, from_state, to_state, actor_ref, trace_id                       | Append-only lifecycle audit          |
 
+For the T13A public traffic-alert projection, an eligible current feature must
+contain a strict `properties.alert` object with `priority`, Vietnamese
+`warning_vi`, Vietnamese `action_vi`, and unique `vehicle_types`. The API never
+returns the remaining arbitrary `properties`; a malformed alert on an otherwise
+eligible public/PUBLISHED/current version makes the query fail closed. This is a
+bbox-only projection and does not imply route proximity, travel direction, or
+anti-repeat policy.
+
 ### platform schema
 
 | Table            | Key columns                                                                    | Notes                                           |

@@ -185,9 +185,9 @@ pnpm build
 | T08  | Dispatch engine va SLA                  | T05+T07+SLA rules     | BLOCKED D-04/D-05               |
 | T09  | Citizen mobile SOS                      | T07 + UI prototype    | ANDROID EMULATOR UAT PASS       |
 | T10  | Evidence pipeline                       | T04 + S3/AV decision  | T10B3 VIEWER PASS / UAT BLOCKED |
-| T11  | Citizen reports va chong lam dung       | T09-T10               | TODO                            |
-| T12  | Privacy vault va break-glass            | T03-T04 + quy che     | TODO                            |
-| T13  | Canh bao giao thong                     | T05-T06               | TODO                            |
+| T11  | Citizen reports va chong lam dung       | T09-T10               | T11B2B1 LOCAL / D-09 BLOCKED    |
+| T12  | Privacy vault va break-glass            | T03-T04 + quy che     | BLOCKED D-06/D-07               |
+| T13  | Canh bao giao thong                     | T05-T06               | T13A LOCAL / T13B BLOCKED       |
 | T14  | Ops workspace hoan chinh                | T07-T10               | TODO                            |
 | T15  | Notifications va contact fallback       | T02-T03 + provider    | TODO                            |
 | T16  | Audit, KPI va dashboard lanh dao        | T04 + core flows      | TODO                            |

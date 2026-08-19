@@ -13,6 +13,7 @@ import { MapDataModule } from "./modules/map-data/map-data.module";
 import { IncidentsModule } from "./modules/incidents/incidents.module";
 import { EvidenceModule } from "./modules/evidence/evidence.module";
 import { ReportsModule } from "./modules/reports/reports.module";
+import { TrafficAlertModule } from "./modules/alerts/traffic-alert.module";
 import { DatabaseModule } from "./platform/database";
 import { ProblemDetailsFilter } from "./platform/problem-details.filter";
 import { RequestContextMiddleware } from "./platform/request-context.middleware";
@@ -41,6 +42,7 @@ export class AppModule implements NestModule {
         MapDataModule,
         IncidentsModule.register(config),
         ReportsModule.register(config, evidenceModule),
+        TrafficAlertModule.register(config),
       ],
       providers: [{ provide: APP_FILTER, useClass: ProblemDetailsFilter }],
     };

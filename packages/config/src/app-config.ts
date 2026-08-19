@@ -79,6 +79,11 @@ export interface AppConfig {
     batchSize?: number;
     maxCandidatesPerReport?: number;
   };
+  trafficAlerts: {
+    enabled: boolean;
+    maxCandidates?: number;
+    maxResults?: number;
+  };
   outboxRelay: { enabled: boolean; pollMs?: number; batchSize?: number };
   evidence: {
     enabled: boolean;
@@ -337,6 +342,33 @@ export function loadAndValidateConfig(
   ]?.trim()
     ? integer(source, "REPORT_SCREENING_MAX_CANDIDATES_PER_REPORT", 0, 1, 1000)
     : undefined;
+  const trafficAlertsEnabled = boolean(source, "TRAFFIC_ALERTS_ENABLED", false);
+  if (trafficAlertsEnabled && (env === "staging" || env === "production")) {
+    throw new Error(
+      "TRAFFIC_ALERTS_ENABLED is local/test only until T13 route and alert-fatigue gates are approved",
+    );
+  }
+  if (trafficAlertsEnabled) {
+    required(source, "TRAFFIC_ALERTS_MAX_CANDIDATES");
+    required(source, "TRAFFIC_ALERTS_MAX_RESULTS");
+  }
+  const trafficAlertsMaxCandidates = source[
+    "TRAFFIC_ALERTS_MAX_CANDIDATES"
+  ]?.trim()
+    ? integer(source, "TRAFFIC_ALERTS_MAX_CANDIDATES", 0, 1, 5000)
+    : undefined;
+  const trafficAlertsMaxResults = source["TRAFFIC_ALERTS_MAX_RESULTS"]?.trim()
+    ? integer(source, "TRAFFIC_ALERTS_MAX_RESULTS", 0, 1, 1000)
+    : undefined;
+  if (
+    trafficAlertsMaxCandidates !== undefined &&
+    trafficAlertsMaxResults !== undefined &&
+    trafficAlertsMaxCandidates < trafficAlertsMaxResults
+  ) {
+    throw new Error(
+      "TRAFFIC_ALERTS_MAX_CANDIDATES must be greater than or equal to TRAFFIC_ALERTS_MAX_RESULTS",
+    );
+  }
   const outboxRelayEnabled = boolean(source, "OUTBOX_RELAY_ENABLED", false);
   if (outboxRelayEnabled) {
     required(source, "OUTBOX_RELAY_POLL_MS");
@@ -625,6 +657,11 @@ export function loadAndValidateConfig(
       pollMs: reportScreeningPollMs,
       batchSize: reportScreeningBatchSize,
       maxCandidatesPerReport: reportScreeningMaxCandidates,
+    },
+    trafficAlerts: {
+      enabled: trafficAlertsEnabled,
+      maxCandidates: trafficAlertsMaxCandidates,
+      maxResults: trafficAlertsMaxResults,
     },
     outboxRelay: {
       enabled: outboxRelayEnabled,

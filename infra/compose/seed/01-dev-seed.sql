@@ -64,7 +64,7 @@ ON CONFLICT (layer_id, schema_version) DO NOTHING;
 INSERT INTO map.layer_schemas
   (layer_id, schema_version, geometry_type, schema_json, is_active, created_by)
 SELECT l.layer_id, 1, l.layer_type,
-  '{"type":"object","required":["name","severity"],"properties":{"name":{"type":"string"},"accident_count":{"type":"integer","minimum":0},"severity":{"type":"string","enum":["LOW","MEDIUM","HIGH"]}},"additionalProperties":false}'::jsonb,
+  '{"type":"object","required":["name","severity","alert"],"properties":{"name":{"type":"string"},"accident_count":{"type":"integer","minimum":0},"severity":{"type":"string","enum":["LOW","MEDIUM","HIGH"]},"alert":{"type":"object","required":["priority","warning_vi","action_vi","vehicle_types"],"properties":{"priority":{"type":"string","enum":["INFO","WARNING","CRITICAL"]},"warning_vi":{"type":"string","minLength":1,"maxLength":300},"action_vi":{"type":"string","minLength":1,"maxLength":300},"vehicle_types":{"type":"array","minItems":1,"maxItems":8,"uniqueItems":true,"items":{"type":"string","enum":["ALL","CAR","MOTORCYCLE","TRUCK","BUS","BICYCLE","PEDESTRIAN","EMERGENCY"]}}},"additionalProperties":false}},"additionalProperties":false}'::jsonb,
   true, 'seed'
 FROM map.layers l WHERE l.layer_key = 'dangerous_points'
 ON CONFLICT (layer_id, schema_version) DO UPDATE SET schema_json = EXCLUDED.schema_json;
@@ -85,7 +85,7 @@ INSERT INTO map.features
 SELECT '00000000-0000-4000-8000-000000000602'::uuid, 'danger-hoabinh-fake', l.layer_id,
   '00000000-0000-4000-8000-000000000601'::uuid,
   ST_SetSRID(ST_MakePoint(108.4384, 11.9404), 4326),
-  '{"name": "Ngã tư Hòa Bình (FAKE)", "accident_count": 12, "severity": "HIGH"}'::jsonb,
+  '{"name":"Ngã tư Hòa Bình (FAKE)","accident_count":12,"severity":"HIGH","alert":{"priority":"WARNING","warning_vi":"Điểm nguy hiểm tổng hợp (FAKE - dev only)","action_vi":"Giảm tốc độ và quan sát (FAKE - dev only)","vehicle_types":["ALL"]}}'::jsonb,
   '2026-01-01T00:00:00Z', 'DRAFT', 'seed-maker'
 FROM map.layers l WHERE l.layer_key = 'dangerous_points'
 ON CONFLICT (feature_id) DO NOTHING;

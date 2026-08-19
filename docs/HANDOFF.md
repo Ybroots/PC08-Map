@@ -19,7 +19,9 @@
 | T09  | ANDROID EMULATOR PASS | UAT-01..04 xong; physical/iOS và production config còn pending |
 | T10  | T10B3 VIEWER PASS     | Local controlled viewer xong; production/UAT còn bị khóa       |
 | T11  | T11B2B1 LOCAL PASS    | Exact-hash screening worker; abuse/heuristics vẫn bị khóa      |
-| T12+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
+| T12  | BLOCKED               | Chờ D-06 retention/legal hold và D-07 break-glass              |
+| T13  | T13A LOCAL PASS       | Published bbox alert projection; T13B chờ D-03/D-09            |
+| T14+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
 real HTTP adapter/contract fixtures và sandbox contract suite; xem
@@ -109,6 +111,11 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   outbox commit atomically; overflow hoặc persisted-event mismatch rollback toàn
   bộ. Không dùng time/space/plate, không ghi risk score và không tự kết luận
   DUPLICATE/VERIFIED/REJECTED.
+- T13A thêm public bbox/vehicle alert projection độc lập từ map module. Repository
+  chỉ đọc latest current public/PUBLISHED version của allowlisted layer, kiểm tra
+  hiệu lực, validate strict `properties.alert`, rồi trả allowlisted warning/action/
+  priority/source/version. Invalid source hoặc overflow fail closed; response ghi
+  rõ `BBOX_ONLY` và không gọi provider.
 
 ## Hard stops còn mở
 
@@ -125,7 +132,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: T11B2B2 abuse/heuristic ports
+## Bước tiếp theo đề xuất sau T13A: T14 ops workspace foundation
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -153,6 +160,13 @@ limit/captcha ports và producer time/space/plate. Phần này vẫn bị khóa 
 không tự điền threshold, rate, window hay score. Mọi heuristic chỉ được tạo
 suggestion; operator vẫn là nơi duy nhất kết luận. Production tiếp tục fail-closed
 cho đến khi T09/T10 provider/UAT/D-09 gates được duyệt.
+
+T12 không được tạo identity collection, retention hoặc break-glass workflow khi
+D-06/D-07 còn pending. T13A chỉ là nền public bbox từ dữ liệu đã duyệt; giữ
+`TRAFFIC_ALERTS_ENABLED=false` ngoài local/test và không mô tả là route-aware.
+T13B proximity/direction/cooldown vẫn bị khóa bởi D-03/D-09. Sau khi T13A full
+gate/cold-start/CI xanh, lát cắt khả thi kế tiếp là rà plan T14 và triển khai phần
+ops workspace không phụ thuộc SLA/provider/policy chưa duyệt.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -263,6 +277,18 @@ unit/coverage/contract/e2e/build đều pass. Worker vẫn disabled mặc địn
 reject ở staging/production; risk/rate/captcha/time/space/plate vẫn blocked bởi
 D-09. Implementation ở commit `fd6ba56`; GitHub CI run `32230392483` xanh đủ
 6/6 job.
+
+T13A local verification (2026-08-19) có strict bbox/vehicle OpenAPI contract,
+fail-closed local/test config và independent alert read model chỉ dùng latest
+current public/PUBLISHED map version. Response allowlist ghi rõ `BBOX_ONLY`; invalid
+nested source và candidate/result overflow đều reject. Synthetic layer schema cũng
+strict ở import boundary. Final cold-start đã xóa đúng 6 volume synthetic `atgt-*`,
+dựng 8 service healthy và 3 MinIO bucket private/versioned; non-cached integration
+pass API 70/70 + worker 9/9. Full frozen-install, format/lint/typecheck/unit/coverage/
+contract/e2e/build đều pass. Cold-run còn bắt được microsecond clock skew ở T11B2A;
+report decision giờ clamp bằng PostgreSQL `GREATEST` và regression `new Date(0)`
+pass. T13B route/direction/cooldown và production enable vẫn blocked D-03/D-09.
+Implementation commit/CI: pending push.
 
 Từ repository root:
 

@@ -39,6 +39,9 @@ import {
   ReportEvidenceLinkedEventSchema,
   ReportScreeningCompletedEventDataSchema,
   ReportDuplicateCandidateCreatedEventDataSchema,
+  TrafficAlertCollectionSchema,
+  TrafficAlertQuerySchema,
+  TrafficAlertSourcePropertiesSchema,
 } from "./index";
 
 const traceId = "0123456789abcdef0123456789abcdef";
@@ -476,6 +479,55 @@ describe("executable contracts", () => {
         zoom: "13",
       }),
     ).toEqual({ bbox: [108.4, 11.9, 108.5, 11.98], zoom: 13 });
+  });
+
+  it("keeps the T13A public alert projection strict and bbox-only", () => {
+    expect(
+      TrafficAlertQuerySchema.parse({
+        bbox: "108.40,11.90,108.50,11.98",
+        vehicle_type: "MOTORCYCLE",
+      }),
+    ).toEqual({
+      bbox: [108.4, 11.9, 108.5, 11.98],
+      vehicle_type: "MOTORCYCLE",
+    });
+    const source = TrafficAlertSourcePropertiesSchema.parse({
+      priority: "WARNING",
+      warning_vi: "Điểm nguy hiểm tổng hợp (FAKE)",
+      action_vi: "Giảm tốc độ và quan sát (FAKE)",
+      vehicle_types: ["ALL"],
+    });
+    const response = TrafficAlertCollectionSchema.parse({
+      effective_at: "2026-08-19T00:00:00.000Z",
+      source: "PUBLISHED_MAP_DATA",
+      quality: "PUBLISHED",
+      capability: "BBOX_ONLY",
+      alerts: [
+        {
+          alert_id: "dangerous_points:danger-hoabinh-fake",
+          layer_key: "dangerous_points",
+          feature_key: "danger-hoabinh-fake",
+          source_version: 1,
+          geometry: { type: "Point", coordinates: [108.4384, 11.9404] },
+          ...source,
+          valid_from: "2026-01-01T00:00:00.000Z",
+          valid_to: null,
+        },
+      ],
+    });
+    expect(response.alerts[0]).not.toHaveProperty("name");
+    expect(
+      TrafficAlertCollectionSchema.safeParse({
+        ...response,
+        route_aware: true,
+      }).success,
+    ).toBe(false);
+    expect(() =>
+      TrafficAlertQuerySchema.parse({
+        bbox: "108.50,11.90,108.40,11.98",
+        vehicle_type: "CAR",
+      }),
+    ).toThrow();
   });
 
   it("rejects an open polygon ring and an inverted bbox", () => {

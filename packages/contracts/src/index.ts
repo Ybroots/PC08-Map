@@ -18,5 +18,8 @@ export * from "./reports/report.dto";
 // Versioned operational map data
 export * from "./map/map-data.dto";
 
+// Public traffic-alert projection
+export * from "./alerts/traffic-alert.dto";
+
 // Events
 export * from "./events/event-envelope";
