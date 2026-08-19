@@ -124,6 +124,8 @@ chia nho de khong vuot cac cong production dang mo:
 - [x] T11B2A GitHub CI run `32228563065` green 6/6.
 - [x] T11B2B1 local exact-hash screening/candidate producer + cold start; API
       integration 66/66, worker integration 9/9.
+- [x] T11B2B1 implementation commit `fd6ba56`; GitHub CI run `32230392483`
+      green 6/6.
 - [ ] T11B2B2 risk/rate-limit/captcha/time-space-plate heuristics (blocked by D-09).
 
 ## Handoff

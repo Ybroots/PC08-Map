@@ -261,7 +261,8 @@ evidence SHA suggestion không lộ checksum, persisted-event mismatch và candi
 overflow rollback toàn transaction. Full frozen-install, format/lint/typecheck,
 unit/coverage/contract/e2e/build đều pass. Worker vẫn disabled mặc định và bị
 reject ở staging/production; risk/rate/captcha/time/space/plate vẫn blocked bởi
-D-09. Chưa ghi commit/GitHub CI tại thời điểm chốt bằng chứng local này.
+D-09. Implementation ở commit `fd6ba56`; GitHub CI run `32230392483` xanh đủ
+6/6 job.
 
 Từ repository root:
 
