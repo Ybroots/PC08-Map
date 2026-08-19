@@ -221,6 +221,87 @@
         "required": ["publicCode", "status", "receivedAt", "lastUpdatedAt"],
         "additionalProperties": false
       },
+      "CreateCitizenReport": {
+        "type": "object",
+        "properties": {
+          "categoryCode": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+          },
+          "coordinateLongitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "coordinateLatitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "plateTextUnverified": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "clientReportedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "categoryCode",
+          "coordinateLongitude",
+          "coordinateLatitude",
+          "description",
+          "clientReportedAt"
+        ],
+        "additionalProperties": false
+      },
+      "CitizenReportAccepted": {
+        "type": "object",
+        "properties": {
+          "publicCode": {
+            "type": "string",
+            "pattern": "^[0-9ABCDEFGHJKMNPQRSTVWXYZ]{12}$"
+          },
+          "status": { "type": "string", "enum": ["RECEIVED"] },
+          "receivedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["publicCode", "status", "receivedAt"],
+        "additionalProperties": false
+      },
+      "ReportIdempotencyHeaders": {
+        "type": "object",
+        "properties": {
+          "idempotency-key": { "type": "string", "format": "uuid" }
+        },
+        "required": ["idempotency-key"],
+        "additionalProperties": false
+      },
+      "PublicReportTracking": {
+        "type": "object",
+        "properties": {
+          "publicCode": {
+            "type": "string",
+            "pattern": "^[0-9ABCDEFGHJKMNPQRSTVWXYZ]{12}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "INSUFFICIENT_BASIS"
+            ]
+          },
+          "receivedAt": { "type": "string", "format": "date-time" },
+          "lastUpdatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["publicCode", "status", "receivedAt", "lastUpdatedAt"],
+        "additionalProperties": false
+      },
       "OpsIncident": {
         "type": "object",
         "properties": {
@@ -509,6 +590,7 @@
               "ATGT_MAP_MAKER_CHECKER_REQUIRED",
               "ATGT_CONFIGURATION_BLOCKED",
               "ATGT_INCIDENT_TYPE_UNAVAILABLE",
+              "ATGT_REPORT_CATEGORY_UNAVAILABLE",
               "ATGT_INTERNAL_ERROR"
             ]
           },
@@ -577,6 +659,7 @@
             "enum": [
               "incident.received.v1",
               "incident.verified.v1",
+              "report.received.v1",
               "assignment.created.v1",
               "assignment.ack_timed_out.v1",
               "evidence.scan_requested.v1",
@@ -1184,6 +1267,107 @@
           },
           "409": {
             "description": "Idempotency conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/reports": {
+      "post": {
+        "summary": "Submit an anonymous citizen report",
+        "description": "Atomically accepts a PII-free report. Citizen input and plate text remain unverified.",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "idempotency-key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCitizenReport" }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Citizen report accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitizenReportAccepted"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Citizen session missing, invalid, expired or revoked",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          },
+          "422": {
+            "description": "Citizen report category unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          },
+          "503": {
+            "description": "Citizen report intake is configuration-blocked",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/reports/{publicCode}": {
+      "get": {
+        "summary": "Read the generalized public status for a citizen report",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "schema": { "type": "string", "example": "A3KX9M2P7Q4R" },
+            "required": true,
+            "name": "publicCode",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Generalized status only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicReportTracking"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid and unknown codes use the same response",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetails" }

@@ -55,9 +55,18 @@ public tracking.
 
 ### report schema
 
-| Table   | Key columns                                                               | Notes                         |
-| ------- | ------------------------------------------------------------------------- | ----------------------------- |
-| reports | id, public_code, category, geom, plate_text_unverified, state, risk_score | PII-free; plate is UNVERIFIED |
+| Table            | Key columns                                                                                                                 | Notes                                            |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| category_catalog | code, label_vi, label_en, enabled                                                                                           | Local seed is explicitly synthetic               |
+| reports          | id, public_code, category_code, longitude/latitude/geom, description, plate_text_unverified, reported_at, state, risk_score | PII-free; plate is UNVERIFIED; risk NULL in T11A |
+| status_history   | report_id, from/to state, actor_ref, reason, trace_id, created_at                                                           | Append-only                                      |
+
+`report.reports` contains no citizen session, IP, device, account, token or
+identity-link column. A database trigger protects the acknowledged category,
+location, description, unverified plate, reported time, area and classification.
+The app role cannot delete report rows or update/delete/truncate history. T11A
+does not calculate risk, attach evidence, identify duplicates or conclude a
+violation; those remain explicit T11B/operator-verification concerns.
 
 ### evidence schema
 

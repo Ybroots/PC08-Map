@@ -66,6 +66,11 @@ export interface AppConfig {
     intakeAreaId?: string;
     idempotencyTtlMinutes?: number;
   };
+  reportIntake: {
+    enabled: boolean;
+    intakeAreaId?: string;
+    idempotencyTtlMinutes?: number;
+  };
   outboxRelay: { enabled: boolean; pollMs?: number; batchSize?: number };
   evidence: {
     enabled: boolean;
@@ -247,6 +252,29 @@ export function loadAndValidateConfig(
   if (sosIntakeEnabled) required(source, "SOS_IDEMPOTENCY_TTL_MINUTES");
   const sosIdempotencyTtlMinutes = source["SOS_IDEMPOTENCY_TTL_MINUTES"]?.trim()
     ? integer(source, "SOS_IDEMPOTENCY_TTL_MINUTES", 0, 1, 525_600)
+    : undefined;
+  const reportIntakeEnabled = boolean(source, "REPORT_INTAKE_ENABLED", false);
+  if (reportIntakeEnabled && (env === "staging" || env === "production")) {
+    throw new Error(
+      "REPORT_INTAKE_ENABLED is blocked outside local/test until T11B production gates complete",
+    );
+  }
+  const reportIntakeAreaId = reportIntakeEnabled
+    ? required(source, "REPORT_INTAKE_AREA_ID")
+    : undefined;
+  if (
+    reportIntakeAreaId &&
+    !/^[a-z0-9][a-z0-9-]{1,99}$/.test(reportIntakeAreaId)
+  ) {
+    throw new Error("REPORT_INTAKE_AREA_ID has an invalid format");
+  }
+  if (reportIntakeEnabled) {
+    required(source, "REPORT_IDEMPOTENCY_TTL_MINUTES");
+  }
+  const reportIdempotencyTtlMinutes = source[
+    "REPORT_IDEMPOTENCY_TTL_MINUTES"
+  ]?.trim()
+    ? integer(source, "REPORT_IDEMPOTENCY_TTL_MINUTES", 0, 1, 525_600)
     : undefined;
   const outboxRelayEnabled = boolean(source, "OUTBOX_RELAY_ENABLED", false);
   if (outboxRelayEnabled) {
@@ -518,6 +546,11 @@ export function loadAndValidateConfig(
       enabled: sosIntakeEnabled,
       intakeAreaId: sosIntakeAreaId,
       idempotencyTtlMinutes: sosIdempotencyTtlMinutes,
+    },
+    reportIntake: {
+      enabled: reportIntakeEnabled,
+      intakeAreaId: reportIntakeAreaId,
+      idempotencyTtlMinutes: reportIdempotencyTtlMinutes,
     },
     outboxRelay: {
       enabled: outboxRelayEnabled,

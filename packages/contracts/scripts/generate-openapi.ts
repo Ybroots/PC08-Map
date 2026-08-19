@@ -11,6 +11,8 @@ import {
 import {
   CitizenSessionHeaderSchema,
   CitizenSessionSchema,
+  CitizenReportAcceptedSchema,
+  CreateCitizenReportSchema,
   CreateCitizenSessionSchema,
   CreateSosSchema,
   EventEnvelopeSchema,
@@ -28,10 +30,12 @@ import {
   MapVersionSchema,
   PublicMapFeatureCollectionSchema,
   PublicIncidentTrackingSchema,
+  PublicReportTrackingSchema,
   ProblemDetailsSchema,
   ProviderQualitySchema,
   SosAcceptedSchema,
   SosIdempotencyHeadersSchema,
+  ReportIdempotencyHeadersSchema,
   OpsIncidentFeedQuerySchema,
   OpsIncidentFeedSchema,
   OpsIncidentSchema,
@@ -76,6 +80,22 @@ const sosHeaders = registry.register(
 const publicIncidentTracking = registry.register(
   "PublicIncidentTracking",
   PublicIncidentTrackingSchema,
+);
+const createCitizenReport = registry.register(
+  "CreateCitizenReport",
+  CreateCitizenReportSchema,
+);
+const citizenReportAccepted = registry.register(
+  "CitizenReportAccepted",
+  CitizenReportAcceptedSchema,
+);
+const reportHeaders = registry.register(
+  "ReportIdempotencyHeaders",
+  ReportIdempotencyHeadersSchema,
+);
+const publicReportTracking = registry.register(
+  "PublicReportTracking",
+  PublicReportTrackingSchema,
 );
 const opsIncident = registry.register("OpsIncident", OpsIncidentSchema);
 const opsIncidentFeed = registry.register(
@@ -151,6 +171,69 @@ registry.registerPath({
     },
     409: {
       description: "Idempotency conflict",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/public/reports",
+  summary: "Submit an anonymous citizen report",
+  description:
+    "Atomically accepts a PII-free report. Citizen input and plate text remain unverified.",
+  tags: ["Reports"],
+  request: {
+    headers: reportHeaders,
+    body: {
+      required: true,
+      content: { "application/json": { schema: createCitizenReport } },
+    },
+  },
+  responses: {
+    202: {
+      description: "Citizen report accepted",
+      content: { "application/json": { schema: citizenReportAccepted } },
+    },
+    401: {
+      description: "Citizen session missing, invalid, expired or revoked",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+    409: {
+      description: "Idempotency conflict",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+    422: {
+      description: "Citizen report category unavailable",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+    503: {
+      description: "Citizen report intake is configuration-blocked",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/v1/public/reports/{publicCode}",
+  summary: "Read the generalized public status for a citizen report",
+  tags: ["Reports"],
+  request: {
+    params: z.object({
+      publicCode: z.string().openapi({
+        param: { name: "publicCode", in: "path" },
+        example: "A3KX9M2P7Q4R",
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      description: "Generalized status only",
+      content: { "application/json": { schema: publicReportTracking } },
+    },
+    404: {
+      description: "Invalid and unknown codes use the same response",
       content: { "application/problem+json": { schema: problemDetails } },
     },
   },

@@ -57,6 +57,24 @@
       "arguments": { "x-queue-type": "classic" }
     },
     {
+      "name": "reports.screening",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-dead-letter-exchange": "atgt.dlx",
+        "x-dead-letter-routing-key": "reports.screening.dlq"
+      }
+    },
+    {
+      "name": "reports.screening.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": { "x-queue-type": "classic" }
+    },
+    {
       "name": "dispatch.events",
       "vhost": "/",
       "durable": true,
@@ -118,6 +136,14 @@
       "destination": "incidents.received",
       "destination_type": "queue",
       "routing_key": "incident.received.v1",
+      "arguments": {}
+    },
+    {
+      "source": "atgt.events",
+      "vhost": "/",
+      "destination": "reports.screening",
+      "destination_type": "queue",
+      "routing_key": "report.received.v1",
       "arguments": {}
     },
     {

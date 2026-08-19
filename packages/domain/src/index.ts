@@ -9,3 +9,4 @@ export * from "./incidents/incident-state.enum";
 export * from "./incidents/incident";
 export * from "./map/map-version";
 export * from "./evidence/evidence-lifecycle";
+export * from "./reports/report";

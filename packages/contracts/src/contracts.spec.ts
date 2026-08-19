@@ -1,4 +1,6 @@
 import {
+  CitizenReportAcceptedSchema,
+  CreateCitizenReportSchema,
   CreateSosSchema,
   CreateCitizenSessionSchema,
   CitizenSessionSchema,
@@ -16,6 +18,7 @@ import {
   InitiateEvidenceUploadSchema,
   MapFeatureCollectionInputSchema,
   PublicMapQuerySchema,
+  PublicReportTrackingSchema,
   ProblemDetailsSchema,
   ProviderQuality,
   ProviderQualitySchema,
@@ -23,12 +26,58 @@ import {
   SosIdempotencyHeadersSchema,
   IncidentReceivedEventDataSchema,
   OpsIncidentFeedQuerySchema,
+  ReportReceivedEventDataSchema,
 } from "./index";
 
 const traceId = "0123456789abcdef0123456789abcdef";
 const uuid = "550e8400-e29b-41d4-a716-446655440000";
 
 describe("executable contracts", () => {
+  it("accepts a PII-free citizen report with explicitly unverified plate text", () => {
+    const payload = {
+      categoryCode: "TRAFFIC_VIOLATION",
+      coordinateLongitude: 108.4384,
+      coordinateLatitude: 11.9404,
+      description: "Synthetic citizen report fixture",
+      plateTextUnverified: "49A-000.00",
+      clientReportedAt: "2026-08-19T10:00:00.000Z",
+    };
+    expect(CreateCitizenReportSchema.parse(payload)).toEqual(payload);
+    expect(
+      CreateCitizenReportSchema.safeParse({
+        ...payload,
+        deviceId: "forbidden-identity",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("keeps report acknowledgement, tracking and event projections minimal", () => {
+    expect(
+      CitizenReportAcceptedSchema.parse({
+        publicCode: "A3KX9M2P7Q4R",
+        status: "RECEIVED",
+        receivedAt: "2026-08-19T10:00:00.000Z",
+      }),
+    ).not.toHaveProperty("reportId");
+    expect(
+      PublicReportTrackingSchema.parse({
+        publicCode: "A3KX9M2P7Q4R",
+        status: "IN_PROGRESS",
+        receivedAt: "2026-08-19T10:00:00.000Z",
+        lastUpdatedAt: "2026-08-19T10:05:00.000Z",
+      }),
+    ).not.toHaveProperty("plateTextUnverified");
+    const event = ReportReceivedEventDataSchema.parse({
+      report_id: uuid,
+      category_code: "TRAFFIC_VIOLATION",
+      area_id: "synthetic-area",
+      state: "RECEIVED",
+    });
+    expect(event).not.toHaveProperty("public_code");
+    expect(event).not.toHaveProperty("longitude");
+    expect(event).not.toHaveProperty("plate_text_unverified");
+  });
+
   it("accepts a valid SOS request and strips no unknown data", () => {
     const payload = {
       coordinateLongitude: 108.4384,

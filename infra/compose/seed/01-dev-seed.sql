@@ -14,6 +14,12 @@ INSERT INTO incident.incident_type_catalog (code, label_vi, label_en, priority) 
   ('PEDESTRIAN_HAZARD',  N'Nguy hiểm người đi bộ',       'Pedestrian Hazard',   'HIGH')
 ON CONFLICT (code) DO NOTHING;
 
+INSERT INTO report.category_catalog (code, label_vi, label_en) VALUES
+  ('TRAFFIC_VIOLATION', N'Vi phạm giao thông (FAKE)', 'Traffic violation (FAKE)'),
+  ('DANGEROUS_DRIVING', N'Lái xe nguy hiểm (FAKE)', 'Dangerous driving (FAKE)'),
+  ('ILLEGAL_PARKING', N'Dừng đỗ không đúng quy định (FAKE)', 'Illegal parking (FAKE)')
+ON CONFLICT (code) DO NOTHING;
+
 -- Fake unit: Da Lat district patrol (synthetic)
 INSERT INTO dispatch.units (unit_code, unit_name, capability, service_area, availability) VALUES
   (

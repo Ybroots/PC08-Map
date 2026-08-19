@@ -18,7 +18,8 @@
 | T08  | BLOCKED               | Chờ D-04 SLA/escalation và D-05 unit/service-area              |
 | T09  | ANDROID EMULATOR PASS | UAT-01..04 xong; physical/iOS và production config còn pending |
 | T10  | T10B3 VIEWER PASS     | Local controlled viewer xong; production/UAT còn bị khóa       |
-| T11+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
+| T11  | T11A INTAKE PASS      | Anonymous intake/tracking local; T11B abuse/evidence/ops TODO  |
+| T12+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
 real HTTP adapter/contract fixtures và sandbox contract suite; xem
@@ -79,6 +80,16 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   actual data class; scope miss trả uniform 404. Access audit/metrics không chứa
   signed URL, object key/checksum hoặc identifier labels. Migration 09 chặn hạ
   classification từ restricted và thêm scoped lookup index.
+- Report T11A có strict public contract, citizen-session-protected submit,
+  idempotent 202 replay, random public code và generalized tracking. Report,
+  initial history, privacy-safe audit, `report.received.v1` outbox và stored
+  response commit trong một transaction; event không mang public code, location,
+  description hay plate. Rabbit giữ event trong durable `reports.screening` +
+  DLQ để consumer T11B có thể triển khai sau mà không mất event đã relay.
+- Migration 10 tạo PII-free `report.reports`, category catalog synthetic và
+  append-only history. Submitted payload được DB trigger bảo vệ; risk luôn NULL,
+  plate luôn `_unverified`, không có auto duplicate/kết luận/enforcement path.
+  `REPORT_INTAKE_ENABLED=false` mặc định và bị reject ở staging/production.
 
 ## Hard stops còn mở
 
@@ -95,7 +106,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: chốt production T10/UAT hoặc physical/iOS gate T09
+## Bước tiếp theo đề xuất: T11B abuse/evidence/operator foundation
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -113,8 +124,15 @@ T10B3 đã hoàn tất controlled preview/download backend trên local PostgreSQ
 Để gọi T10 DONE vẫn cần approved storage/secret resolver/real AV, D-09 media/load
 profile, malware alert workflow và end-user UAT-11..14. Khi chưa có các quyết định
 này, giữ `EVIDENCE_PIPELINE_ENABLED=false`; không dựng fake production, không đánh
-dấu pilot UAT pass và không thêm retention delete khi D-06 còn pending. T11 phụ
-thuộc T09-T10 nên chưa nên triển khai workflow production trước các gate này.
+dấu pilot UAT pass và không thêm retention delete khi D-06 còn pending.
+
+T11A local/test đã hoàn tất. Lát cắt tiếp theo là T11B: evidence ownership/linking
+chỉ với upload READY + capability/session hợp lệ; risk/rate-limit/captcha ports;
+duplicate candidate theo time/space/hash/plate; và ops verification queue có
+confirm/false-positive override. Heuristic chỉ được tạo suggestion, không tự đổi
+report thành DUPLICATE/VERIFIED và không tạo enforcement decision. Không tự điền
+threshold D-09; mọi giá trị local/test phải explicit, production vẫn fail-closed
+cho đến khi T09/T10 provider/UAT/D-09 gates được phê duyệt.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -178,6 +196,16 @@ chậm hơn PostgreSQL; finalize timestamp giờ được clamp theo persisted `
 và có regression fixture -1 giây. Implementation ở commit `1544b1a`; GitHub CI
 run `32219225891` xanh đủ 6/6 job, gồm secret scan, static gates, contract drift,
 coverage, cold-start integration và build.
+
+T11A verification (2026-08-19) có executable report submit/accepted/tracking và
+`report.received.v1` contracts, 54 domain tests, 24 contract tests, 18 config
+tests và 68 API unit tests. Cold-start đã xóa đúng 6 volume synthetic `atgt-*`,
+chạy migration 10 trước seed 11, dựng 8 service healthy và khởi tạo 3 MinIO bucket
+private. Non-cached integration pass API 56/56 + worker 5/5; HTTP test xác nhận
+missing session 401, anonymous session -> 202, exact replay và tracking tối giản.
+Full format/lint/typecheck/unit/coverage/contract/e2e/build đều pass. Production
+intake vẫn bị config reject; xem `docs/plans/T11-citizen-reports.md` để tiếp tục
+T11B mà không suy đoán D-09.
 
 Từ repository root:
 

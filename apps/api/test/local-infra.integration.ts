@@ -116,6 +116,22 @@ describe("T01: Local dev infrastructure smoke tests", () => {
       expect(result.rows[0]?.count).toBeGreaterThanOrEqual(6);
     });
 
+    it("loads T11A report tables and only synthetic category seed data", async () => {
+      if (SKIP) return;
+      const result = await client.query(`
+        SELECT
+          (SELECT count(*)::int FROM information_schema.tables
+            WHERE table_schema='report'
+              AND table_name IN ('category_catalog','reports','status_history')) AS table_count,
+          (SELECT count(*)::int FROM report.category_catalog
+            WHERE label_vi LIKE '%(FAKE)%' AND label_en LIKE '%(FAKE)%') AS fake_category_count
+      `);
+      expect(result.rows[0]).toEqual({
+        table_count: 3,
+        fake_category_count: 3,
+      });
+    });
+
     it("audit.audit_events table exists", async () => {
       if (SKIP) return;
       const result = await client.query(`
@@ -164,6 +180,25 @@ describe("T01: Local dev infrastructure smoke tests", () => {
       if (SKIP) return;
       const ok = await tcpCheck("localhost", 15672);
       expect(ok).toBe(true);
+    });
+
+    it("durably binds report intake events to the screening queue", async () => {
+      if (SKIP) return;
+      const authorization = Buffer.from(
+        "atgt:devpassword_local",
+        "utf8",
+      ).toString("base64");
+      const response = await fetch(
+        "http://localhost:15672/api/bindings/%2F/e/atgt.events/q/reports.screening",
+        { headers: { authorization: `Basic ${authorization}` } },
+      );
+      expect(response.status).toBe(200);
+      const bindings = (await response.json()) as Array<{
+        routing_key: string;
+      }>;
+      expect(bindings.map((binding) => binding.routing_key)).toContain(
+        "report.received.v1",
+      );
     });
   });
 

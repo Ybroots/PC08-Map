@@ -12,6 +12,9 @@ export * from "./identity/citizen-session.dto";
 // Evidence upload/processing
 export * from "./evidence/evidence.dto";
 
+// Anonymous citizen reports
+export * from "./reports/report.dto";
+
 // Versioned operational map data
 export * from "./map/map-data.dto";
 

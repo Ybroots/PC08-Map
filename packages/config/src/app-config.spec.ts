@@ -211,6 +211,51 @@ describe("loadAndValidateConfig", () => {
     ).toEqual({ enabled: true, pollMs: 1000, batchSize: 25 });
   });
 
+  it("keeps citizen report intake local/test and fail-closed", () => {
+    expect(loadAndValidateConfig(validEnvironment()).reportIntake).toEqual({
+      enabled: false,
+      intakeAreaId: undefined,
+      idempotencyTtlMinutes: undefined,
+    });
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        REPORT_INTAKE_ENABLED: "true",
+      }),
+    ).toThrow("REPORT_INTAKE_AREA_ID is required");
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        REPORT_INTAKE_ENABLED: "true",
+        REPORT_INTAKE_AREA_ID: "lam-dong",
+      }),
+    ).toThrow("REPORT_IDEMPOTENCY_TTL_MINUTES is required");
+    expect(
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        REPORT_INTAKE_ENABLED: "true",
+        REPORT_INTAKE_AREA_ID: "lam-dong",
+        REPORT_IDEMPOTENCY_TTL_MINUTES: "60",
+      }).reportIntake,
+    ).toEqual({
+      enabled: true,
+      intakeAreaId: "lam-dong",
+      idempotencyTtlMinutes: 60,
+    });
+    expect(() =>
+      loadAndValidateConfig({
+        ...validEnvironment(),
+        APP_ENV: "production",
+        LOG_LEVEL: "info",
+        OIDC_ISSUER: "https://identity.example.test/realms/atgt",
+        OIDC_JWKS_URI: "https://identity.example.test/realms/atgt/certs",
+        REPORT_INTAKE_ENABLED: "true",
+      }),
+    ).toThrow(
+      "REPORT_INTAKE_ENABLED is blocked outside local/test until T11B production gates complete",
+    );
+  });
+
   it("keeps the evidence pipeline disabled without implicit media policy", () => {
     expect(loadAndValidateConfig(validEnvironment()).evidence).toEqual({
       enabled: false,

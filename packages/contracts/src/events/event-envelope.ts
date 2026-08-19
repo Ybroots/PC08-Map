@@ -3,6 +3,7 @@ import { z } from "zod";
 export const EVENT_ROUTING_KEYS = {
   INCIDENT_RECEIVED: "incident.received.v1",
   INCIDENT_VERIFIED: "incident.verified.v1",
+  REPORT_RECEIVED: "report.received.v1",
   ASSIGNMENT_CREATED: "assignment.created.v1",
   ASSIGNMENT_ACK_TIMED_OUT: "assignment.ack_timed_out.v1",
   EVIDENCE_SCAN_REQUESTED: "evidence.scan_requested.v1",
