@@ -109,3 +109,7 @@ export type EvidenceScanRequestedEventData = z.infer<
 export type EvidenceReadyEventData = z.infer<
   typeof EvidenceReadyEventDataSchema
 >;
+export type EvidenceScanRequestedEvent = z.infer<
+  typeof EvidenceScanRequestedEventSchema
+>;
+export type EvidenceReadyEvent = z.infer<typeof EvidenceReadyEventSchema>;

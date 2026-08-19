@@ -56,9 +56,11 @@ with monotonic cursors 12–15 and state `RECEIVED`.
 | UAT-13 | EXIF data in photo            | Derivative has EXIF stripped; original retained immutably      |
 | UAT-14 | Unauthorized download attempt | Blocked; audit event logged                                    |
 
-T10B1 now verifies a technical signed PUT into quarantine and idempotent finalize
-against local MinIO/PostgreSQL. It still does not run magic-byte/AV/derivative
-processing or authorize a preview; therefore UAT-11..14 remain pending.
+T10B2 technical integration now verifies clean JPEG processing, duplicate-event
+idempotency, exact immutable original, EXIF-free watermarked derivative and EICAR
+rejection against local MinIO/PostgreSQL. This is backend acceptance evidence for
+parts of UAT-11..13, not end-user UAT: authorized preview, malware alert workflow
+and unauthorized-read audit are not implemented. UAT-11..14 remain pending.
 
 ## Reports (UAT-15 to UAT-17)
 

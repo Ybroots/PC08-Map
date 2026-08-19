@@ -8,9 +8,9 @@ atomically với outbox, worker xử lý idempotent và chỉ tạo bản ghi RE
 type/size/hash/AV/derivative đều pass. Original và checksum không thể bị sửa; mọi
 preview/download sau này phải qua policy và audit.
 
-T10 được chia hai checkpoint. T10A triển khai contract, migration, lifecycle,
-configuration và test foundation. T10B mới nối S3-compatible adapter, AV adapter,
-derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
+T10 được chia thành T10A foundation, T10B1 upload runtime, T10B2 media worker và
+T10B3 controlled viewer/UAT. Không gọi T10 DONE trước khi viewer authorization,
+production provider gate và UAT-11..14 hoàn tất.
 
 ## Source requirements
 
@@ -28,7 +28,11 @@ derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
 
 - Local Compose có ba bucket private `atgt-quarantine`,
   `atgt-evidence-original`, `atgt-evidence-derivative`; T10B1 đã nối S3-compatible
-  signed PUT/HEAD adapter cho local/test nhưng chưa có media worker.
+  signed PUT/HEAD adapter cho local/test.
+- T10B2 có idempotent RabbitMQ media worker cho JPEG/PNG: bounded read, exact
+  size/SHA-256, magic bytes, fake EICAR AV, immutable original và watermarked PNG
+  derivative đã auto-orient/loại EXIF. READY/history/audit/ready-event commit cùng
+  inbox claim; provider failure được retry và invalid event đi DLQ.
 - `evidence` schema có upload/object/history tables và immutable triggers. Runtime
   initiate/finalize dùng citizen session, idempotency, transaction và outbox.
 - Evidence events có typed payload không mang object key/URL/checksum.
@@ -64,8 +68,8 @@ derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
 1. T10A: executable contracts/events, expand-only migration and DB immutability.
 2. T10A: pure lifecycle and fail-closed configuration with deterministic tests.
 3. T10B1: initiate/finalize application service + S3-compatible quarantine port.
-4. T10B: idempotent media worker, magic/hash/AV, immutable original and derivative.
-5. T10B: scoped preview/download authorization, audit, observability and UAT.
+4. T10B2: idempotent media worker, magic/hash/AV, immutable original và derivative.
+5. T10B3: scoped preview/download authorization, audit, observability và UAT.
 
 ## Test plan
 
@@ -90,8 +94,8 @@ derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
 
 - [x] T10A contracts/events/migration/domain/config and deterministic tests pass.
 - [x] Initiate/finalize use server key and quarantine only.
-- [ ] Worker validates magic/size/hash/AV and retries idempotently.
-- [ ] Original immutable; derivative strips EXIF and carries internal watermark.
+- [x] Worker validates magic/size/hash/AV and retries idempotently in local/test.
+- [x] Original immutable; derivative strips EXIF and carries internal watermark.
 - [ ] Scoped preview/download is short-lived and audit logged; no URL/key in logs.
 - [ ] UAT-11..14 and full repository/CI gates pass.
 
@@ -117,14 +121,20 @@ derivative/controlled download và UAT-11..14. Không gọi T10 DONE sau T10A.
       PostgreSQL `created_at`; the test now uses the runtime clock. Commit
       `3655aff` passed all six jobs in CI run `32007748446`, including cold-start
       PostgreSQL/MinIO integration from empty volumes.
+- [x] 2026-08-19: T10B2 added the exact scan-request consumer, PostgreSQL advisory
+      lease/inbox transaction, bounded S3 reads, SHA-256/magic checks, fake EICAR
+      AV, immutable conditional writes and Sharp EXIF-free watermarked derivative.
+      Focused worker unit tests pass 13/13 and real PostgreSQL/MinIO integration
+      passes clean-media/idempotency and EICAR rejection scenarios.
 
 ## Handoff
 
-- Changed files: T10A foundation plus T10B1 API module, citizen-session guard,
-  S3 adapter, configuration, OpenAPI and runtime integration.
-- Tests run/results: focused T10B1 has 57 API unit tests and 46 API integration
-  tests; frozen install, format, lint, typecheck, unit/coverage, contract,
-  integration, e2e and build all pass locally. CI run `32007748446` passes 6/6.
+- Changed files: T10B2 worker ports/adapters/processor, exact Rabbit binding,
+  local/test fail-closed MIME config, unit and PostgreSQL/MinIO integration tests.
+- Tests run/results: focused T10B2 has 13 worker unit tests and 2 media integration
+  tests passing. Full repository gates pass; cold-start API integration is 46/46
+  and worker integration is 5/5. Commit/CI are recorded in `docs/HANDOFF.md` after
+  the push run.
 - Remaining risks: production provider/secret resolution, media limits, AV/CDR,
-  derivative/download authorization and physical UAT.
+  controlled viewer/download authorization and physical UAT.
 - Rollback: keep all evidence rows/objects; disable feature and worker.

@@ -141,7 +141,7 @@
       "vhost": "/",
       "destination": "evidence.pipeline",
       "destination_type": "queue",
-      "routing_key": "evidence.#",
+      "routing_key": "evidence.scan_requested.v1",
       "arguments": {}
     },
     {

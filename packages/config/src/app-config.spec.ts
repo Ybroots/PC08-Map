@@ -262,6 +262,14 @@ describe("loadAndValidateConfig", () => {
     expect(() =>
       loadAndValidateConfig({
         ...enabled,
+        EVIDENCE_ALLOWED_MIME_TYPES: "image/jpeg,video/mp4",
+      }),
+    ).toThrow(
+      "EVIDENCE_ALLOWED_MIME_TYPES contains a media type unsupported by the T10B2 derivative worker",
+    );
+    expect(() =>
+      loadAndValidateConfig({
+        ...enabled,
         EVIDENCE_USE_FAKE_ANTIVIRUS: "false",
       }),
     ).toThrow(

@@ -17,7 +17,7 @@
 | T07  | DONE                  | Atomic SOS, replay, tracking, scoped feed, relay + ops shell   |
 | T08  | BLOCKED               | Chờ D-04 SLA/escalation và D-05 unit/service-area              |
 | T09  | ANDROID EMULATOR PASS | UAT-01..04 xong; physical/iOS và production config còn pending |
-| T10  | T10B1 UPLOAD PASS     | Local initiate/finalize xong; AV worker/derivative/UAT còn chờ |
+| T10  | T10B2 WORKER PASS     | Local media worker xong; controlled viewer/UAT còn chờ         |
 | T11+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
@@ -67,6 +67,10 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   idempotency, server-generated quarantine key và HMAC capability chỉ lưu hash.
   MinIO adapter signed PUT/HEAD chạy ngoài transaction; finalize atomically ghi
   state/history/audit/outbox. Event không mang object key/URL/checksum.
+- Evidence T10B2 consume đúng `evidence.scan_requested.v1`, giữ advisory lease,
+  bounded-read quarantine, kiểm tra exact size/SHA-256/magic, fake EICAR AV và tạo
+  PNG watermarked đã loại EXIF. Conditional puts giữ original/derivative bất biến;
+  inbox + READY/history/audit/ready-event được commit atomically.
 - Evidence lifecycle chỉ READY sau exact hash/MIME/size, clean AV và đủ original +
   derivative. Config mặc định disabled, yêu cầu toàn bộ deployment values và chặn
   staging/production cho tới T10B provider approval.
@@ -86,7 +90,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: T10B provider gate hoặc physical/iOS gate T09
+## Bước tiếp theo đề xuất: T10B3 controlled viewer hoặc physical/iOS gate T09
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -100,12 +104,12 @@ permission precise/approximate/deny, airplane-mode reconnect, double action và
 build/UAT trên macOS. Trước release cần approved application ID, HTTPS API endpoint
 và signing; không tự suy đoán các giá trị này. D-09 vẫn khóa media/load.
 
-T10B1 đã phát signed upload URL và xác nhận object quarantine trên local MinIO,
-nhưng production storage/secret resolver và AV vẫn chưa được duyệt. Bước tiếp theo
-là idempotent media worker: magic/size/hash/AV, original bất biến và derivative.
-Khi chưa có quyết định provider cùng explicit deployment values, giữ
-`EVIDENCE_PIPELINE_ENABLED=false`; không dựng fake production, không đánh dấu
-UAT-11..14 pass và không thêm retention delete khi D-06 còn pending.
+T10B2 đã xử lý media idempotent trên local PostgreSQL/MinIO nhưng production
+storage/secret resolver và AV vẫn chưa được duyệt. Bước kế tiếp trong T10 là T10B3:
+scoped preview/download authorization, URL ngắn hạn, audit và UAT-11..14. Khi chưa
+có quyết định provider cùng explicit deployment values, giữ
+`EVIDENCE_PIPELINE_ENABLED=false`; không dựng fake production, không đánh dấu UAT
+pass và không thêm retention delete khi D-06 còn pending.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -146,8 +150,16 @@ Runtime ở commit `72b334e`; clean-runner phát hiện test dùng timestamp c�
 trước `created_at` của PostgreSQL nên smoke clock đã sửa tại `3655aff`. GitHub CI
 run `32007748446` xanh đủ sáu job, gồm cold-start PostgreSQL/MinIO và signed PUT
 integration. Xem
-`docs/plans/T10-evidence-pipeline.md` để tiếp tục media worker mà không vượt hard
+`docs/plans/T10-evidence-pipeline.md` để tiếp tục controlled viewer mà không vượt hard
 stop.
+
+T10B2 verification (2026-08-19) có 13 worker unit tests và 2 real PostgreSQL/MinIO
+media integration tests: clean JPEG + duplicate event tạo đúng một version
+original, derivative PNG không EXIF; EICAR bị REJECTED và không tạo object đọc
+được. Full frozen-install, format/lint/typecheck, unit/coverage, contract, e2e và
+build đều pass. Cold-start từ volume rỗng dựng 8 service healthy, Rabbit chỉ bind
+scan-request, seed có 6 incident type; API integration 46/46 và worker integration
+5/5 pass. Commit/CI T10B2 được bổ sung sau khi push.
 
 Từ repository root:
 

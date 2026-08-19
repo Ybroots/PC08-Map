@@ -2,12 +2,12 @@
 
 ## Prerequisites
 
-| Tool           | Version   | Install             |
-| -------------- | --------- | ------------------- |
-| Node.js        | >= 20 LTS | https://nodejs.org  |
-| pnpm           | >= 9      | `npm i -g pnpm@9`   |
-| Docker Desktop | >= 4.20   | https://docker.com  |
-| Git            | any       | https://git-scm.com |
+| Tool           | Version     | Install             |
+| -------------- | ----------- | ------------------- |
+| Node.js        | >= 20.9 LTS | https://nodejs.org  |
+| pnpm           | >= 9        | `npm i -g pnpm@9`   |
+| Docker Desktop | >= 4.20     | https://docker.com  |
+| Git            | any         | https://git-scm.com |
 
 ## First-time setup
 
@@ -269,9 +269,9 @@ initializer after pulling T10A:
 docker compose -f infra/compose/docker-compose.yml run --rm minio-init
 ```
 
-T10B1 exposes citizen-session-protected initiate/finalize routes for local/test,
-but does not start a media worker. Leave the feature disabled unless explicitly
-testing this slice:
+T10B1 exposes citizen-session-protected initiate/finalize routes and T10B2 starts
+the media worker when the complete local/test configuration is explicitly enabled.
+Leave the feature disabled outside a deliberate evidence test:
 
 ```dotenv
 EVIDENCE_PIPELINE_ENABLED=false
@@ -290,6 +290,13 @@ fixtures, not production policy. Staging/production reject enablement until the
 approved storage/AV provider and secret resolver exist. Never place raw capabilities,
 signed URLs, object keys, checksums or scan detail in logs/tickets/screenshots.
 
+The T10B2 worker accepts only `image/jpeg,image/png`. It reads quarantine with the
+configured byte bound, verifies size/SHA-256/magic bytes, runs the deliberately
+fake EICAR detector, writes a PNG derivative before the original with conditional
+immutable puts, then atomically records READY/history/audit/outbox/inbox. EICAR or
+stable validation failures remain unreadable and become REJECTED; provider errors
+are requeued. The quarantine object is not deleted while D-06 is pending.
+
 There is no retention cleanup path. Do not manually delete quarantine/original
 objects or evidence rows to “unstick” a test; inspect append-only history and keep
 the feature disabled. Integration verification:
@@ -297,6 +304,7 @@ the feature disabled. Integration verification:
 ```bash
 pnpm --filter @atgt/api exec jest --config jest.integration.config.js --runInBand evidence-foundation.integration.ts
 pnpm --filter @atgt/api exec jest --config jest.integration.config.js --runInBand evidence-runtime.integration.ts
+pnpm --filter @atgt/worker exec jest --config jest.integration.config.js --runInBand evidence-media.integration.ts
 ```
 
 ### Port conflict

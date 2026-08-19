@@ -11,13 +11,16 @@
     "test:integration": "jest --config jest.integration.config.js --passWithNoTests"
   },
   "dependencies": {
+    "@atgt/domain": "workspace:*",
     "@atgt/config": "workspace:*",
     "@atgt/contracts": "workspace:*",
     "@atgt/observability": "workspace:*",
+    "@aws-sdk/client-s3": "^3.1111.0",
     "amqplib": "^0.10.4",
     "dotenv": "^16.4.5",
     "pg": "^8.11.0",
-    "reflect-metadata": "^0.2.0"
+    "reflect-metadata": "^0.2.0",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.5",

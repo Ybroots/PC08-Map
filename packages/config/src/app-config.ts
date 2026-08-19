@@ -322,6 +322,16 @@ export function loadAndValidateConfig(
       "EVIDENCE_ALLOWED_MIME_TYPES contains an invalid MIME type",
     );
   }
+  if (
+    evidenceEnabled &&
+    evidenceAllowedMimeTypes.some(
+      (mime) => mime !== "image/jpeg" && mime !== "image/png",
+    )
+  ) {
+    throw new Error(
+      "EVIDENCE_ALLOWED_MIME_TYPES contains a media type unsupported by the T10B2 derivative worker",
+    );
+  }
   const evidenceMaxBytes = source["EVIDENCE_MAX_BYTES"]?.trim()
     ? integer(source, "EVIDENCE_MAX_BYTES", 0, 1, Number.MAX_SAFE_INTEGER)
     : undefined;
