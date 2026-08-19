@@ -78,13 +78,14 @@ search/export, leader/auditor UI, completeness report va UAT duoc phe duyet/noi 
 - [x] Exact event reconciliation/dedupe/timezone behavior is deterministic.
 - [x] Leader area scope and small-cell suppression fail closed.
 - [x] Output exposes data freshness without event IDs or identity.
-- [ ] Full local gates/CI pass; T16B blockers remain explicit.
+- [x] Full local gates/CI pass; T16B blockers remain explicit.
 
 ## Progress log
 
 - [x] 2026-08-19: source/current-state/decision review and T16A boundary complete.
 - [x] 2026-08-19: T16A implementation and full local verification complete.
-- [ ] Publish implementation and record green CI evidence.
+- [x] 2026-08-19: implementation `cd4c61b` published; CI run `32241122195`
+  green 6/6.
 
 ## Handoff
 
@@ -92,7 +93,8 @@ search/export, leader/auditor UI, completeness report va UAT duoc phe duyet/noi 
   tests, KPI dictionary and deterministic map integration fixtures.
 - Tests run/results: analytics 9/9, contracts 30/30, API unit 90/90, worker unit
   25/25, API integration 70/70, worker integration 9/9; full local gates and clean
-  Linux Node 20 coverage 19/19 workspace tasks pass.
+  Linux Node 20 coverage 19/19 workspace tasks pass. GitHub CI run `32241122195`
+  passed all six jobs for implementation `cd4c61b`.
 - Remaining risks: persisted read model, governed thresholds/targets, audit export,
   completeness report, dashboard and UAT.
 - Rollback: no runtime/data change; revert T16A foundation files.

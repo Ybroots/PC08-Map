@@ -353,6 +353,7 @@ build pass; clean Linux Node 20/2 CPU coverage pass 19/19 workspace tasks. Gate
 integration cũng sửa nondeterminism cũ bằng advisory lock chung theo layer và
 kiểm tra trực tiếp GiST bbox predicate. T16B vẫn chờ governed baseline/target,
 small-cell/load policy, persisted read model, audit export, dashboard và UAT.
+Implementation ở commit `cd4c61b`; GitHub CI run `32241122195` xanh đủ 6/6 job.
 
 Từ repository root:
 
