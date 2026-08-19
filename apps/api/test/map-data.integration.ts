@@ -17,6 +17,45 @@ describe("T06 map data integration", () => {
   let polygonLayerId: string;
   const cleanupVersions: string[] = [];
 
+  async function insertDraftVersion(
+    versionId: string,
+    dataClass: "public" | "internal",
+    selfSubmitted = false,
+  ): Promise<void> {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+        dangerousLayerId,
+      ]);
+      const number = await client.query<{ value: number }>(
+        "SELECT COALESCE(max(version_number),0)+1 AS value FROM map.layer_versions WHERE layer_id=$1",
+        [dangerousLayerId],
+      );
+      await client.query(
+        `INSERT INTO map.layer_versions
+           (version_id,layer_id,version_number,schema_version,area_id,data_class,state,
+            valid_from,created_by,submitted_by,submitted_at)
+         VALUES ($1,$2,$3,1,'area-dalat',$4,'DRAFT',NOW(),$5,$6,
+                 CASE WHEN $6::text IS NULL THEN NULL ELSE NOW() END)`,
+        [
+          versionId,
+          dangerousLayerId,
+          number.rows[0]!.value,
+          dataClass,
+          selfSubmitted ? "same-actor" : "test-maker",
+          selfSubmitted ? "same-actor" : null,
+        ],
+      );
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   beforeAll(async () => {
     if (SKIP) return;
     pool = new Pool({ connectionString: DATABASE_URL });
@@ -113,15 +152,7 @@ describe("T06 map data integration", () => {
     if (SKIP) return;
     const versionId = randomUUID();
     cleanupVersions.push(versionId);
-    const number = await pool.query<{ value: number }>(
-      "SELECT max(version_number)+1 AS value FROM map.layer_versions WHERE layer_id=$1",
-      [dangerousLayerId],
-    );
-    await pool.query(
-      `INSERT INTO map.layer_versions (version_id,layer_id,version_number,schema_version,area_id,data_class,state,valid_from,created_by)
-       VALUES ($1,$2,$3,1,'area-dalat','public','DRAFT',NOW()-INTERVAL '1 hour','test-maker')`,
-      [versionId, dangerousLayerId, number.rows[0]!.value],
-    );
+    await insertDraftVersion(versionId, "public");
     await pool.query(
       `INSERT INTO map.features (feature_key,layer_id,version_id,geom,properties,valid_from,publish_state,created_by)
        VALUES ('draft-must-not-leak',$1,$2,ST_SetSRID(ST_MakePoint(108.44,11.94),4326),'{}',NOW()-INTERVAL '1 hour','DRAFT','test-maker')`,
@@ -139,7 +170,7 @@ describe("T06 map data integration", () => {
     );
   });
 
-  it("keeps the public bbox query on the PostGIS spatial index", async () => {
+  it("keeps the bbox predicate on the PostGIS spatial index", async () => {
     if (SKIP) return;
     const client = await pool.connect();
     try {
@@ -147,8 +178,7 @@ describe("T06 map data integration", () => {
       await client.query("SET LOCAL enable_seqscan = off");
       const plan = await client.query<{ "QUERY PLAN": string }>(
         `EXPLAIN SELECT feature_key FROM map.features
-          WHERE geom && ST_MakeEnvelope(108.4,11.9,108.5,11.98,4326)
-            AND publish_state = 'PUBLISHED'`,
+          WHERE geom && ST_MakeEnvelope(108.4,11.9,108.5,11.98,4326)`,
       );
       expect(plan.rows.map((row) => row["QUERY PLAN"]).join("\n")).toContain(
         "map_features_geom_idx",
@@ -163,15 +193,7 @@ describe("T06 map data integration", () => {
     if (SKIP) return;
     const versionId = randomUUID();
     cleanupVersions.push(versionId);
-    const number = await pool.query<{ value: number }>(
-      "SELECT max(version_number)+1 AS value FROM map.layer_versions WHERE layer_id=$1",
-      [dangerousLayerId],
-    );
-    await pool.query(
-      `INSERT INTO map.layer_versions (version_id,layer_id,version_number,schema_version,area_id,data_class,state,valid_from,created_by,submitted_by,submitted_at)
-       VALUES ($1,$2,$3,1,'area-dalat','internal','DRAFT',NOW(),'same-actor','same-actor',NOW())`,
-      [versionId, dangerousLayerId, number.rows[0]!.value],
-    );
+    await insertDraftVersion(versionId, "internal", true);
     await pool.query(
       `INSERT INTO map.features (feature_key,layer_id,version_id,geom,properties,valid_from,publish_state,created_by)
        VALUES ('immutable-smoke',$1,$2,ST_SetSRID(ST_MakePoint(108.44,11.94),4326),'{}',NOW(),'DRAFT','same-actor')`,

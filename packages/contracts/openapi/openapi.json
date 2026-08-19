@@ -1034,6 +1034,57 @@
         ],
         "additionalProperties": false
       },
+      "IncidentReceivedEvent": {
+        "type": "object",
+        "properties": {
+          "event_id": { "type": "string", "format": "uuid" },
+          "type": { "type": "string", "enum": ["incident.received.v1"] },
+          "version": { "type": "number", "enum": [1] },
+          "occurred_at": { "type": "string", "format": "date-time" },
+          "trace_id": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+          "aggregate_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "aggregate_type": { "type": "string", "enum": ["incident"] },
+          "data": {
+            "type": "object",
+            "properties": {
+              "incident_id": { "type": "string", "format": "uuid" },
+              "incident_type": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+              },
+              "priority": {
+                "type": "string",
+                "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+              },
+              "area_id": { "type": "string", "minLength": 1, "maxLength": 100 },
+              "state": { "type": "string", "enum": ["RECEIVED"] }
+            },
+            "required": [
+              "incident_id",
+              "incident_type",
+              "priority",
+              "area_id",
+              "state"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "event_id",
+          "type",
+          "version",
+          "occurred_at",
+          "trace_id",
+          "aggregate_id",
+          "aggregate_type",
+          "data"
+        ],
+        "additionalProperties": false
+      },
       "NotificationRequestedEvent": {
         "type": "object",
         "properties": {

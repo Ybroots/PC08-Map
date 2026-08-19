@@ -15,6 +15,7 @@ import {
   CreateCitizenReportSchema,
   CreateCitizenSessionSchema,
   CreateSosSchema,
+  IncidentReceivedEventSchema,
   EventEnvelopeSchema,
   EvidenceScanPendingSchema,
   EvidenceAccessGrantSchema,
@@ -158,6 +159,7 @@ const citizenSessionHeader = registry.register(
   CitizenSessionHeaderSchema,
 );
 registry.register("EventEnvelope", EventEnvelopeSchema);
+registry.register("IncidentReceivedEvent", IncidentReceivedEventSchema);
 registry.register(
   "NotificationRequestedEvent",
   NotificationRequestedEventSchema,

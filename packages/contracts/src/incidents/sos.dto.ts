@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { IdempotencyKeySchema } from "../common/idempotency";
+import {
+  EVENT_ROUTING_KEYS,
+  eventEnvelopeSchema,
+} from "../events/event-envelope";
 
 export const IncidentStateSchema = z.enum([
   "RECEIVED",
@@ -151,6 +155,25 @@ export const IncidentReceivedEventDataSchema = z
 export type IncidentReceivedEventData = z.infer<
   typeof IncidentReceivedEventDataSchema
 >;
+
+export const IncidentReceivedEventSchema = eventEnvelopeSchema(
+  IncidentReceivedEventDataSchema,
+)
+  .extend({
+    type: z.literal(EVENT_ROUTING_KEYS.INCIDENT_RECEIVED),
+    version: z.literal(1),
+    aggregate_type: z.literal("incident"),
+  })
+  .superRefine((event, context) => {
+    if (event.aggregate_id !== event.data.incident_id) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["aggregate_id"],
+        message: "Incident aggregate_id must equal incident_id",
+      });
+    }
+  });
+export type IncidentReceivedEvent = z.infer<typeof IncidentReceivedEventSchema>;
 
 export const EMERGENCY_CONTACTS: readonly EmergencyContact[] = [
   { name: "Cuu nan - Cuu ho", number: "112", type: "112" },

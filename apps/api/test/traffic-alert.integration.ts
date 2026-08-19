@@ -55,9 +55,9 @@ describe("T13A published traffic-alert projection", () => {
     cleanupVersions.push(versionId);
     try {
       await client.query("BEGIN");
-      await client.query(
-        "SELECT pg_advisory_xact_lock(hashtext('traffic-alert-test-version'))",
-      );
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+        layerId,
+      ]);
       const number = await client.query<{ value: number }>(
         "SELECT COALESCE(max(version_number),0)+1 AS value FROM map.layer_versions WHERE layer_id=$1",
         [layerId],

@@ -23,7 +23,8 @@
 | T13  | T13A LOCAL PASS       | Published bbox alert projection; T13B chờ D-03/D-09            |
 | T14  | T14A LOCAL PASS       | Read-only resume workspace; live/dispatch chờ D-02/04/05/09    |
 | T15  | T15A LOCAL PASS       | Internal-only contract/ports; provider/runtime chờ D-08        |
-| T16+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
+| T16  | T16A LOCAL PASS       | Scoped trusted-event KPI core; dashboard/export còn bị khóa    |
+| T17+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
 real HTTP adapter/contract fixtures và sandbox contract suite; xem
@@ -128,6 +129,11 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   tác nghiệp. Pure dispatcher dùng injected claim/template/preference/provider/
   audit ports; duplicate, opt-out, mandatory, retryable/permanent provider failure
   đều có deterministic test. Không có adapter, migration hay bootstrap wiring.
+- T16A thêm immutable metric dictionary và pure trusted-event aggregator cho ba
+  count metric. Chỉ leader đúng area được đọc; event replay được dedupe theo ID,
+  conflict/source-version drift fail closed, ngày dùng `Asia/Ho_Chi_Minh` và
+  small-cell count trả `null` theo ngưỡng bắt buộc injected. Không có route,
+  migration, read model, audit export hay dashboard runtime.
 
 ## Hard stops còn mở
 
@@ -144,7 +150,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất sau T15A: T16 audit/KPI safe foundation
+## Bước tiếp theo đề xuất sau T16A: rà T17 production infrastructure
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -183,9 +189,11 @@ assignment/SLA/service area chờ D-04/D-05; realtime cadence/load chờ D-09. K
 đổi synthetic shell thành live bằng cách hard-code bearer hoặc poll interval.
 T15A đã tách executable internal-only contract/ports khỏi provider selection.
 Không nối dispatcher vào bootstrap, tạo production template, retry count/backoff,
-SMS/email/push hay contact endpoint trước D-08/D-09. Lát cắt khả thi kế tiếp là rà
-T16 để thêm audit/KPI foundation chỉ từ aggregate, không suy đoán baseline hoặc
-đọc privacy vault.
+SMS/email/push hay contact endpoint trước D-08/D-09. T16A chỉ là KPI core không
+runtime; không thêm baseline/target, persisted analytics, audit export hay leader
+dashboard trước khi governance, suppression/load và ATTT gates được duyệt. Rà T17
+theo inventory/topology thực tế; không tự tạo production address, certificate,
+secret hoặc capacity value.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -336,6 +344,15 @@ worker 9/9. Clean Linux Node 20/2 CPU coverage pass 19/19 workspace tasks. T15B
 vẫn blocked bởi D-02/D-04/D-08/D-09, provider security review, persistence,
 contact/deep-link và UAT. Implementation ở commit `e0ee0c0`; GitHub CI run
 `32239395995` xanh đủ 6/6 job.
+
+T16A local verification (2026-08-19) có immutable metric dictionary và scoped
+trusted-event aggregation cho incident/report counts. Analytics unit 9/9, contract
+30/30, API unit 90/90, worker unit 25/25, API integration 70/70 và worker
+integration 9/9 đều pass. Full format/lint/typecheck/unit/coverage/contract/e2e/
+build pass; clean Linux Node 20/2 CPU coverage pass 19/19 workspace tasks. Gate
+integration cũng sửa nondeterminism cũ bằng advisory lock chung theo layer và
+kiểm tra trực tiếp GiST bbox predicate. T16B vẫn chờ governed baseline/target,
+small-cell/load policy, persisted read model, audit export, dashboard và UAT.
 
 Từ repository root:
 

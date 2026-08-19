@@ -25,6 +25,7 @@ import {
   SosAcceptedSchema,
   SosIdempotencyHeadersSchema,
   IncidentReceivedEventDataSchema,
+  IncidentReceivedEventSchema,
   OpsIncidentFeedQuerySchema,
   OpsReportVerificationDecisionSchema,
   OpsReportVerificationQueueQuerySchema,
@@ -308,15 +309,37 @@ describe("executable contracts", () => {
   });
 
   it("keeps the incident received event free of public codes and coordinates", () => {
-    const data = IncidentReceivedEventDataSchema.parse({
-      incident_id: uuid,
-      incident_type: "TRAFFIC_ACCIDENT",
-      priority: "CRITICAL",
-      area_id: "lam-dong",
-      state: "RECEIVED",
+    const event = IncidentReceivedEventSchema.parse({
+      event_id: uuid,
+      type: EVENT_ROUTING_KEYS.INCIDENT_RECEIVED,
+      version: 1,
+      occurred_at: "2026-08-16T10:00:00.000Z",
+      trace_id: traceId,
+      aggregate_id: uuid,
+      aggregate_type: "incident",
+      data: {
+        incident_id: uuid,
+        incident_type: "TRAFFIC_ACCIDENT",
+        priority: "CRITICAL",
+        area_id: "lam-dong",
+        state: "RECEIVED",
+      },
     });
+    const data = IncidentReceivedEventDataSchema.parse(event.data);
     expect(data).not.toHaveProperty("public_code");
     expect(data).not.toHaveProperty("coordinate");
+    expect(
+      IncidentReceivedEventSchema.safeParse({
+        ...event,
+        type: EVENT_ROUTING_KEYS.REPORT_RECEIVED,
+      }).success,
+    ).toBe(false);
+    expect(
+      IncidentReceivedEventSchema.safeParse({
+        ...event,
+        aggregate_id: "650e8400-e29b-41d4-a716-446655440000",
+      }).success,
+    ).toBe(false);
   });
 
   it("normalizes a bounded resume cursor query", () => {

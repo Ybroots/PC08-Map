@@ -194,6 +194,18 @@ pnpm build
   không chứa recipient hoặc template data. Chưa có adapter, migration, consumer
   registration hay production template; D-08 vẫn khóa T15B.
 
+## Analytics/KPI foundation
+
+- T16A có metric dictionary bất biến cho ba count metric từ exact trusted events:
+  incident received, report received và report screening completed.
+- Pure aggregator chỉ cho `leader_viewer` đúng area, đếm unique event ID, phát
+  hiện replay conflict/source-version drift và bucket ngày theo
+  `Asia/Ho_Chi_Minh`.
+- Small-cell threshold bắt buộc được inject và count dưới ngưỡng trả `null`; output
+  không chứa event/aggregate/principal ID và có `dataFreshThrough`.
+- Baseline/target vẫn `GOVERNED_UNSET`. Chưa có route, migration, persisted read
+  model, audit export hoặc dashboard; D-04/D-05/D-06/D-07/D-09/D-10 khóa T16B.
+
 ## Backlog trien khai (Codex tasks)
 
 | Task | Ten                                     | Phu thuoc             | Trang thai                      |
@@ -214,7 +226,7 @@ pnpm build
 | T13  | Canh bao giao thong                     | T05-T06               | T13A LOCAL / T13B BLOCKED       |
 | T14  | Ops workspace hoan chinh                | T07-T10               | T14A LOCAL / T14B BLOCKED       |
 | T15  | Notifications va contact fallback       | T02-T03 + provider    | T15A LOCAL / T15B BLOCKED       |
-| T16  | Audit, KPI va dashboard lanh dao        | T04 + core flows      | TODO                            |
+| T16  | Audit, KPI va dashboard lanh dao        | T04 + core flows      | T16A LOCAL / T16B BLOCKED       |
 | T17  | Production infrastructure as code       | T00-T16 + ha tang cap | TODO                            |
 | T18  | Security hardening va release candidate | Feature complete      | TODO                            |
 | T19  | Performance, HA/DR va chaos rehearsal   | T17-T18               | TODO                            |
