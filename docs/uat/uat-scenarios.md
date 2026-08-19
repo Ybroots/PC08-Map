@@ -90,6 +90,14 @@ as complete pilot scenarios.
 | UAT-24 | Break-glass grant expired          | Access denied after TTL; audit shows expiry            |
 | UAT-25 | Audit export                       | Requires reason; export logged; hash/watermark present |
 
+T14A local UI evidence (2026-08-19) is not an operator UAT pass. The synthetic
+read-only incident workspace was exercised at 1440x1000 and 390x844: queue filter
+and selection worked, mobile horizontal overflow was 0 px, reduced-motion removed
+the freshness animation, and browser console/page errors were zero. Screenshots:
+`docs/uat/evidence/t14a-ops-desktop.png` and
+`docs/uat/evidence/t14a-ops-mobile.png`. Real role/session, concurrency, dispatch,
+SLA and cross-area UAT remain blocked by D-02/D-04/D-05/D-09.
+
 ## Infrastructure (UAT-26 to UAT-30)
 
 | ID     | Scenario                | Expected result                                              |

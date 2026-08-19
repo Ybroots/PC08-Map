@@ -21,7 +21,8 @@
 | T11  | T11B2B1 LOCAL PASS    | Exact-hash screening worker; abuse/heuristics vẫn bị khóa      |
 | T12  | BLOCKED               | Chờ D-06 retention/legal hold và D-07 break-glass              |
 | T13  | T13A LOCAL PASS       | Published bbox alert projection; T13B chờ D-03/D-09            |
-| T14+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
+| T14  | T14A LOCAL PASS       | Read-only resume workspace; live/dispatch chờ D-02/04/05/09    |
+| T15+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
 real HTTP adapter/contract fixtures và sandbox contract suite; xem
@@ -116,6 +117,11 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   hiệu lực, validate strict `properties.alert`, rồi trả allowlisted warning/action/
   priority/source/version. Invalid source hoặc overflow fail closed; response ghi
   rõ `BBOX_ONLY` và không gọi provider.
+- T14A thêm contract feed client và pure resume model: cursor không được lùi,
+  overlapping page dedupe, queue lấy projection mới nhất, stale/auth/network/
+  contract failure không xóa dữ liệu đã validate. Navigation dùng shared policy.
+  Ops UI vẫn explicit synthetic/read-only, không poll, không giữ bearer và không
+  mở assignment/SLA.
 
 ## Hard stops còn mở
 
@@ -132,7 +138,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất sau T13A: T14 ops workspace foundation
+## Bước tiếp theo đề xuất sau T14A: T15 safe notification contracts
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -167,6 +173,12 @@ D-06/D-07 còn pending. T13A chỉ là nền public bbox từ dữ liệu đã d
 T13B proximity/direction/cooldown vẫn bị khóa bởi D-03/D-09. Sau khi T13A full
 gate/cold-start/CI xanh, lát cắt khả thi kế tiếp là rà plan T14 và triển khai phần
 ops workspace không phụ thuộc SLA/provider/policy chưa duyệt.
+
+T14A chỉ hoàn thành read-only UX foundation. Live OIDC/session wiring chờ D-02;
+assignment/SLA/service area chờ D-04/D-05; realtime cadence/load chờ D-09. Không
+đổi synthetic shell thành live bằng cách hard-code bearer hoặc poll interval.
+Sau full gate/CI T14A, rà T15 để tách phần executable notification contracts/ports
+khỏi provider/channel selection D-08; runtime delivery vẫn phải fail closed.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -290,6 +302,17 @@ report decision giờ clamp bằng PostgreSQL `GREATEST` và regression `new Dat
 pass. T13B route/direction/cooldown và production enable vẫn blocked D-03/D-09.
 Clock invariant fix ở commit `cd4c67e`; T13A implementation ở `34cf2e4`;
 GitHub CI run `32232926639` xanh đủ 6/6 job.
+
+T14A local verification (2026-08-19) có contract-validated incident feed client,
+monotonic resume/dedupe model, explicit stale/auth/network/contract states và
+navigation tạo từ shared authorization policy. Ops UI là synthetic read-only
+shell, không poll, không lưu bearer, không mở assignment/SLA; desktop 1440x1000
+và mobile 390x844 browser smoke pass selection/filter bằng bàn phím, không tràn
+ngang, reduced-motion không animation và 0 console error. Có 10/10 focused ops
+unit test; full frozen-install, format/lint/typecheck, 283 unit tests + coverage,
+contract/e2e/build đều pass. Không chạy cold-start vì lát cắt không đổi API, DB,
+migration hay infra. Production/live vẫn bị khóa bởi D-02/D-04/D-05/D-09.
+Implementation commit và GitHub CI sẽ được ghi sau khi publish.
 
 Từ repository root:
 

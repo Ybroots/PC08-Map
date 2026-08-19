@@ -107,6 +107,34 @@ pnpm dev:reset
 | MailHog (email)     | http://localhost:8025                    | -                                       |
 | PostgreSQL          | localhost:5432                           | atgt_app / devpassword_local / atgt_dev |
 
+## T14A ops workspace local verification
+
+The `/incidents` page is deliberately synthetic and read-only until officer OIDC
+and dispatch policies are approved. It makes no API/provider request and contains
+no bearer token. Run the focused gates from the repository root:
+
+```bash
+pnpm --filter @atgt/ops-web lint
+pnpm --filter @atgt/ops-web typecheck
+pnpm --filter @atgt/ops-web test
+pnpm --filter @atgt/ops-web build
+```
+
+For desktop/mobile interaction, console, overflow and reduced-motion evidence,
+run the browser helper from an environment with Python Playwright installed:
+
+```bash
+python <webapp-testing-skill>/scripts/with_server.py \
+  --server "pnpm --filter @atgt/ops-web dev" --port 3001 --timeout 45 -- \
+  python apps/ops-web/test/visual-smoke.py
+```
+
+Never add a local mock token to this page, its screenshots or browser storage.
+The live feed client accepts a caller-provided token port for future D-02 wiring,
+validates `OpsIncidentFeedSchema`, and has no implicit polling cadence. UI
+navigation is advisory only; every live route must retain API/repository scope
+checks.
+
 ## Troubleshooting
 
 ### Map lifecycle worker

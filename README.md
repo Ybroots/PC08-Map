@@ -170,6 +170,17 @@ pnpm build
   tới provider approval. Backend technical evidence cho UAT-11, UAT-13 và UAT-14
   đã có; end-user UAT và malware alert của UAT-12 vẫn chưa hoàn tất.
 
+## Ops workspace foundation
+
+- T14A có contract-validated incident feed client, monotonic resume cursor,
+  overlap dedupe, latest-per-incident queue và explicit stale/auth/network/contract
+  failure states. Client không lưu hoặc log bearer token.
+- Navigation dùng chung `AuthorizationPolicy`; đây chỉ là UX projection, API và
+  repository vẫn là enforcement boundary.
+- `/incidents` là interactive synthetic/read-only shell với filter, keyboard focus,
+  responsive layout và resume rail. Không có poll interval mặc định, assignment,
+  SLA hay realtime claim khi D-02/D-04/D-05/D-09 còn pending.
+
 ## Backlog trien khai (Codex tasks)
 
 | Task | Ten                                     | Phu thuoc             | Trang thai                      |
@@ -188,7 +199,7 @@ pnpm build
 | T11  | Citizen reports va chong lam dung       | T09-T10               | T11B2B1 LOCAL / D-09 BLOCKED    |
 | T12  | Privacy vault va break-glass            | T03-T04 + quy che     | BLOCKED D-06/D-07               |
 | T13  | Canh bao giao thong                     | T05-T06               | T13A LOCAL / T13B BLOCKED       |
-| T14  | Ops workspace hoan chinh                | T07-T10               | TODO                            |
+| T14  | Ops workspace hoan chinh                | T07-T10               | T14A LOCAL / T14B BLOCKED       |
 | T15  | Notifications va contact fallback       | T02-T03 + provider    | TODO                            |
 | T16  | Audit, KPI va dashboard lanh dao        | T04 + core flows      | TODO                            |
 | T17  | Production infrastructure as code       | T00-T16 + ha tang cap | TODO                            |
