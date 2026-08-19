@@ -133,8 +133,8 @@ production provider gate và UAT-11..14 hoàn tất.
   local/test fail-closed MIME config, unit and PostgreSQL/MinIO integration tests.
 - Tests run/results: focused T10B2 has 13 worker unit tests and 2 media integration
   tests passing. Full repository gates pass; cold-start API integration is 46/46
-  and worker integration is 5/5. Commit/CI are recorded in `docs/HANDOFF.md` after
-  the push run.
+  and worker integration is 5/5. Implementation commit `428cc91` passes GitHub CI
+  run `32217478741` with all six jobs green.
 - Remaining risks: production provider/secret resolution, media limits, AV/CDR,
   controlled viewer/download authorization and physical UAT.
 - Rollback: keep all evidence rows/objects; disable feature and worker.

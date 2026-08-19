@@ -159,7 +159,8 @@ original, derivative PNG không EXIF; EICAR bị REJECTED và không tạo objec
 được. Full frozen-install, format/lint/typecheck, unit/coverage, contract, e2e và
 build đều pass. Cold-start từ volume rỗng dựng 8 service healthy, Rabbit chỉ bind
 scan-request, seed có 6 incident type; API integration 46/46 và worker integration
-5/5 pass. Commit/CI T10B2 được bổ sung sau khi push.
+5/5 pass. Implementation ở commit `428cc91`; GitHub CI run `32217478741` xanh đủ
+6/6 gồm secret, quality, contract, coverage, cold-start integration và build.
 
 Từ repository root:
 
