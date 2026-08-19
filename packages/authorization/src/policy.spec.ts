@@ -55,6 +55,15 @@ describe("AuthorizationPolicy traceability matrix", () => {
       request(PolicyAction.INCIDENT_UPDATE_STATUS, { areaId: AREA_A }),
     ],
     [
+      "dispatcher can view evidence in its area and assigned case",
+      OfficerRole.DISPATCHER,
+      request(PolicyAction.EVIDENCE_VIEW, {
+        areaId: AREA_A,
+        caseId: CASE_A,
+        dataClass: DataClass.SENSITIVE,
+      }),
+    ],
+    [
       "field officer can update an assigned case for its unit",
       OfficerRole.FIELD_OFFICER,
       request(PolicyAction.INCIDENT_UPDATE_STATUS, {

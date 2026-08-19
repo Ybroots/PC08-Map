@@ -192,17 +192,19 @@ export class PostgresEvidenceRepository implements EvidenceRepositoryPort {
 
       const updated = await client.query<{ finalized_at: Date }>(
         `UPDATE evidence.uploads
-            SET state='SCAN_PENDING',observed_sha256=$2,finalized_at=$3
+            SET state='SCAN_PENDING',observed_sha256=$2,
+                finalized_at=GREATEST($3::timestamptz,created_at)
           WHERE upload_id=$1 AND state='INITIATED'
           RETURNING finalized_at`,
         [uploadId, input.observed_sha256, now],
       );
       if (updated.rowCount !== 1) throw new EvidenceFailure("STATE_CONFLICT");
+      const finalizedAt = new Date(updated.rows[0]!.finalized_at);
       await client.query(
         `INSERT INTO evidence.scan_history
            (evidence_id,from_state,to_state,outcome_code,trace_id,created_at)
          VALUES ($1,'INITIATED','SCAN_PENDING','SCAN_REQUESTED',$2,$3)`,
-        [uploadId, traceId, now],
+        [uploadId, traceId, finalizedAt],
       );
       await client.query(
         `INSERT INTO audit.audit_events
@@ -218,13 +220,13 @@ export class PostgresEvidenceRepository implements EvidenceRepositoryPort {
         event_id: randomUUID(),
         type: EVENT_ROUTING_KEYS.EVIDENCE_SCAN_REQUESTED,
         version: 1,
-        occurred_at: now.toISOString(),
+        occurred_at: finalizedAt.toISOString(),
         trace_id: traceId,
         aggregate_id: uploadId,
         aggregate_type: "evidence",
         data,
       });
-      return new Date(updated.rows[0]!.finalized_at);
+      return finalizedAt;
     });
   }
 

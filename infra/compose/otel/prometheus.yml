@@ -12,6 +12,11 @@ scrape_configs:
       - targets: ["host.docker.internal:3000"]
     metrics_path: /api/v1/metrics
 
+  - job_name: atgt-api-evidence
+    static_configs:
+      - targets: ["host.docker.internal:3000"]
+    metrics_path: /api/v1/metrics/evidence
+
   - job_name: postgres
     static_configs:
       - targets: ["host.docker.internal:9187"]

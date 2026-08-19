@@ -70,6 +70,16 @@ export const EvidenceScanPendingSchema = z
   })
   .strict();
 
+export const EvidenceAccessGrantSchema = z
+  .object({
+    evidence_id: z.string().uuid(),
+    access_kind: z.enum(["PREVIEW", "DOWNLOAD"]),
+    media_type: EvidenceMimeSchema,
+    access_url: z.string().url(),
+    expires_at: z.string().datetime(),
+  })
+  .strict();
+
 export const EvidenceScanRequestedEventDataSchema = z
   .object({
     evidence_id: z.string().uuid(),
@@ -103,6 +113,7 @@ export type FinalizeEvidenceUpload = z.infer<
   typeof FinalizeEvidenceUploadSchema
 >;
 export type EvidenceScanPending = z.infer<typeof EvidenceScanPendingSchema>;
+export type EvidenceAccessGrant = z.infer<typeof EvidenceAccessGrantSchema>;
 export type EvidenceScanRequestedEventData = z.infer<
   typeof EvidenceScanRequestedEventDataSchema
 >;

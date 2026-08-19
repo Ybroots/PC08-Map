@@ -15,6 +15,7 @@ import {
   CreateSosSchema,
   EventEnvelopeSchema,
   EvidenceScanPendingSchema,
+  EvidenceAccessGrantSchema,
   EvidenceFinalizeHeadersSchema,
   EvidenceInitiateHeadersSchema,
   EvidenceUploadInitiatedSchema,
@@ -53,6 +54,10 @@ const finalizeEvidenceUpload = registry.register(
 const evidenceScanPending = registry.register(
   "EvidenceScanPending",
   EvidenceScanPendingSchema,
+);
+const evidenceAccessGrant = registry.register(
+  "EvidenceAccessGrant",
+  EvidenceAccessGrantSchema,
 );
 const evidenceInitiateHeaders = registry.register(
   "EvidenceInitiateHeaders",
@@ -150,6 +155,64 @@ registry.registerPath({
     },
   },
 });
+
+const evidenceAreaParameter = registry.registerParameter(
+  "EvidenceAreaId",
+  z.string().openapi({ param: { name: "areaId", in: "path" } }),
+);
+const evidenceCaseParameter = registry.registerParameter(
+  "EvidenceCaseId",
+  z
+    .string()
+    .uuid()
+    .openapi({ param: { name: "caseId", in: "path" } }),
+);
+const evidenceIdParameter = registry.registerParameter(
+  "EvidenceId",
+  z
+    .string()
+    .uuid()
+    .openapi({ param: { name: "evidenceId", in: "path" } }),
+);
+
+for (const access of ["preview", "download"] as const) {
+  registry.registerPath({
+    method: "get",
+    path: `/api/v1/ops/areas/{areaId}/cases/{caseId}/evidence/{evidenceId}/${access}`,
+    summary:
+      access === "preview"
+        ? "Issue a scoped derivative preview URL"
+        : "Issue a scoped immutable-original download URL",
+    description:
+      "Requires evidence.view over the actual area, assigned case and data classification. Every URL issuance is audited.",
+    tags: ["Evidence"],
+    request: {
+      params: z.object({
+        areaId: evidenceAreaParameter,
+        caseId: evidenceCaseParameter,
+        evidenceId: evidenceIdParameter,
+      }),
+    },
+    responses: {
+      200: {
+        description: "Short-lived access grant; never contains an object key",
+        content: { "application/json": { schema: evidenceAccessGrant } },
+      },
+      403: {
+        description: "Officer scope or data classification denied and audited",
+        content: { "application/problem+json": { schema: problemDetails } },
+      },
+      404: {
+        description: "Unknown and out-of-scope evidence use the same response",
+        content: { "application/problem+json": { schema: problemDetails } },
+      },
+      503: {
+        description: "Evidence reader or storage is unavailable",
+        content: { "application/problem+json": { schema: problemDetails } },
+      },
+    },
+  });
+}
 
 registry.registerPath({
   method: "post",

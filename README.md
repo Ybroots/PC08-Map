@@ -1,6 +1,6 @@
 # ATGT Platform - Ban do so va ung dung an toan giao thong tinh Lam Dong
 
-> **Phiên bản**: 0.0.1 — T00 đến T07 hoàn thành; T09 Android emulator pass; T10B2 media worker local/test
+> **Phiên bản**: 0.0.1 — T00 đến T07 hoàn thành; T09 Android emulator pass; T10B3 controlled viewer local/test
 > **Nguon tai lieu**: Ke_hoach_trien_khai_Code_Codex_ATGT_Lam_Dong.docx (v1.0, 16/08/2026)
 
 ## Gioi thieu
@@ -160,9 +160,15 @@ pnpm build
   bằng conditional immutable put và tạo PNG watermarked đã loại EXIF. Inbox claim,
   state/history/audit và ready-event được commit atomically; retry không tạo thêm
   original version.
-- Pipeline mặc định tắt. Local/test phải khai báo MIME/max bytes/URL TTL/worker
+- T10B3 cấp preview derivative hoặc download original bằng signed GET ngắn hạn
+  sau khi guard và repository cùng xác nhận role, area, assigned case và actual
+  data class. Mỗi lần cấp URL có append-only audit; contract/log/metrics không
+  chứa object key, checksum hoặc signed URL. Classification không được hạ từ
+  `restricted` về `sensitive`.
+- Pipeline mặc định tắt. Local/test phải khai báo MIME/max bytes/upload+read URL TTL/worker
   poll+batch, S3 credentials và fake AV rõ ràng; staging/production bị chặn cho
-  tới provider approval. Chưa có controlled viewer/download hoặc UAT-11..14.
+  tới provider approval. Backend technical evidence cho UAT-11, UAT-13 và UAT-14
+  đã có; end-user UAT và malware alert của UAT-12 vẫn chưa hoàn tất.
 
 ## Backlog trien khai (Codex tasks)
 
@@ -178,7 +184,7 @@ pnpm build
 | T07  | SOS incident vertical slice             | T02-T04               | DONE                            |
 | T08  | Dispatch engine va SLA                  | T05+T07+SLA rules     | BLOCKED D-04/D-05               |
 | T09  | Citizen mobile SOS                      | T07 + UI prototype    | ANDROID EMULATOR UAT PASS       |
-| T10  | Evidence pipeline                       | T04 + S3/AV decision  | T10B2 WORKER PASS / VIEWER TODO |
+| T10  | Evidence pipeline                       | T04 + S3/AV decision  | T10B3 VIEWER PASS / UAT BLOCKED |
 | T11  | Citizen reports va chong lam dung       | T09-T10               | TODO                            |
 | T12  | Privacy vault va break-glass            | T03-T04 + quy che     | TODO                            |
 | T13  | Canh bao giao thong                     | T05-T06               | TODO                            |

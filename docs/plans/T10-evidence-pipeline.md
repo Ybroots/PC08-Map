@@ -33,6 +33,10 @@ production provider gate và UAT-11..14 hoàn tất.
   size/SHA-256, magic bytes, fake EICAR AV, immutable original và watermarked PNG
   derivative đã auto-orient/loại EXIF. READY/history/audit/ready-event commit cùng
   inbox claim; provider failure được retry và invalid event đi DLQ.
+- T10B3 có officer-only preview/download theo area + assigned case + actual data
+  class. Preview chỉ ký derivative, download chỉ ký immutable original; URL có TTL
+  explicit và mọi lần cấp/deny/provider error đều ghi append-only audit không chứa
+  URL, object key hay checksum. Metrics chỉ là aggregate counters.
 - `evidence` schema có upload/object/history tables và immutable triggers. Runtime
   initiate/finalize dùng citizen session, idempotency, transaction và outbox.
 - Evidence events có typed payload không mang object key/URL/checksum.
@@ -96,8 +100,8 @@ production provider gate và UAT-11..14 hoàn tất.
 - [x] Initiate/finalize use server key and quarantine only.
 - [x] Worker validates magic/size/hash/AV and retries idempotently in local/test.
 - [x] Original immutable; derivative strips EXIF and carries internal watermark.
-- [ ] Scoped preview/download is short-lived and audit logged; no URL/key in logs.
-- [ ] UAT-11..14 and full repository/CI gates pass.
+- [x] Scoped preview/download is short-lived and audit logged; no URL/key in logs.
+- [ ] End-user UAT-11..14 and production provider/decision gates pass.
 
 ## Progress log
 
@@ -126,15 +130,22 @@ production provider gate và UAT-11..14 hoàn tất.
       AV, immutable conditional writes and Sharp EXIF-free watermarked derivative.
       Focused worker unit tests pass 13/13 and real PostgreSQL/MinIO integration
       passes clean-media/idempotency and EICAR rejection scenarios.
+- [x] 2026-08-19: T10B3 added executable preview/download contracts, dual guard +
+      repository scope recheck, short-lived signed GET, append-only access audit,
+      aggregate Prometheus counters and classification downgrade protection.
+- [x] 2026-08-19: cold-start from empty `atgt-*` volumes applied migration 09 and
+      seeded successfully. API integration passes 47/47 and worker integration
+      passes 5/5. A real host/PostgreSQL clock skew exposed finalize timestamp
+      coupling; persisted finalize/history/outbox time is now clamped to DB
+      `created_at` and covered by a deliberate -1 second regression fixture.
 
 ## Handoff
 
-- Changed files: T10B2 worker ports/adapters/processor, exact Rabbit binding,
-  local/test fail-closed MIME config, unit and PostgreSQL/MinIO integration tests.
-- Tests run/results: focused T10B2 has 13 worker unit tests and 2 media integration
-  tests passing. Full repository gates pass; cold-start API integration is 46/46
-  and worker integration is 5/5. Implementation commit `428cc91` passes GitHub CI
-  run `32217478741` with all six jobs green.
-- Remaining risks: production provider/secret resolution, media limits, AV/CDR,
-  controlled viewer/download authorization and physical UAT.
+- Changed files: T10B3 access contract/OpenAPI, officer routes, scoped repository,
+  access service, S3 signed GET, audit/metrics, migration 09 and integration tests.
+- Tests run/results: focused access integration and clock-skew regression pass.
+  Full frozen install, format/lint/typecheck, unit/coverage, contract, e2e/build
+  pass; cold-start API integration is 47/47 and worker integration is 5/5.
+- Remaining risks: production provider/secret resolution, media limits, real AV/CDR,
+  malware alert workflow and end-user/physical UAT. Record commit/CI after push.
 - Rollback: keep all evidence rows/objects; disable feature and worker.

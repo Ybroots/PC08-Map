@@ -61,17 +61,21 @@ public tracking.
 
 ### evidence schema
 
-| Table        | Key columns                                                                                  | Notes                                      |
-| ------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| uploads      | upload_id, capability_hash, quarantine_object_key, declared_sha256/mime/size, state          | No citizen identity; declaration immutable |
-| objects      | evidence_id, owner_type/id, original/derivative key, sha256, mime, size, scan engine/version | READY only; integrity fields immutable     |
-| scan_history | evidence_id, from/to state, outcome_code, engine/version, trace_id                           | Append-only; no key, URL or scan detail    |
+| Table        | Key columns                                                                                                      | Notes                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| uploads      | upload_id, capability_hash, quarantine_object_key, declared_sha256/mime/size, state                              | No citizen identity; declaration immutable     |
+| objects      | evidence_id, owner_type/id/area_id, data_class, original/derivative key, sha256, mime, size, scan engine/version | READY only; integrity/classification protected |
+| scan_history | evidence_id, from/to state, outcome_code, engine/version, trace_id                                               | Append-only; no key, URL or scan detail        |
 
 `owner_type/owner_id/area_id` remain null until a later incident/report attachment
 use case authorizes the link; once attached they cannot be reassigned. App role
 cannot delete uploads/objects or update/delete scan history. Retention version is
 `PENDING`, legal hold defaults false, and no archive/delete job exists while D-06
 is pending.
+
+Once classified `restricted`, an evidence object cannot be downgraded. Scoped
+viewer lookup requires exact `area_id + owner_id(case) + evidence_id`, a linked
+`incident|report` owner and READY upload state; storage keys remain server-only.
 
 ### privacy schema (RESTRICTED ACCESS)
 

@@ -40,11 +40,19 @@ Five user groups: citizen/tourist, dispatcher, field officer, leader, system adm
 | T8  | Elevation of privilege | Self-approve data         | Maker-checker (4 eyes)                                          | Low           |
 | T9  | Spoofing/tampering     | Stolen upload capability  | Citizen session + short TTL + HMAC capability; hash-only DB     | Medium        |
 | T10 | Tampering/disclosure   | Malicious media/EXIF leak | Quarantine + AV port + EXIF-free watermarked derivative         | Medium        |
+| T11 | Info disclosure        | Evidence IDOR/signed URL  | Area+case ABAC, repository recheck, short TTL, access audit     | Medium        |
 
 T10B2 implements the T2/T10 controls only for explicit local/test JPEG/PNG values
 and a fake EICAR detector. Production remains fail-closed until the AV/storage
 provider, secret resolver and D-09 limits are approved. Quarantine retention and
 legal-hold behavior remain pending D-06; no automatic deletion path exists.
+
+T10B3 implements the T11 control locally: the guard evaluates `evidence.view`,
+then the repository matches persisted owner/area and reevaluates actual data class.
+Scope miss and missing evidence share the same response. Signed URLs are returned
+only to the caller, use `no-store`/`no-referrer`, and are excluded from audit and
+aggregate metrics. URL forwarding within its short lifetime remains a residual
+risk; production TTL/provider controls still require approval.
 
 ## Pentest scope (T18)
 

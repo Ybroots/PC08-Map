@@ -217,6 +217,7 @@ describe("loadAndValidateConfig", () => {
       allowedMimeTypes: [],
       maxBytes: undefined,
       uploadUrlTtlSeconds: undefined,
+      readUrlTtlSeconds: undefined,
       workerPollMs: undefined,
       workerBatchSize: undefined,
       useFakeAntivirus: false,
@@ -237,6 +238,7 @@ describe("loadAndValidateConfig", () => {
       EVIDENCE_ALLOWED_MIME_TYPES: "image/jpeg,image/png",
       EVIDENCE_MAX_BYTES: "1048576",
       EVIDENCE_UPLOAD_URL_TTL_SECONDS: "300",
+      EVIDENCE_READ_URL_TTL_SECONDS: "120",
       EVIDENCE_WORKER_POLL_MS: "1000",
       EVIDENCE_WORKER_BATCH_SIZE: "10",
       EVIDENCE_USE_FAKE_ANTIVIRUS: "true",
@@ -251,6 +253,7 @@ describe("loadAndValidateConfig", () => {
       allowedMimeTypes: ["image/jpeg", "image/png"],
       maxBytes: 1048576,
       uploadUrlTtlSeconds: 300,
+      readUrlTtlSeconds: 120,
       workerPollMs: 1000,
       workerBatchSize: 10,
       useFakeAntivirus: true,
@@ -259,6 +262,12 @@ describe("loadAndValidateConfig", () => {
     expect(() =>
       loadAndValidateConfig({ ...enabled, EVIDENCE_MAX_BYTES: "" }),
     ).toThrow("EVIDENCE_MAX_BYTES is required");
+    expect(() =>
+      loadAndValidateConfig({
+        ...enabled,
+        EVIDENCE_READ_URL_TTL_SECONDS: "",
+      }),
+    ).toThrow("EVIDENCE_READ_URL_TTL_SECONDS is required");
     expect(() =>
       loadAndValidateConfig({
         ...enabled,

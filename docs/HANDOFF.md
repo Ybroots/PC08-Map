@@ -17,7 +17,7 @@
 | T07  | DONE                  | Atomic SOS, replay, tracking, scoped feed, relay + ops shell   |
 | T08  | BLOCKED               | Chờ D-04 SLA/escalation và D-05 unit/service-area              |
 | T09  | ANDROID EMULATOR PASS | UAT-01..04 xong; physical/iOS và production config còn pending |
-| T10  | T10B2 WORKER PASS     | Local media worker xong; controlled viewer/UAT còn chờ         |
+| T10  | T10B3 VIEWER PASS     | Local controlled viewer xong; production/UAT còn bị khóa       |
 | T11+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
@@ -74,6 +74,11 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
 - Evidence lifecycle chỉ READY sau exact hash/MIME/size, clean AV và đủ original +
   derivative. Config mặc định disabled, yêu cầu toàn bộ deployment values và chặn
   staging/production cho tới T10B provider approval.
+- Evidence T10B3 có preview derivative/download immutable original qua signed GET
+  TTL ngắn. Guard và repository cùng kiểm tra dispatcher, area, assigned case và
+  actual data class; scope miss trả uniform 404. Access audit/metrics không chứa
+  signed URL, object key/checksum hoặc identifier labels. Migration 09 chặn hạ
+  classification từ restricted và thêm scoped lookup index.
 
 ## Hard stops còn mở
 
@@ -90,7 +95,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: T10B3 controlled viewer hoặc physical/iOS gate T09
+## Bước tiếp theo đề xuất: chốt production T10/UAT hoặc physical/iOS gate T09
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -104,12 +109,12 @@ permission precise/approximate/deny, airplane-mode reconnect, double action và
 build/UAT trên macOS. Trước release cần approved application ID, HTTPS API endpoint
 và signing; không tự suy đoán các giá trị này. D-09 vẫn khóa media/load.
 
-T10B2 đã xử lý media idempotent trên local PostgreSQL/MinIO nhưng production
-storage/secret resolver và AV vẫn chưa được duyệt. Bước kế tiếp trong T10 là T10B3:
-scoped preview/download authorization, URL ngắn hạn, audit và UAT-11..14. Khi chưa
-có quyết định provider cùng explicit deployment values, giữ
-`EVIDENCE_PIPELINE_ENABLED=false`; không dựng fake production, không đánh dấu UAT
-pass và không thêm retention delete khi D-06 còn pending.
+T10B3 đã hoàn tất controlled preview/download backend trên local PostgreSQL/MinIO.
+Để gọi T10 DONE vẫn cần approved storage/secret resolver/real AV, D-09 media/load
+profile, malware alert workflow và end-user UAT-11..14. Khi chưa có các quyết định
+này, giữ `EVIDENCE_PIPELINE_ENABLED=false`; không dựng fake production, không đánh
+dấu pilot UAT pass và không thêm retention delete khi D-06 còn pending. T11 phụ
+thuộc T09-T10 nên chưa nên triển khai workflow production trước các gate này.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -161,6 +166,16 @@ build đều pass. Cold-start từ volume rỗng dựng 8 service healthy, Rabbi
 scan-request, seed có 6 incident type; API integration 46/46 và worker integration
 5/5 pass. Implementation ở commit `428cc91`; GitHub CI run `32217478741` xanh đủ
 6/6 gồm secret, quality, contract, coverage, cold-start integration và build.
+
+T10B3 verification (2026-08-19) có executable preview/download OpenAPI contract,
+66 API unit tests và real PostgreSQL/MinIO access integration: authorized preview
+đọc derivative, download đọc original, wrong-case/actual restricted data bị uniform
+deny và audit không chứa URL/key/hash. Cold-start đã xóa đúng các volume synthetic
+`atgt-*`, dựng lại 8 service healthy, áp migration 09 rồi seed; API integration
+47/47 và worker integration 5/5 pass. Full frozen-install, format/lint/typecheck,
+unit/coverage/contract/e2e/build pass. Full integration còn phát hiện host clock
+chậm hơn PostgreSQL; finalize timestamp giờ được clamp theo persisted `created_at`
+và có regression fixture -1 giây. Commit/CI sẽ được ghi sau khi push.
 
 Từ repository root:
 

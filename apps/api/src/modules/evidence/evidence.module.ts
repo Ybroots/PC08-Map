@@ -6,7 +6,14 @@ import {
   PostgresOutboxWriter,
   PostgresTransactionManager,
 } from "../../platform/database";
-import { EvidenceController } from "./evidence.controller";
+import { EvidenceAccessService } from "./evidence-access.service";
+import { EvidenceAccessMetrics } from "./evidence-access.metrics";
+import { PostgresEvidenceAccessRepository } from "./evidence-access.repository";
+import {
+  EvidenceController,
+  EvidenceAccessMetricsController,
+  OpsEvidenceController,
+} from "./evidence.controller";
 import { PostgresEvidenceRepository } from "./evidence.repository";
 import { EvidenceService } from "./evidence.service";
 import { EvidenceFailure } from "./evidence.types";
@@ -17,8 +24,19 @@ export class EvidenceModule {
   static register(config: AppConfig): DynamicModule {
     return {
       module: EvidenceModule,
-      controllers: [EvidenceController],
+      controllers: [
+        EvidenceController,
+        OpsEvidenceController,
+        EvidenceAccessMetricsController,
+      ],
       providers: [
+        EvidenceAccessMetrics,
+        {
+          provide: PostgresEvidenceAccessRepository,
+          inject: [DATABASE_POOL],
+          useFactory: (pool: Pool) =>
+            new PostgresEvidenceAccessRepository(pool),
+        },
         {
           provide: PostgresEvidenceRepository,
           inject: [
@@ -43,6 +61,8 @@ export class EvidenceModule {
               accessKey,
               secretKey,
               bucketQuarantine: config.storage.bucketQuarantine,
+              bucketOriginal: config.storage.bucketOriginal,
+              bucketDerivative: config.storage.bucketDerivative,
               forcePathStyle: config.storage.forcePathStyle,
             });
           },
@@ -65,6 +85,29 @@ export class EvidenceModule {
                 },
               },
               config.evidence,
+            ),
+        },
+        {
+          provide: EvidenceAccessService,
+          inject: [
+            PostgresEvidenceAccessRepository,
+            S3EvidenceStorageAdapter,
+            EvidenceAccessMetrics,
+          ],
+          useFactory: (
+            repository: PostgresEvidenceAccessRepository,
+            storage: S3EvidenceStorageAdapter | null,
+            metrics: EvidenceAccessMetrics,
+          ) =>
+            new EvidenceAccessService(
+              repository,
+              storage ?? {
+                createReadUrl: async () => {
+                  throw new EvidenceFailure("CONFIGURATION_BLOCKED");
+                },
+              },
+              config.evidence,
+              metrics,
             ),
         },
       ],

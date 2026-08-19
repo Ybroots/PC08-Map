@@ -280,7 +280,8 @@ EVIDENCE_USE_FAKE_ANTIVIRUS=false
 
 Local/test enablement requires explicit values for
 `EVIDENCE_ALLOWED_MIME_TYPES`, `EVIDENCE_MAX_BYTES`,
-`EVIDENCE_UPLOAD_URL_TTL_SECONDS`, `EVIDENCE_WORKER_POLL_MS` and
+`EVIDENCE_UPLOAD_URL_TTL_SECONDS`, `EVIDENCE_READ_URL_TTL_SECONDS`,
+`EVIDENCE_WORKER_POLL_MS` and
 `EVIDENCE_WORKER_BATCH_SIZE`, plus `EVIDENCE_CAPABILITY_SECRET` (32+ characters),
 `S3_REGION`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_FORCE_PATH_STYLE` and the
 deliberately fake AV flag. Compose uses region `us-east-1`, path style and the
@@ -297,6 +298,14 @@ immutable puts, then atomically records READY/history/audit/outbox/inbox. EICAR 
 stable validation failures remain unreadable and become REJECTED; provider errors
 are requeued. The quarantine object is not deleted while D-06 is pending.
 
+T10B3 officer access requires `evidence.view` plus the exact area and assigned
+case in the resolved access scope. The repository rechecks the persisted owner,
+area and actual data class before issuing a signed GET. Preview always targets the
+EXIF-free derivative; download targets the immutable original. The read TTL is
+required and capped at 3600 seconds as a technical safety bound, not a production
+policy default. Access audit and `/api/v1/metrics/evidence` never include signed
+URLs, object keys, checksums, case, evidence or principal labels.
+
 There is no retention cleanup path. Do not manually delete quarantine/original
 objects or evidence rows to “unstick” a test; inspect append-only history and keep
 the feature disabled. Integration verification:
@@ -304,6 +313,7 @@ the feature disabled. Integration verification:
 ```bash
 pnpm --filter @atgt/api exec jest --config jest.integration.config.js --runInBand evidence-foundation.integration.ts
 pnpm --filter @atgt/api exec jest --config jest.integration.config.js --runInBand evidence-runtime.integration.ts
+pnpm --filter @atgt/api exec jest --config jest.integration.config.js --runInBand evidence-access.integration.ts
 pnpm --filter @atgt/worker exec jest --config jest.integration.config.js --runInBand evidence-media.integration.ts
 ```
 

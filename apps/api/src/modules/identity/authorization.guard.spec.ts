@@ -26,6 +26,7 @@ const dispatcherScope = createAccessScope({
   principalId: "dispatcher-1",
   role: OfficerRole.DISPATCHER,
   areaIds: ["area-a"],
+  assignedCaseIds: ["00000000-0000-4000-8000-000000000301"],
   maxDataClass: DataClass.SENSITIVE,
   sessionId: "session-1",
   authenticationMethods: ["pwd", "mfa"],
@@ -170,5 +171,44 @@ describe("AuthorizationGuard", () => {
     ).resolves.toBe(true);
     expect(httpRequest.accessScope).toBe(dispatcherScope);
     expect(audit.events.at(-1)).toMatchObject({ outcome: "SUCCESS" });
+  });
+
+  it("denies and audits an evidence URL attempt outside the assigned case", async () => {
+    const handler = () => undefined;
+    Reflect.defineMetadata(
+      POLICY_METADATA,
+      {
+        action: PolicyAction.EVIDENCE_VIEW,
+        dataClass: DataClass.SENSITIVE,
+        areaParam: "areaId",
+        caseParam: "caseId",
+      } satisfies RequiredPolicyMetadata,
+      handler,
+    );
+    const audit = new InMemorySecurityAuditSink();
+    const guard = new AuthorizationGuard(
+      new Reflector(),
+      new AuthorizationPolicy(),
+      { authenticate: async () => dispatcherScope },
+      audit,
+    );
+    const httpRequest = request();
+    httpRequest.params = {
+      areaId: "area-a",
+      caseId: "00000000-0000-4000-8000-000000000399",
+      evidenceId: "00000000-0000-4000-8000-000000000398",
+    };
+    await expect(
+      guard.canActivate(executionContext(handler, httpRequest)),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(audit.events.at(-1)).toMatchObject({
+      action: PolicyAction.EVIDENCE_VIEW,
+      outcome: "DENIED",
+      reason: "CASE_SCOPE_MISMATCH",
+      resourceId: "00000000-0000-4000-8000-000000000399",
+    });
+    expect(JSON.stringify(audit.events)).not.toContain(
+      "00000000-0000-4000-8000-000000000398",
+    );
   });
 });

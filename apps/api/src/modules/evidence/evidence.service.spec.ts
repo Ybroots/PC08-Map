@@ -91,6 +91,7 @@ function service(
       allowedMimeTypes: ["image/jpeg"],
       maxBytes: 8,
       uploadUrlTtlSeconds: 300,
+      readUrlTtlSeconds: 120,
       capabilitySecret: "local-test-capability-secret-32-characters",
     },
     () => new Date(now),

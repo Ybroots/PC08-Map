@@ -31,6 +31,12 @@
 - Repository methods require `AccessScope` parameter
 - Tests must include explicit denial cases for each role boundary
 
+For evidence reads, `dispatcher` must have `evidence.view`, the route area and the
+assigned case. The evidence repository independently matches persisted owner/area,
+then reevaluates the actual data class. Preview signs only the derivative and
+download signs only the immutable original. Missing and out-of-scope resources
+share a uniform not-found response while each issuance/denial is audited.
+
 ## OIDC claim contract
 
 | Claim             | Required      | Use                                           |

@@ -16,6 +16,9 @@ const S3_ENDPOINT = process.env["S3_ENDPOINT"] ?? "http://localhost:9000";
 const S3_ACCESS_KEY = process.env["S3_ACCESS_KEY"] ?? "minio_dev";
 const S3_SECRET_KEY = process.env["S3_SECRET_KEY"] ?? "devpassword_local";
 const BUCKET = process.env["S3_BUCKET_QUARANTINE"] ?? "atgt-quarantine";
+const ORIGINAL = process.env["S3_BUCKET_ORIGINAL"] ?? "atgt-evidence-original";
+const DERIVATIVE =
+  process.env["S3_BUCKET_DERIVATIVE"] ?? "atgt-evidence-derivative";
 
 class ClientBoundTransactions implements DatabaseTransactionManager {
   constructor(private readonly client: PoolClient) {}
@@ -33,6 +36,8 @@ describe("T10B1 evidence initiate/finalize runtime", () => {
     accessKey: S3_ACCESS_KEY,
     secretKey: S3_SECRET_KEY,
     bucketQuarantine: BUCKET,
+    bucketOriginal: ORIGINAL,
+    bucketDerivative: DERIVATIVE,
     forcePathStyle: true,
   };
   const cleanupClient = new S3Client({
@@ -57,7 +62,7 @@ describe("T10B1 evidence initiate/finalize runtime", () => {
     }
   });
 
-  it("puts only into quarantine and atomically emits one scan request", async () => {
+  it("puts only into quarantine and atomically emits one scan request under clock skew", async () => {
     if (SKIP) return;
     const client = await pool.connect();
     let sequence = 101;
@@ -69,6 +74,11 @@ describe("T10B1 evidence initiate/finalize runtime", () => {
     const sha256 = createHash("sha256").update(body).digest("hex");
     try {
       await client.query("BEGIN");
+      const databaseClock = await client.query<{ now: Date }>(
+        "SELECT clock_timestamp() AS now",
+      );
+      const databaseNow = new Date(databaseClock.rows[0]!.now);
+      let clockReads = 0;
       const repository = new PostgresEvidenceRepository(
         client,
         new ClientBoundTransactions(client),
@@ -82,9 +92,11 @@ describe("T10B1 evidence initiate/finalize runtime", () => {
           allowedMimeTypes: ["image/jpeg"],
           maxBytes: 8,
           uploadUrlTtlSeconds: 300,
+          readUrlTtlSeconds: 120,
           capabilitySecret: "local-test-capability-secret-32-characters",
         },
-        () => new Date(),
+        () =>
+          new Date(databaseNow.getTime() + (clockReads++ < 3 ? 1_000 : -1_000)),
         nextId,
       );
       const initiated = await service.initiate(

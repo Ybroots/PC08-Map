@@ -63,6 +63,29 @@
         "required": ["evidence_id", "state", "accepted_at"],
         "additionalProperties": false
       },
+      "EvidenceAccessGrant": {
+        "type": "object",
+        "properties": {
+          "evidence_id": { "type": "string", "format": "uuid" },
+          "access_kind": { "type": "string", "enum": ["PREVIEW", "DOWNLOAD"] },
+          "media_type": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 127,
+            "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]*\\/[a-z0-9][a-z0-9!#$&^_.+-]*$"
+          },
+          "access_url": { "type": "string", "format": "uri" },
+          "expires_at": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "evidence_id",
+          "access_kind",
+          "media_type",
+          "access_url",
+          "expires_at"
+        ],
+        "additionalProperties": false
+      },
       "EvidenceInitiateHeaders": {
         "type": "object",
         "properties": {
@@ -1053,6 +1076,9 @@
         ],
         "additionalProperties": false
       },
+      "EvidenceAreaId": { "type": "string" },
+      "EvidenceCaseId": { "type": "string", "format": "uuid" },
+      "EvidenceId": { "type": "string", "format": "uuid" },
       "IncidentAreaId": { "type": "string" },
       "IncidentId": { "type": "string", "format": "uuid" },
       "MapLayerKey": { "type": "string" },
@@ -1061,6 +1087,24 @@
       "MapVersionId": { "type": "string", "format": "uuid" }
     },
     "parameters": {
+      "EvidenceAreaId": {
+        "schema": { "$ref": "#/components/schemas/EvidenceAreaId" },
+        "required": true,
+        "name": "areaId",
+        "in": "path"
+      },
+      "EvidenceCaseId": {
+        "schema": { "$ref": "#/components/schemas/EvidenceCaseId" },
+        "required": true,
+        "name": "caseId",
+        "in": "path"
+      },
+      "EvidenceId": {
+        "schema": { "$ref": "#/components/schemas/EvidenceId" },
+        "required": true,
+        "name": "evidenceId",
+        "in": "path"
+      },
       "IncidentAreaId": {
         "schema": { "$ref": "#/components/schemas/IncidentAreaId" },
         "required": true,
@@ -1140,6 +1184,98 @@
           },
           "409": {
             "description": "Idempotency conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ops/areas/{areaId}/cases/{caseId}/evidence/{evidenceId}/preview": {
+      "get": {
+        "summary": "Issue a scoped derivative preview URL",
+        "description": "Requires evidence.view over the actual area, assigned case and data classification. Every URL issuance is audited.",
+        "tags": ["Evidence"],
+        "parameters": [
+          { "$ref": "#/components/parameters/EvidenceAreaId" },
+          { "$ref": "#/components/parameters/EvidenceCaseId" },
+          { "$ref": "#/components/parameters/EvidenceId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Short-lived access grant; never contains an object key",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EvidenceAccessGrant" }
+              }
+            }
+          },
+          "403": {
+            "description": "Officer scope or data classification denied and audited",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown and out-of-scope evidence use the same response",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          },
+          "503": {
+            "description": "Evidence reader or storage is unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ops/areas/{areaId}/cases/{caseId}/evidence/{evidenceId}/download": {
+      "get": {
+        "summary": "Issue a scoped immutable-original download URL",
+        "description": "Requires evidence.view over the actual area, assigned case and data classification. Every URL issuance is audited.",
+        "tags": ["Evidence"],
+        "parameters": [
+          { "$ref": "#/components/parameters/EvidenceAreaId" },
+          { "$ref": "#/components/parameters/EvidenceCaseId" },
+          { "$ref": "#/components/parameters/EvidenceId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Short-lived access grant; never contains an object key",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EvidenceAccessGrant" }
+              }
+            }
+          },
+          "403": {
+            "description": "Officer scope or data classification denied and audited",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown and out-of-scope evidence use the same response",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          },
+          "503": {
+            "description": "Evidence reader or storage is unavailable",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetails" }

@@ -8,6 +8,7 @@ import {
   EventEnvelopeSchema,
   EvidenceReadyEventSchema,
   EvidenceFinalizeHeadersSchema,
+  EvidenceAccessGrantSchema,
   EvidenceInitiateHeadersSchema,
   EvidenceScanRequestedEventSchema,
   EvidenceUploadInitiatedSchema,
@@ -221,6 +222,24 @@ describe("executable contracts", () => {
     ).toBeDefined();
     expect(() =>
       EvidenceInitiateHeadersSchema.parse({ "idempotency-key": uuid }),
+    ).toThrow();
+  });
+
+  it("returns a bounded evidence access grant without storage keys", () => {
+    const grant = EvidenceAccessGrantSchema.parse({
+      evidence_id: uuid,
+      access_kind: "PREVIEW",
+      media_type: "image/png",
+      access_url: "https://storage.example.test/signed-preview",
+      expires_at: "2026-08-16T10:02:00.000Z",
+    });
+    expect(grant.access_kind).toBe("PREVIEW");
+    expect(JSON.stringify(grant)).not.toMatch(/object_key|sha256|scan_engine/);
+    expect(() =>
+      EvidenceAccessGrantSchema.parse({
+        ...grant,
+        original_object_key: "original/secret",
+      }),
     ).toThrow();
   });
 

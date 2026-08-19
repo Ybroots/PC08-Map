@@ -72,6 +72,7 @@ export interface AppConfig {
     allowedMimeTypes: readonly string[];
     maxBytes?: number;
     uploadUrlTtlSeconds?: number;
+    readUrlTtlSeconds?: number;
     workerPollMs?: number;
     workerBatchSize?: number;
     useFakeAntivirus: boolean;
@@ -279,6 +280,7 @@ export function loadAndValidateConfig(
       "EVIDENCE_ALLOWED_MIME_TYPES",
       "EVIDENCE_MAX_BYTES",
       "EVIDENCE_UPLOAD_URL_TTL_SECONDS",
+      "EVIDENCE_READ_URL_TTL_SECONDS",
       "EVIDENCE_WORKER_POLL_MS",
       "EVIDENCE_WORKER_BATCH_SIZE",
       "EVIDENCE_CAPABILITY_SECRET",
@@ -339,6 +341,11 @@ export function loadAndValidateConfig(
     "EVIDENCE_UPLOAD_URL_TTL_SECONDS"
   ]?.trim()
     ? integer(source, "EVIDENCE_UPLOAD_URL_TTL_SECONDS", 0, 1, 604_800)
+    : undefined;
+  const evidenceReadUrlTtlSeconds = source[
+    "EVIDENCE_READ_URL_TTL_SECONDS"
+  ]?.trim()
+    ? integer(source, "EVIDENCE_READ_URL_TTL_SECONDS", 0, 1, 3_600)
     : undefined;
   const evidenceWorkerPollMs = source["EVIDENCE_WORKER_POLL_MS"]?.trim()
     ? integer(source, "EVIDENCE_WORKER_POLL_MS", 0, 1, Number.MAX_SAFE_INTEGER)
@@ -522,6 +529,7 @@ export function loadAndValidateConfig(
       allowedMimeTypes: evidenceAllowedMimeTypes,
       maxBytes: evidenceMaxBytes,
       uploadUrlTtlSeconds: evidenceUploadUrlTtlSeconds,
+      readUrlTtlSeconds: evidenceReadUrlTtlSeconds,
       workerPollMs: evidenceWorkerPollMs,
       workerBatchSize: evidenceWorkerBatchSize,
       useFakeAntivirus,

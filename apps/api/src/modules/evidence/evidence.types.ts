@@ -30,6 +30,7 @@ export interface EvidenceRuntimePolicy {
   readonly allowedMimeTypes: readonly string[];
   readonly maxBytes?: number;
   readonly uploadUrlTtlSeconds?: number;
+  readonly readUrlTtlSeconds?: number;
   readonly capabilitySecret?: string;
 }
 
