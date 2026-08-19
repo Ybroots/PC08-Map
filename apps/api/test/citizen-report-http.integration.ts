@@ -4,6 +4,7 @@ import { NestFactory } from "@nestjs/core";
 import { loadAndValidateConfig } from "@atgt/config";
 import { Pool } from "pg";
 import { AppModule } from "../src/app.module";
+import { hashUploadCapability } from "../src/modules/evidence/evidence-capability";
 
 const SKIP = process.env["SKIP_SMOKE"] === "true";
 const ADMIN_DATABASE_URL =
@@ -44,6 +45,21 @@ const config = loadAndValidateConfig({
   REPORT_INTAKE_ENABLED: "true",
   REPORT_INTAKE_AREA_ID: areaId,
   REPORT_IDEMPOTENCY_TTL_MINUTES: "60",
+  REPORT_EVIDENCE_LINKING_ENABLED: "true",
+  REPORT_CAPABILITY_SECRET: "http-report-capability-secret-32-characters",
+  EVIDENCE_PIPELINE_ENABLED: "true",
+  EVIDENCE_ALLOWED_MIME_TYPES: "image/jpeg",
+  EVIDENCE_MAX_BYTES: "1048576",
+  EVIDENCE_UPLOAD_URL_TTL_SECONDS: "300",
+  EVIDENCE_READ_URL_TTL_SECONDS: "120",
+  EVIDENCE_WORKER_POLL_MS: "1000",
+  EVIDENCE_WORKER_BATCH_SIZE: "10",
+  EVIDENCE_CAPABILITY_SECRET: "http-evidence-capability-secret-32-characters",
+  EVIDENCE_USE_FAKE_ANTIVIRUS: "true",
+  S3_REGION: "us-east-1",
+  S3_ACCESS_KEY: "minio_dev",
+  S3_SECRET_KEY: "devpassword_local",
+  S3_FORCE_PATH_STYLE: "true",
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:4317",
   OTEL_SERVICE_NAME: "atgt-api-t11-http-integration",
 });
@@ -54,6 +70,7 @@ describe("T11A citizen report HTTP boundary", () => {
   let baseUrl: string;
   const idempotencyKeys: string[] = [];
   const sessionIds: string[] = [];
+  const evidenceIds: string[] = [];
 
   beforeAll(async () => {
     if (SKIP) return;
@@ -74,6 +91,16 @@ describe("T11A citizen report HTTP boundary", () => {
       [areaId],
     );
     const reportIds = ids.rows.map((row) => row.id);
+    if (evidenceIds.length > 0) {
+      await admin.query(
+        "DELETE FROM evidence.objects WHERE evidence_id=ANY($1::uuid[])",
+        [evidenceIds],
+      );
+      await admin.query(
+        "DELETE FROM evidence.uploads WHERE upload_id=ANY($1::uuid[])",
+        [evidenceIds],
+      );
+    }
     if (reportIds.length > 0) {
       await admin.query(
         "DELETE FROM platform.outbox WHERE aggregate_id=ANY($1::text[])",
@@ -165,6 +192,7 @@ describe("T11A citizen report HTTP boundary", () => {
       publicCode: string;
       status: string;
       receivedAt: string;
+      reportCapability: string;
     };
 
     const replay = await submit();
@@ -182,5 +210,55 @@ describe("T11A citizen report HTTP boundary", () => {
       receivedAt: accepted.receivedAt,
       lastUpdatedAt: accepted.receivedAt,
     });
+
+    const evidenceId = randomUUID();
+    evidenceIds.push(evidenceId);
+    const uploadCapability = "http-upload-capability-ready-evidence-t11b1";
+    const sha256 = "b".repeat(64);
+    await admin.query(
+      `INSERT INTO evidence.uploads
+         (upload_id,capability_hash,quarantine_object_key,declared_sha256,
+          declared_mime,declared_size_bytes,state,observed_sha256,created_at,
+          expires_at,finalized_at,processed_at)
+       VALUES ($1,$2,$3,$4,'image/jpeg',128,'READY',$4,NOW(),
+               NOW()+INTERVAL '1 hour',NOW(),NOW())`,
+      [
+        evidenceId,
+        hashUploadCapability(uploadCapability),
+        `quarantine/${evidenceId}`,
+        sha256,
+      ],
+    );
+    await admin.query(
+      `INSERT INTO evidence.objects
+         (evidence_id,original_object_key,derivative_object_key,sha256,mime,
+          size_bytes,scan_engine,scan_engine_version)
+       VALUES ($1,$2,$3,$4,'image/jpeg',128,'test-av','1')`,
+      [
+        evidenceId,
+        `original/${evidenceId}`,
+        `derivative/${evidenceId}`,
+        sha256,
+      ],
+    );
+    const attachmentUrl = `${baseUrl}/public/reports/${accepted.publicCode}/evidence/${evidenceId}`;
+    const missingSession = await fetch(attachmentUrl, {
+      method: "POST",
+      headers: {
+        "x-report-capability": accepted.reportCapability,
+        "x-upload-capability": uploadCapability,
+      },
+    });
+    expect(missingSession.status).toBe(401);
+    const attached = await fetch(attachmentUrl, {
+      method: "POST",
+      headers: {
+        "x-citizen-session": session.session_token,
+        "x-report-capability": accepted.reportCapability,
+        "x-upload-capability": uploadCapability,
+      },
+    });
+    expect(attached.status).toBe(200);
+    expect(await attached.json()).toEqual({ evidenceId, state: "ATTACHED" });
   });
 });

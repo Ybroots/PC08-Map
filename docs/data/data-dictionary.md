@@ -64,9 +64,12 @@ public tracking.
 `report.reports` contains no citizen session, IP, device, account, token or
 identity-link column. A database trigger protects the acknowledged category,
 location, description, unverified plate, reported time, area and classification.
-The app role cannot delete report rows or update/delete/truncate history. T11A
-does not calculate risk, attach evidence, identify duplicates or conclude a
-violation; those remain explicit T11B/operator-verification concerns.
+The app role cannot delete report rows or update/delete/truncate history. T11B1
+may set an unowned `evidence.objects` owner to this report only after the object
+is READY and both HMAC capabilities plus a live citizen session are valid. The
+ownership cannot be reassigned. Raw report capability material is not stored in
+the business table or idempotency response. Risk scoring, duplicate detection
+and conclusions remain later T11B/operator-verification concerns.
 
 ### evidence schema
 
@@ -76,11 +79,15 @@ violation; those remain explicit T11B/operator-verification concerns.
 | objects      | evidence_id, owner_type/id/area_id, data_class, original/derivative key, sha256, mime, size, scan engine/version | READY only; integrity/classification protected |
 | scan_history | evidence_id, from/to state, outcome_code, engine/version, trace_id                                               | Append-only; no key, URL or scan detail        |
 
-`owner_type/owner_id/area_id` remain null until a later incident/report attachment
-use case authorizes the link; once attached they cannot be reassigned. App role
+`owner_type/owner_id/area_id` remain null until an incident/report attachment
+authorizes the link; once attached they cannot be reassigned. App role
 cannot delete uploads/objects or update/delete scan history. Retention version is
 `PENDING`, legal hold defaults false, and no archive/delete job exists while D-06
 is pending.
+
+Migration 11 exposes `evidence.attach_ready_to_report` as the narrow atomic
+ownership boundary. Invalid upload capability, non-READY state and existing
+ownership all return no row so the public API cannot enumerate evidence state.
 
 Once classified `restricted`, an evidence object cannot be downgraded. Scoped
 viewer lookup requires exact `area_id + owner_id(case) + evidence_id`, a linked

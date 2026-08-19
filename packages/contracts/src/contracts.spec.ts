@@ -27,6 +27,9 @@ import {
   IncidentReceivedEventDataSchema,
   OpsIncidentFeedQuerySchema,
   ReportReceivedEventDataSchema,
+  ReportEvidenceLinkHeadersSchema,
+  ReportEvidenceLinkedSchema,
+  ReportEvidenceLinkedEventDataSchema,
 } from "./index";
 
 const traceId = "0123456789abcdef0123456789abcdef";
@@ -76,6 +79,27 @@ describe("executable contracts", () => {
     expect(event).not.toHaveProperty("public_code");
     expect(event).not.toHaveProperty("longitude");
     expect(event).not.toHaveProperty("plate_text_unverified");
+  });
+
+  it("keeps report evidence linking capability-protected and privacy-safe", () => {
+    expect(
+      ReportEvidenceLinkHeadersSchema.parse({
+        "x-report-capability": "r".repeat(43),
+        "x-upload-capability": "u".repeat(43),
+        "x-citizen-session": "s".repeat(43),
+      }),
+    ).toBeDefined();
+    expect(
+      ReportEvidenceLinkedSchema.parse({ evidenceId: uuid, state: "ATTACHED" }),
+    ).toEqual({ evidenceId: uuid, state: "ATTACHED" });
+    const event = ReportEvidenceLinkedEventDataSchema.parse({
+      report_id: uuid,
+      evidence_id: "650e8400-e29b-41d4-a716-446655440000",
+      area_id: "synthetic-area",
+    });
+    expect(JSON.stringify(event)).not.toMatch(
+      /public_code|object_key|sha256|capability|session|plate|description/,
+    );
   });
 
   it("accepts a valid SOS request and strips no unknown data", () => {

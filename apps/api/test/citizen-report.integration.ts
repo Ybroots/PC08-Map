@@ -7,6 +7,8 @@ import {
 } from "../src/modules/reports/report.repository";
 import { PostgresOutboxWriter } from "../src/platform/database/outbox-writer";
 import { PostgresTransactionManager } from "../src/platform/database/transaction-manager";
+import { EvidenceAttachmentService } from "../src/modules/evidence/evidence-attachment.service";
+import { hashUploadCapability } from "../src/modules/evidence/evidence-capability";
 
 const SKIP = process.env["SKIP_SMOKE"] === "true";
 const DATABASE_URL =
@@ -26,6 +28,8 @@ describe("T11A anonymous citizen report intake", () => {
     .toUpperCase()}`;
   const traceId = randomUUID().replaceAll("-", "");
   const keys: string[] = [];
+  const evidenceIds: string[] = [];
+  const reportCapabilitySecret = "test-report-capability-secret-32-characters";
 
   const payload = (
     overrides: Partial<CreateCitizenReport> = {},
@@ -53,7 +57,14 @@ describe("T11A anonymous citizen report intake", () => {
       pool,
       new PostgresTransactionManager(pool),
       new PostgresOutboxWriter(),
-      { enabled: true, intakeAreaId: areaId, idempotencyTtlMinutes: 60 },
+      {
+        enabled: true,
+        intakeAreaId: areaId,
+        idempotencyTtlMinutes: 60,
+        evidenceLinkingEnabled: true,
+        capabilitySecret: reportCapabilitySecret,
+      },
+      new EvidenceAttachmentService(),
     );
   });
 
@@ -64,6 +75,20 @@ describe("T11A anonymous citizen report intake", () => {
       [areaId],
     );
     const reportIds = ids.rows.map((row) => row.id);
+    if (evidenceIds.length > 0) {
+      await admin.query(
+        "DELETE FROM evidence.objects WHERE evidence_id=ANY($1::uuid[])",
+        [evidenceIds],
+      );
+      await admin.query(
+        "DELETE FROM evidence.scan_history WHERE evidence_id=ANY($1::uuid[])",
+        [evidenceIds],
+      );
+      await admin.query(
+        "DELETE FROM evidence.uploads WHERE upload_id=ANY($1::uuid[])",
+        [evidenceIds],
+      );
+    }
     if (reportIds.length > 0) {
       await admin.query(
         "DELETE FROM platform.outbox WHERE aggregate_id=ANY($1::text[])",
@@ -164,6 +189,98 @@ describe("T11A anonymous citizen report intake", () => {
     );
   });
 
+  it("links only capability-authorized READY evidence once without concluding the report", async () => {
+    if (SKIP) return;
+    const key = randomUUID();
+    keys.push(key);
+    const accepted = await reports.accept(payload(), key, traceId);
+    expect(accepted.response.reportCapability).toHaveLength(43);
+    const evidenceId = randomUUID();
+    evidenceIds.push(evidenceId);
+    const uploadCapability = "upload-capability-for-t11b1-ready-evidence";
+    const sha256 = "a".repeat(64);
+    await admin.query(
+      `INSERT INTO evidence.uploads
+         (upload_id,capability_hash,quarantine_object_key,declared_sha256,
+          declared_mime,declared_size_bytes,state,observed_sha256,created_at,
+          expires_at,finalized_at,processed_at)
+       VALUES ($1,$2,$3,$4,'image/jpeg',128,'READY',$4,NOW(),
+               NOW()+INTERVAL '1 hour',NOW(),NOW())`,
+      [
+        evidenceId,
+        hashUploadCapability(uploadCapability),
+        `quarantine/${evidenceId}`,
+        sha256,
+      ],
+    );
+    await admin.query(
+      `INSERT INTO evidence.objects
+         (evidence_id,original_object_key,derivative_object_key,sha256,mime,
+          size_bytes,scan_engine,scan_engine_version)
+       VALUES ($1,$2,$3,$4,'image/jpeg',128,'test-av','1')`,
+      [
+        evidenceId,
+        `original/${evidenceId}`,
+        `derivative/${evidenceId}`,
+        sha256,
+      ],
+    );
+
+    const first = await reports.attachEvidence(
+      accepted.response.publicCode,
+      evidenceId,
+      accepted.response.reportCapability!,
+      uploadCapability,
+      traceId,
+    );
+    expect(first).toEqual({ evidenceId, state: "ATTACHED" });
+    expect(
+      await reports.attachEvidence(
+        accepted.response.publicCode,
+        evidenceId,
+        accepted.response.reportCapability!,
+        uploadCapability,
+        traceId,
+      ),
+    ).toEqual(first);
+
+    const stored = await admin.query<{
+      owner_type: string;
+      owner_id: string;
+      area_id: string;
+      state: string;
+      audit_count: number;
+      event_count: number;
+    }>(
+      `SELECT o.owner_type,o.owner_id::text,o.area_id,r.state,
+         (SELECT count(*)::int FROM audit.audit_events a
+           WHERE a.action='report.evidence.attach' AND a.object_id=r.id::text) audit_count,
+         (SELECT count(*)::int FROM platform.outbox x
+           WHERE x.event_type='report.evidence_linked.v1'
+             AND x.aggregate_id=r.id::text) event_count
+       FROM evidence.objects o
+       JOIN report.reports r ON r.id=o.owner_id
+       WHERE o.evidence_id=$1`,
+      [evidenceId],
+    );
+    expect(stored.rows[0]).toMatchObject({
+      owner_type: "report",
+      area_id: areaId,
+      state: "RECEIVED",
+      audit_count: 1,
+      event_count: 1,
+    });
+    await expect(
+      reports.attachEvidence(
+        accepted.response.publicCode,
+        evidenceId,
+        "wrong-report-capability-that-is-long-enough",
+        uploadCapability,
+        traceId,
+      ),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
   it("returns only generalized tracking and uniform not-found", async () => {
     if (SKIP) return;
     const key = randomUUID();
@@ -244,5 +361,25 @@ describe("T11A anonymous citizen report intake", () => {
       [`report:${key}`],
     );
     expect(partial.rows[0]?.count).toBe(0);
+  });
+
+  it("denies direct evidence owner updates and exposes only the capability boundary", async () => {
+    if (SKIP) return;
+    const privileges = await admin.query<{
+      table_update: boolean;
+      owner_update: boolean;
+      classification_update: boolean;
+      attach_execute: boolean;
+    }>(`SELECT
+      has_table_privilege('atgt_app','evidence.objects','UPDATE') table_update,
+      has_column_privilege('atgt_app','evidence.objects','owner_id','UPDATE') owner_update,
+      has_column_privilege('atgt_app','evidence.objects','data_class','UPDATE') classification_update,
+      has_function_privilege('atgt_app','evidence.attach_ready_to_report(uuid,uuid,text,character)','EXECUTE') attach_execute`);
+    expect(privileges.rows[0]).toEqual({
+      table_update: false,
+      owner_update: false,
+      classification_update: true,
+      attach_execute: true,
+    });
   });
 });

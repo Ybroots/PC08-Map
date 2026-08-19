@@ -306,6 +306,20 @@ required and capped at 3600 seconds as a technical safety bound, not a productio
 policy default. Access audit and `/api/v1/metrics/evidence` never include signed
 URLs, object keys, checksums, case, evidence or principal labels.
 
+T11B1 report evidence linking is disabled by default. For a deliberate local/test
+flow, enable report intake and the evidence pipeline, then additionally provide:
+
+```dotenv
+REPORT_EVIDENCE_LINKING_ENABLED=true
+REPORT_CAPABILITY_SECRET=<a-separate-random-secret-at-least-32-characters>
+```
+
+`POST /api/v1/public/reports/{publicCode}/evidence/{evidenceId}` requires the
+live `X-Citizen-Session`, returned `X-Report-Capability` and original
+`X-Upload-Capability`. It accepts only a READY object, sets owner exactly once,
+and returns a uniform 404 for invalid capability/non-READY/owner conflict. Never
+log either capability or reuse the evidence secret as the report secret.
+
 There is no retention cleanup path. Do not manually delete quarantine/original
 objects or evidence rows to “unstick” a test; inspect append-only history and keep
 the feature disabled. Integration verification:

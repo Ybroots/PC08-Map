@@ -267,7 +267,12 @@
             "pattern": "^[0-9ABCDEFGHJKMNPQRSTVWXYZ]{12}$"
           },
           "status": { "type": "string", "enum": ["RECEIVED"] },
-          "receivedAt": { "type": "string", "format": "date-time" }
+          "receivedAt": { "type": "string", "format": "date-time" },
+          "reportCapability": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 256
+          }
         },
         "required": ["publicCode", "status", "receivedAt"],
         "additionalProperties": false
@@ -300,6 +305,41 @@
           "lastUpdatedAt": { "type": "string", "format": "date-time" }
         },
         "required": ["publicCode", "status", "receivedAt", "lastUpdatedAt"],
+        "additionalProperties": false
+      },
+      "ReportEvidenceLinkHeaders": {
+        "type": "object",
+        "properties": {
+          "x-report-capability": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 256
+          },
+          "x-upload-capability": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 256
+          },
+          "x-citizen-session": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "x-report-capability",
+          "x-upload-capability",
+          "x-citizen-session"
+        ],
+        "additionalProperties": false
+      },
+      "ReportEvidenceLinked": {
+        "type": "object",
+        "properties": {
+          "evidenceId": { "type": "string", "format": "uuid" },
+          "state": { "type": "string", "enum": ["ATTACHED"] }
+        },
+        "required": ["evidenceId", "state"],
         "additionalProperties": false
       },
       "OpsIncident": {
@@ -591,6 +631,7 @@
               "ATGT_CONFIGURATION_BLOCKED",
               "ATGT_INCIDENT_TYPE_UNAVAILABLE",
               "ATGT_REPORT_CATEGORY_UNAVAILABLE",
+              "ATGT_REPORT_EVIDENCE_UNAVAILABLE",
               "ATGT_INTERNAL_ERROR"
             ]
           },
@@ -660,6 +701,7 @@
               "incident.received.v1",
               "incident.verified.v1",
               "report.received.v1",
+              "report.evidence_linked.v1",
               "assignment.created.v1",
               "assignment.ack_timed_out.v1",
               "evidence.scan_requested.v1",
@@ -1368,6 +1410,81 @@
           },
           "404": {
             "description": "Invalid and unknown codes use the same response",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/reports/{publicCode}/evidence/{evidenceId}": {
+      "post": {
+        "summary": "Attach a READY evidence object to an anonymous report",
+        "description": "Requires a live citizen session plus independent report and upload capabilities. It never verifies the report or creates an enforcement decision.",
+        "tags": ["Reports", "Evidence"],
+        "parameters": [
+          {
+            "schema": { "type": "string" },
+            "required": true,
+            "name": "publicCode",
+            "in": "path"
+          },
+          {
+            "schema": { "type": "string", "format": "uuid" },
+            "required": true,
+            "name": "evidenceId",
+            "in": "path"
+          },
+          {
+            "schema": { "type": "string", "minLength": 43, "maxLength": 256 },
+            "required": true,
+            "name": "x-report-capability",
+            "in": "header"
+          },
+          {
+            "schema": { "type": "string", "minLength": 43, "maxLength": 256 },
+            "required": true,
+            "name": "x-upload-capability",
+            "in": "header"
+          },
+          {
+            "schema": { "type": "string", "minLength": 43, "maxLength": 256 },
+            "required": true,
+            "name": "x-citizen-session",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evidence ownership attached or exact attachment replayed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportEvidenceLinked"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Citizen session missing, invalid, expired or revoked",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid capability, non-READY evidence and ownership conflicts use a uniform response",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          },
+          "503": {
+            "description": "Evidence linking is configuration-blocked",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetails" }

@@ -28,19 +28,20 @@ Five user groups: citizen/tourist, dispatcher, field officer, leader, system adm
 
 ## Threat register (STRIDE)
 
-| ID  | Category               | Threat                    | Current control                                                 | Residual risk |
-| --- | ---------------------- | ------------------------- | --------------------------------------------------------------- | ------------- |
-| T1  | Spoofing               | Fake SOS flood            | Rate limit, risk score, duplicate detection                     | Medium        |
-| T2  | Tampering              | Evidence modification     | Magic/size/SHA256 checks + conditional put + versioned original | Medium        |
-| T3  | Repudiation            | Deny action taken         | Append-only audit log                                           | Low           |
-| T4  | Info disclosure        | PII in logs               | Structured logging allowlist                                    | Medium        |
-| T5  | Info disclosure        | API key in bundle         | Secret store + key alias                                        | Low           |
-| T6  | Denial of service      | Queue flood               | Rate limit + DLQ + circuit breaker                              | Medium        |
-| T7  | Elevation of privilege | Cross-area access         | ABAC + scoped repository                                        | Low           |
-| T8  | Elevation of privilege | Self-approve data         | Maker-checker (4 eyes)                                          | Low           |
-| T9  | Spoofing/tampering     | Stolen upload capability  | Citizen session + short TTL + HMAC capability; hash-only DB     | Medium        |
-| T10 | Tampering/disclosure   | Malicious media/EXIF leak | Quarantine + AV port + EXIF-free watermarked derivative         | Medium        |
-| T11 | Info disclosure        | Evidence IDOR/signed URL  | Area+case ABAC, repository recheck, short TTL, access audit     | Medium        |
+| ID  | Category               | Threat                    | Current control                                                                              | Residual risk |
+| --- | ---------------------- | ------------------------- | -------------------------------------------------------------------------------------------- | ------------- |
+| T1  | Spoofing               | Fake SOS flood            | Rate limit, risk score, duplicate detection                                                  | Medium        |
+| T2  | Tampering              | Evidence modification     | Magic/size/SHA256 checks + conditional put + versioned original                              | Medium        |
+| T3  | Repudiation            | Deny action taken         | Append-only audit log                                                                        | Low           |
+| T4  | Info disclosure        | PII in logs               | Structured logging allowlist                                                                 | Medium        |
+| T5  | Info disclosure        | API key in bundle         | Secret store + key alias                                                                     | Low           |
+| T6  | Denial of service      | Queue flood               | Rate limit + DLQ + circuit breaker                                                           | Medium        |
+| T7  | Elevation of privilege | Cross-area access         | ABAC + scoped repository                                                                     | Low           |
+| T8  | Elevation of privilege | Self-approve data         | Maker-checker (4 eyes)                                                                       | Low           |
+| T9  | Spoofing/tampering     | Stolen upload capability  | Citizen session + short TTL + HMAC capability; hash-only DB                                  | Medium        |
+| T10 | Tampering/disclosure   | Malicious media/EXIF leak | Quarantine + AV port + EXIF-free watermarked derivative                                      | Medium        |
+| T11 | Info disclosure        | Evidence IDOR/signed URL  | Area+case ABAC, repository recheck, short TTL, access audit                                  | Medium        |
+| T12 | Spoofing/tampering     | Attach another upload     | Live session + separate report/upload HMAC capabilities + READY-only atomic owner assignment | Medium        |
 
 T10B2 implements the T2/T10 controls only for explicit local/test JPEG/PNG values
 and a fake EICAR detector. Production remains fail-closed until the AV/storage
@@ -53,6 +54,12 @@ Scope miss and missing evidence share the same response. Signed URLs are returne
 only to the caller, use `no-store`/`no-referrer`, and are excluded from audit and
 aggregate metrics. URL forwarding within its short lifetime remains a residual
 risk; production TTL/provider controls still require approval.
+
+T11B1 implements T12 only for local/test. Report and upload capabilities are
+verified independently; raw capabilities are not written to report, evidence,
+audit or outbox rows. Invalid capability, non-READY media and owner conflict are
+intentionally indistinguishable. Production remains fail-closed pending the
+T10/D-09 gates.
 
 ## Pentest scope (T18)
 

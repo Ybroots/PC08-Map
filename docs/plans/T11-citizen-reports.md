@@ -8,9 +8,11 @@ chia nho de khong vuot cac cong production dang mo:
 - T11A: intake + public tracking foundation. Citizen session submit mot report
   text/location/plate-unverified, idempotent acknowledgement, append-only
   history/audit va atomic outbox. Runtime chi duoc bat o local/test.
-- T11B: evidence linking, risk/rate-limit/captcha port, duplicate candidates,
-  operator verification queue va false-positive override sau khi cac gate
-  T09/T10/D-09 lien quan duoc phe duyet.
+- T11B1: READY evidence ownership/linking voi citizen session va hai capability
+  rieng biet; local/test only, production fail-closed.
+- T11B2: risk/rate-limit/captcha port, duplicate candidates, operator
+  verification queue va false-positive override sau khi cac gate T09/T10/D-09
+  lien quan duoc phe duyet.
 
 ## Source requirements
 
@@ -27,10 +29,11 @@ chia nho de khong vuot cac cong production dang mo:
 
 - T03 da co anonymous citizen session va guard.
 - T04 da co schema `report`, transaction/outbox/idempotency primitives.
-- T10B1-B3 da co upload/scan/controlled access local, nhung production/UAT con
-  bi khoa boi provider/secret resolver/D-09.
+- T10B1-B3 da co upload/scan/controlled access local; T11B1 da noi READY object
+  vao report atomically, nhung production/UAT con bi khoa boi provider/secret
+  resolver/D-09.
 - Domain da co enum `ReportState` nhung chua co lifecycle rules.
-- Chua co report contract, table, runtime module, public tracking hay tests.
+- Intake/tracking/evidence-link contracts, report runtime va tests da co.
 
 ## Decisions and blockers
 
@@ -61,8 +64,9 @@ chia nho de khong vuot cac cong production dang mo:
 3. T11A public controller protected by citizen session; invalid/unknown tracking
    codes share uniform 404.
 4. T11A test gates, cold start, docs and disabled-by-default rollout.
-5. T11B only after gates: evidence ownership/linking, abuse ports, duplicate
-   candidates and operator queue. No heuristic may auto-conclude a violation.
+5. T11B1 READY evidence ownership/linking local/test, capability protected.
+6. T11B2 only after explicit values/gates: abuse ports, duplicate candidates
+   and operator queue. No heuristic may auto-conclude a violation.
 
 ## Test plan
 
@@ -82,8 +86,8 @@ chia nho de khong vuot cac cong production dang mo:
 
 - Feature flag: `REPORT_INTAKE_ENABLED=false`; staging/production enable is
   rejected until T11B production gates are explicitly completed.
-- Migration compatibility: migration 10 is expand-only; no existing table or
-  event is rewritten.
+- Migration compatibility: migrations 10-11 are expand-only; migration 11 adds
+  a narrow attachment function and does not rewrite existing rows/events.
 - Deploy order: migration -> API -> clients. Rollback API/config first and keep
   report/history/outbox data dormant; do not drop or delete acknowledged data.
 
@@ -104,19 +108,22 @@ chia nho de khong vuot cac cong production dang mo:
 - [x] T11A implementation.
 - [x] T11A full local gates and cold start.
 - [x] T11A GitHub CI run `32221632793` green 6/6.
-- [ ] T11B evidence/abuse/duplicate/operator workflow (blocked by gates above).
+- [x] T11B1 READY evidence ownership/linking local implementation + cold start.
+- [ ] T11B2 abuse/duplicate/operator workflow (blocked by explicit gates above).
 
 ## Handoff
 
-- Changed files: report executable contracts/OpenAPI, report domain lifecycle,
-  config policy, API report module, migration 10, synthetic seed, integration
-  tests, data dictionary and HANDOFF.
-- Tests run/results: format/lint/typecheck/unit/coverage/contract/e2e/build pass;
-  cold-start non-cached integration passes API 56/56 and worker 5/5. HTTP path
-  proves missing session 401, session create, 202 accept/exact replay and minimal
-  tracking; Rabbit holds `report.received.v1` in a durable screening queue.
-- Remaining risks: no T11B evidence link, captcha/rate/risk port, duplicate
-  candidate or ops verification queue. Production enable remains rejected.
-- Rollback steps: set `REPORT_INTAKE_ENABLED=false`, roll back API/client code and
-  keep migration 10/report/history/audit/outbox/idempotency data dormant. Do not
-  drop or delete acknowledged reports while D-06 is pending.
+- Changed files: T11A files plus T11B1 capability/link contracts, config, public
+  evidence application boundary, report transaction/API, migration 11, Rabbit
+  binding, privacy/security/runbook docs and tests.
+- Tests run/results: T11B1 cold-start/final non-cached integration passes API 59/59 and
+  worker 5/5. HTTP path proves attachment rejects missing session, then accepts
+  READY evidence with both capabilities. Replay emits one audit/outbox only;
+  report state remains RECEIVED. Full gates are recorded in HANDOFF/CI history.
+- Remaining risks: no captcha/rate/risk port, duplicate candidate or ops
+  verification queue. Production enable remains rejected. Capability forwarding
+  during its client lifetime remains a residual risk.
+- Rollback steps: set `REPORT_EVIDENCE_LINKING_ENABLED=false` and
+  `REPORT_INTAKE_ENABLED=false`, roll back API/client code and keep migrations
+  10-11/report/evidence ownership/audit/outbox/idempotency data dormant. Do not
+  detach evidence or delete acknowledged records while D-06 is pending.

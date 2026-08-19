@@ -149,6 +149,14 @@
     {
       "source": "atgt.events",
       "vhost": "/",
+      "destination": "reports.screening",
+      "destination_type": "queue",
+      "routing_key": "report.evidence_linked.v1",
+      "arguments": {}
+    },
+    {
+      "source": "atgt.events",
+      "vhost": "/",
       "destination": "dispatch.events",
       "destination_type": "queue",
       "routing_key": "incident.verified.v1",

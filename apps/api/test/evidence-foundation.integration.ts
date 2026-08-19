@@ -208,7 +208,7 @@ describe("T10A evidence foundation", () => {
           "UPDATE evidence.objects SET sha256=$2 WHERE evidence_id=$1",
           [evidenceId, "c".repeat(64)],
         ),
-      ).rejects.toMatchObject({ code: "55000" });
+      ).rejects.toMatchObject({ code: expect.stringMatching(/42501|55000/) });
       await client.query("ROLLBACK TO SAVEPOINT immutable_object");
       const stored = await client.query<{
         state: string;

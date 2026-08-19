@@ -21,7 +21,7 @@ describe("citizen report route authorization coverage", () => {
         name !== "constructor" &&
         Reflect.hasMetadata(METHOD_METADATA, prototype[name]),
     );
-    expect(methods).toEqual(["accept", "tracking"]);
+    expect(methods).toEqual(["accept", "tracking", "attachEvidence"]);
     for (const method of methods) {
       const handler = prototype[method];
       expect(Reflect.getMetadata(PUBLIC_ROUTE_METADATA, handler)).toBe(true);
@@ -33,5 +33,8 @@ describe("citizen report route authorization coverage", () => {
     expect(
       Reflect.getMetadata(CITIZEN_SESSION_METADATA, prototype.tracking),
     ).toBeUndefined();
+    expect(
+      Reflect.getMetadata(CITIZEN_SESSION_METADATA, prototype.attachEvidence),
+    ).toBe(true);
   });
 });

@@ -70,6 +70,8 @@ export interface AppConfig {
     enabled: boolean;
     intakeAreaId?: string;
     idempotencyTtlMinutes?: number;
+    evidenceLinkingEnabled: boolean;
+    capabilitySecret?: string;
   };
   outboxRelay: { enabled: boolean; pollMs?: number; batchSize?: number };
   evidence: {
@@ -276,6 +278,33 @@ export function loadAndValidateConfig(
   ]?.trim()
     ? integer(source, "REPORT_IDEMPOTENCY_TTL_MINUTES", 0, 1, 525_600)
     : undefined;
+  const reportEvidenceLinkingEnabled = boolean(
+    source,
+    "REPORT_EVIDENCE_LINKING_ENABLED",
+    false,
+  );
+  if (reportEvidenceLinkingEnabled && !reportIntakeEnabled) {
+    throw new Error(
+      "REPORT_EVIDENCE_LINKING_ENABLED requires REPORT_INTAKE_ENABLED",
+    );
+  }
+  if (
+    reportEvidenceLinkingEnabled &&
+    (env === "staging" || env === "production")
+  ) {
+    throw new Error(
+      "REPORT_EVIDENCE_LINKING_ENABLED is blocked outside local/test until T11B production gates complete",
+    );
+  }
+  const reportCapabilitySecret = reportEvidenceLinkingEnabled
+    ? required(source, "REPORT_CAPABILITY_SECRET")
+    : undefined;
+  if (
+    reportCapabilitySecret !== undefined &&
+    reportCapabilitySecret.length < 32
+  ) {
+    throw new Error("REPORT_CAPABILITY_SECRET must be at least 32 characters");
+  }
   const outboxRelayEnabled = boolean(source, "OUTBOX_RELAY_ENABLED", false);
   if (outboxRelayEnabled) {
     required(source, "OUTBOX_RELAY_POLL_MS");
@@ -288,6 +317,11 @@ export function loadAndValidateConfig(
     ? integer(source, "OUTBOX_RELAY_BATCH_SIZE", 0, 1, 1000)
     : undefined;
   const evidenceEnabled = boolean(source, "EVIDENCE_PIPELINE_ENABLED", false);
+  if (reportEvidenceLinkingEnabled && !evidenceEnabled) {
+    throw new Error(
+      "REPORT_EVIDENCE_LINKING_ENABLED requires EVIDENCE_PIPELINE_ENABLED",
+    );
+  }
   const useFakeAntivirus = boolean(
     source,
     "EVIDENCE_USE_FAKE_ANTIVIRUS",
@@ -551,6 +585,8 @@ export function loadAndValidateConfig(
       enabled: reportIntakeEnabled,
       intakeAreaId: reportIntakeAreaId,
       idempotencyTtlMinutes: reportIdempotencyTtlMinutes,
+      evidenceLinkingEnabled: reportEvidenceLinkingEnabled,
+      capabilitySecret: reportCapabilitySecret,
     },
     outboxRelay: {
       enabled: outboxRelayEnabled,

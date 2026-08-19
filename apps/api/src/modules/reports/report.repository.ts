@@ -2,19 +2,27 @@ import { randomUUID } from "node:crypto";
 import {
   CitizenReportAcceptedSchema,
   EVENT_ROUTING_KEYS,
+  ReportEvidenceLinkedSchema,
   type CitizenReportAccepted,
   type CreateCitizenReport,
   type PublicReportTracking,
+  type ReportEvidenceLinked,
+  type ReportEvidenceLinkedEventData,
   type ReportReceivedEventData,
 } from "@atgt/contracts";
 import { PublicCode, ReportState, toPublicReportStatus } from "@atgt/domain";
 import type { Pool } from "pg";
+import { EvidenceAttachmentService } from "../evidence/evidence-attachment.service";
 import {
   PostgresOutboxWriter,
   PostgresTransactionManager,
 } from "../../platform/database";
 import { hashRequest } from "../../platform/idempotency/request-hash";
 import type { JsonValue } from "../../platform/idempotency/idempotency.types";
+import {
+  deriveReportCapability,
+  isValidReportCapability,
+} from "./report-capability";
 
 interface IdempotencyRow {
   request_hash: string;
@@ -33,6 +41,8 @@ export interface ReportIntakePolicy {
   enabled: boolean;
   intakeAreaId?: string;
   idempotencyTtlMinutes?: number;
+  evidenceLinkingEnabled?: boolean;
+  capabilitySecret?: string;
 }
 
 export interface AcceptedReportResult {
@@ -45,6 +55,7 @@ export type ReportFailureCode =
   | "IDEMPOTENCY_CONFLICT"
   | "IDEMPOTENCY_IN_PROGRESS"
   | "CATEGORY_UNAVAILABLE"
+  | "EVIDENCE_UNAVAILABLE"
   | "NOT_FOUND";
 
 export class ReportFailure extends Error {
@@ -76,7 +87,22 @@ export class PostgresReportRepository {
     private readonly transactions: PostgresTransactionManager,
     private readonly outbox: PostgresOutboxWriter,
     private readonly policy: ReportIntakePolicy,
+    private readonly evidenceAttachments?: EvidenceAttachmentService,
   ) {}
+
+  private acceptedWithCapability(
+    response: CitizenReportAccepted,
+  ): CitizenReportAccepted {
+    const { evidenceLinkingEnabled, capabilitySecret } = this.policy;
+    if (!evidenceLinkingEnabled || !capabilitySecret) return response;
+    return {
+      ...response,
+      reportCapability: deriveReportCapability(
+        capabilitySecret,
+        response.publicCode,
+      ),
+    };
+  }
 
   async accept(
     input: CreateCitizenReport,
@@ -130,7 +156,9 @@ export class PostgresReportRepository {
           );
         }
         return {
-          response: CitizenReportAcceptedSchema.parse(row.response_body),
+          response: this.acceptedWithCapability(
+            CitizenReportAcceptedSchema.parse(row.response_body),
+          ),
           replayed: true,
         };
       }
@@ -221,7 +249,96 @@ export class PostgresReportRepository {
           "Citizen report idempotency completion invariant failed",
         );
       }
-      return { response, replayed: false };
+      return {
+        response: this.acceptedWithCapability(response),
+        replayed: false,
+      };
+    });
+  }
+
+  async attachEvidence(
+    publicCode: string,
+    evidenceId: string,
+    reportCapability: string,
+    uploadCapability: string,
+    traceId: string,
+    now = new Date(),
+  ): Promise<ReportEvidenceLinked> {
+    const { evidenceLinkingEnabled, capabilitySecret } = this.policy;
+    if (
+      !evidenceLinkingEnabled ||
+      !capabilitySecret ||
+      !this.evidenceAttachments
+    ) {
+      throw new ReportFailure(
+        "CONFIGURATION_BLOCKED",
+        "Citizen report evidence linking is not configured",
+      );
+    }
+    if (
+      !PublicCode.isValid(publicCode) ||
+      !isValidReportCapability(capabilitySecret, publicCode, reportCapability)
+    ) {
+      throw new ReportFailure("NOT_FOUND", "Citizen report not found");
+    }
+
+    return this.transactions.execute(async (client) => {
+      const report = await client.query<{ id: string; area_id: string }>(
+        `SELECT id,area_id FROM report.reports
+          WHERE public_code=$1
+          FOR UPDATE`,
+        [publicCode.toUpperCase()],
+      );
+      const row = report.rows[0];
+      if (!row)
+        throw new ReportFailure("NOT_FOUND", "Citizen report not found");
+      const linked = await this.evidenceAttachments!.attachReadyToReport(
+        client,
+        {
+          evidenceId,
+          reportId: row.id,
+          areaId: row.area_id,
+          uploadCapability,
+        },
+      );
+      if (!linked) {
+        throw new ReportFailure(
+          "EVIDENCE_UNAVAILABLE",
+          "Evidence is unavailable for attachment",
+        );
+      }
+      if (linked.attachedNow) {
+        await client.query(
+          `INSERT INTO audit.audit_events
+             (who,action,object_type,object_id,scope,outcome,trace_id,metadata)
+           VALUES ('public','report.evidence.attach','report',$1,$2,'SUCCESS',$3,$4::jsonb)`,
+          [
+            row.id,
+            row.area_id,
+            traceId,
+            JSON.stringify({ evidence_id: evidenceId }),
+          ],
+        );
+        const eventData: ReportEvidenceLinkedEventData = {
+          report_id: row.id,
+          evidence_id: evidenceId,
+          area_id: row.area_id,
+        };
+        await this.outbox.append(client, {
+          event_id: randomUUID(),
+          type: EVENT_ROUTING_KEYS.REPORT_EVIDENCE_LINKED,
+          version: 1,
+          occurred_at: now.toISOString(),
+          trace_id: traceId,
+          aggregate_id: row.id,
+          aggregate_type: "report",
+          data: eventData,
+        });
+      }
+      return ReportEvidenceLinkedSchema.parse({
+        evidenceId,
+        state: "ATTACHED",
+      });
     });
   }
 

@@ -18,7 +18,7 @@
 | T08  | BLOCKED               | Chờ D-04 SLA/escalation và D-05 unit/service-area              |
 | T09  | ANDROID EMULATOR PASS | UAT-01..04 xong; physical/iOS và production config còn pending |
 | T10  | T10B3 VIEWER PASS     | Local controlled viewer xong; production/UAT còn bị khóa       |
-| T11  | T11A INTAKE PASS      | Anonymous intake/tracking local; T11B abuse/evidence/ops TODO  |
+| T11  | T11B1 LINKING PASS    | Intake/tracking + READY evidence link local; abuse/ops TODO    |
 | T12+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
@@ -90,6 +90,10 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   append-only history. Submitted payload được DB trigger bảo vệ; risk luôn NULL,
   plate luôn `_unverified`, không có auto duplicate/kết luận/enforcement path.
   `REPORT_INTAKE_ENABLED=false` mặc định và bị reject ở staging/production.
+- T11B1 thêm report capability HMAC riêng và endpoint gắn evidence. Citizen
+  session, report capability và upload capability đều bắt buộc; DB chỉ gắn object
+  READY chưa có owner, không cho reassign. Link/audit/`report.evidence_linked.v1`
+  outbox commit atomically; raw capability không vào report/audit/outbox.
 
 ## Hard stops còn mở
 
@@ -106,7 +110,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: T11B abuse/evidence/operator foundation
+## Bước tiếp theo đề xuất: T11B2 abuse/duplicate/operator foundation
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -126,8 +130,8 @@ profile, malware alert workflow và end-user UAT-11..14. Khi chưa có các quy�
 này, giữ `EVIDENCE_PIPELINE_ENABLED=false`; không dựng fake production, không đánh
 dấu pilot UAT pass và không thêm retention delete khi D-06 còn pending.
 
-T11A local/test đã hoàn tất. Lát cắt tiếp theo là T11B: evidence ownership/linking
-chỉ với upload READY + capability/session hợp lệ; risk/rate-limit/captcha ports;
+T11B1 local/test đã hoàn tất READY evidence ownership/linking với capability và
+session hợp lệ. Lát cắt tiếp theo là T11B2: risk/rate-limit/captcha ports;
 duplicate candidate theo time/space/hash/plate; và ops verification queue có
 confirm/false-positive override. Heuristic chỉ được tạo suggestion, không tự đổi
 report thành DUPLICATE/VERIFIED và không tạo enforcement decision. Không tự điền
@@ -207,6 +211,15 @@ Full format/lint/typecheck/unit/coverage/contract/e2e/build đều pass. Product
 intake vẫn bị config reject; xem `docs/plans/T11-citizen-reports.md` để tiếp tục
 T11B mà không suy đoán D-09. Implementation ở commit `4541c9b`; GitHub CI run
 `32221632793` xanh đủ 6/6 job.
+
+T11B1 verification (2026-08-19) có capability-protected READY evidence link,
+atomic owner/audit/`report.evidence_linked.v1` outbox và exact replay không phát
+event lần hai. Contract có 25 test, config 19 test, API unit 72 test. Cold-start
+đã xóa đúng 6 volume synthetic `atgt-*`, chạy migration 11 trước seed 12, dựng 8
+service healthy và 3 MinIO bucket private/versioned; non-cached integration pass
+API 59/59 + worker 5/5. HTTP test xác nhận thiếu citizen session bị 401, đủ hai
+capability + READY thì link 200 và report vẫn RECEIVED. Production linking/intake
+vẫn fail-closed; T11B2 không được tự đặt threshold khi D-09 còn pending.
 
 Từ repository root:
 

@@ -216,6 +216,8 @@ describe("loadAndValidateConfig", () => {
       enabled: false,
       intakeAreaId: undefined,
       idempotencyTtlMinutes: undefined,
+      evidenceLinkingEnabled: false,
+      capabilitySecret: undefined,
     });
     expect(() =>
       loadAndValidateConfig({
@@ -241,6 +243,8 @@ describe("loadAndValidateConfig", () => {
       enabled: true,
       intakeAreaId: "lam-dong",
       idempotencyTtlMinutes: 60,
+      evidenceLinkingEnabled: false,
+      capabilitySecret: undefined,
     });
     expect(() =>
       loadAndValidateConfig({
@@ -254,6 +258,40 @@ describe("loadAndValidateConfig", () => {
     ).toThrow(
       "REPORT_INTAKE_ENABLED is blocked outside local/test until T11B production gates complete",
     );
+  });
+
+  it("requires explicit local evidence and isolated capability policy for report linking", () => {
+    const base = {
+      ...validEnvironment(),
+      REPORT_INTAKE_ENABLED: "true",
+      REPORT_INTAKE_AREA_ID: "lam-dong",
+      REPORT_IDEMPOTENCY_TTL_MINUTES: "60",
+      REPORT_EVIDENCE_LINKING_ENABLED: "true",
+      REPORT_CAPABILITY_SECRET: "report-capability-secret-32-characters",
+    };
+    expect(() => loadAndValidateConfig(base)).toThrow(
+      "REPORT_EVIDENCE_LINKING_ENABLED requires EVIDENCE_PIPELINE_ENABLED",
+    );
+    const enabled = loadAndValidateConfig({
+      ...base,
+      EVIDENCE_PIPELINE_ENABLED: "true",
+      EVIDENCE_ALLOWED_MIME_TYPES: "image/jpeg",
+      EVIDENCE_MAX_BYTES: "1048576",
+      EVIDENCE_UPLOAD_URL_TTL_SECONDS: "300",
+      EVIDENCE_READ_URL_TTL_SECONDS: "120",
+      EVIDENCE_WORKER_POLL_MS: "1000",
+      EVIDENCE_WORKER_BATCH_SIZE: "10",
+      EVIDENCE_CAPABILITY_SECRET: "evidence-capability-secret-32-characters",
+      EVIDENCE_USE_FAKE_ANTIVIRUS: "true",
+      S3_REGION: "us-east-1",
+      S3_ACCESS_KEY: "local-access",
+      S3_SECRET_KEY: "local-secret",
+      S3_FORCE_PATH_STYLE: "true",
+    });
+    expect(enabled.reportIntake).toMatchObject({
+      evidenceLinkingEnabled: true,
+      capabilitySecret: "report-capability-secret-32-characters",
+    });
   });
 
   it("keeps the evidence pipeline disabled without implicit media policy", () => {

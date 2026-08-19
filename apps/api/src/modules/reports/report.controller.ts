@@ -15,9 +15,12 @@ import {
   CreateCitizenReportSchema,
   ERROR_CODES,
   IdempotencyKeySchema,
+  ReportEvidenceLinkHeadersSchema,
+  ReportEvidenceLinkParamsSchema,
   type CitizenReportAccepted,
   type CreateCitizenReport,
   type PublicReportTracking,
+  type ReportEvidenceLinked,
 } from "@atgt/contracts";
 import { createTraceId, requestContext } from "@atgt/observability";
 import type { Response } from "express";
@@ -49,6 +52,14 @@ function rethrow(error: unknown): never {
       ERROR_CODES.REPORT_CATEGORY_UNAVAILABLE,
       "Report category unavailable",
       "The selected citizen report category is unavailable",
+    );
+  }
+  if (error.code === "EVIDENCE_UNAVAILABLE") {
+    throw new SafeHttpException(
+      404,
+      ERROR_CODES.REPORT_EVIDENCE_UNAVAILABLE,
+      "Evidence unavailable",
+      "The requested evidence is not available for this report",
     );
   }
   if (error.code === "IDEMPOTENCY_CONFLICT") {
@@ -115,6 +126,39 @@ export class PublicReportController {
   ): Promise<PublicReportTracking> {
     try {
       return await this.reports.publicTracking(publicCode);
+    } catch (error) {
+      rethrow(error);
+    }
+  }
+
+  @Post(":publicCode/evidence/:evidenceId")
+  @PublicRoute()
+  @RequireCitizenSession()
+  @HttpCode(HttpStatus.OK)
+  @Header("Cache-Control", "no-store")
+  async attachEvidence(
+    @Param() paramsInput: Record<string, string>,
+    @Headers("x-report-capability") reportCapabilityInput: string | undefined,
+    @Headers("x-upload-capability") uploadCapabilityInput: string | undefined,
+    @Headers("x-citizen-session") citizenSessionInput: string | undefined,
+  ): Promise<ReportEvidenceLinked> {
+    const params = ReportEvidenceLinkParamsSchema.safeParse(paramsInput);
+    const headers = ReportEvidenceLinkHeadersSchema.safeParse({
+      "x-report-capability": reportCapabilityInput,
+      "x-upload-capability": uploadCapabilityInput,
+      "x-citizen-session": citizenSessionInput,
+    });
+    if (!params.success || !headers.success) {
+      throw new BadRequestException("Request validation failed");
+    }
+    try {
+      return await this.reports.attachEvidence(
+        params.data.publicCode,
+        params.data.evidenceId,
+        headers.data["x-report-capability"],
+        headers.data["x-upload-capability"],
+        traceId(),
+      );
     } catch (error) {
       rethrow(error);
     }

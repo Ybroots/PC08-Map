@@ -57,9 +57,33 @@ export const CitizenReportAcceptedSchema = z
     publicCode: z.string().regex(/^[0-9ABCDEFGHJKMNPQRSTVWXYZ]{12}$/),
     status: z.literal("RECEIVED"),
     receivedAt: z.string().datetime(),
+    reportCapability: z.string().min(43).max(256).optional(),
   })
   .strict();
 export type CitizenReportAccepted = z.infer<typeof CitizenReportAcceptedSchema>;
+
+export const ReportEvidenceLinkHeadersSchema = z
+  .object({
+    "x-report-capability": z.string().min(43).max(256),
+    "x-upload-capability": z.string().min(43).max(256),
+    "x-citizen-session": z.string().min(43).max(256),
+  })
+  .strict();
+
+export const ReportEvidenceLinkParamsSchema = z
+  .object({
+    publicCode: z.string().regex(/^[0-9ABCDEFGHJKMNPQRSTVWXYZ]{12}$/),
+    evidenceId: z.string().uuid(),
+  })
+  .strict();
+
+export const ReportEvidenceLinkedSchema = z
+  .object({
+    evidenceId: z.string().uuid(),
+    state: z.literal("ATTACHED"),
+  })
+  .strict();
+export type ReportEvidenceLinked = z.infer<typeof ReportEvidenceLinkedSchema>;
 
 export const PublicReportTrackingSchema = z
   .object({
@@ -81,4 +105,15 @@ export const ReportReceivedEventDataSchema = z
   .strict();
 export type ReportReceivedEventData = z.infer<
   typeof ReportReceivedEventDataSchema
+>;
+
+export const ReportEvidenceLinkedEventDataSchema = z
+  .object({
+    report_id: z.string().uuid(),
+    evidence_id: z.string().uuid(),
+    area_id: z.string().min(1).max(100),
+  })
+  .strict();
+export type ReportEvidenceLinkedEventData = z.infer<
+  typeof ReportEvidenceLinkedEventDataSchema
 >;

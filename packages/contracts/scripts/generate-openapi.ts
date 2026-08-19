@@ -36,6 +36,8 @@ import {
   SosAcceptedSchema,
   SosIdempotencyHeadersSchema,
   ReportIdempotencyHeadersSchema,
+  ReportEvidenceLinkHeadersSchema,
+  ReportEvidenceLinkedSchema,
   OpsIncidentFeedQuerySchema,
   OpsIncidentFeedSchema,
   OpsIncidentSchema,
@@ -96,6 +98,14 @@ const reportHeaders = registry.register(
 const publicReportTracking = registry.register(
   "PublicReportTracking",
   PublicReportTrackingSchema,
+);
+const reportEvidenceLinkHeaders = registry.register(
+  "ReportEvidenceLinkHeaders",
+  ReportEvidenceLinkHeadersSchema,
+);
+const reportEvidenceLinked = registry.register(
+  "ReportEvidenceLinked",
+  ReportEvidenceLinkedSchema,
 );
 const opsIncident = registry.register("OpsIncident", OpsIncidentSchema);
 const opsIncidentFeed = registry.register(
@@ -234,6 +244,48 @@ registry.registerPath({
     },
     404: {
       description: "Invalid and unknown codes use the same response",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/public/reports/{publicCode}/evidence/{evidenceId}",
+  summary: "Attach a READY evidence object to an anonymous report",
+  description:
+    "Requires a live citizen session plus independent report and upload capabilities. It never verifies the report or creates an enforcement decision.",
+  tags: ["Reports", "Evidence"],
+  request: {
+    params: z.object({
+      publicCode: z.string().openapi({
+        param: { name: "publicCode", in: "path" },
+      }),
+      evidenceId: z
+        .string()
+        .uuid()
+        .openapi({
+          param: { name: "evidenceId", in: "path" },
+        }),
+    }),
+    headers: reportEvidenceLinkHeaders,
+  },
+  responses: {
+    200: {
+      description: "Evidence ownership attached or exact attachment replayed",
+      content: { "application/json": { schema: reportEvidenceLinked } },
+    },
+    401: {
+      description: "Citizen session missing, invalid, expired or revoked",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+    404: {
+      description:
+        "Invalid capability, non-READY evidence and ownership conflicts use a uniform response",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+    503: {
+      description: "Evidence linking is configuration-blocked",
       content: { "application/problem+json": { schema: problemDetails } },
     },
   },

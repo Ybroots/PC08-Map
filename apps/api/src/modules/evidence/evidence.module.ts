@@ -18,6 +18,7 @@ import { PostgresEvidenceRepository } from "./evidence.repository";
 import { EvidenceService } from "./evidence.service";
 import { EvidenceFailure } from "./evidence.types";
 import { S3EvidenceStorageAdapter } from "./s3-evidence-storage.adapter";
+import { EvidenceAttachmentService } from "./evidence-attachment.service";
 
 @Module({})
 export class EvidenceModule {
@@ -30,6 +31,7 @@ export class EvidenceModule {
         EvidenceAccessMetricsController,
       ],
       providers: [
+        EvidenceAttachmentService,
         EvidenceAccessMetrics,
         {
           provide: PostgresEvidenceAccessRepository,
@@ -111,6 +113,7 @@ export class EvidenceModule {
             ),
         },
       ],
+      exports: [EvidenceAttachmentService],
     };
   }
 }

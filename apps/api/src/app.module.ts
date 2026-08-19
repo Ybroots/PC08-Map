@@ -30,6 +30,7 @@ import { RequestContextMiddleware } from "./platform/request-context.middleware"
 @Module({})
 export class AppModule implements NestModule {
   static register(config: AppConfig): DynamicModule {
+    const evidenceModule = EvidenceModule.register(config);
     return {
       module: AppModule,
       imports: [
@@ -39,8 +40,7 @@ export class AppModule implements NestModule {
         MapProviderModule.register(config),
         MapDataModule,
         IncidentsModule.register(config),
-        EvidenceModule.register(config),
-        ReportsModule.register(config),
+        ReportsModule.register(config, evidenceModule),
       ],
       providers: [{ provide: APP_FILTER, useClass: ProblemDetailsFilter }],
     };

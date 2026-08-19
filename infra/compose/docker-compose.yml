@@ -62,7 +62,8 @@ services:
       - ./postgres/08-evidence-pipeline.sql:/docker-entrypoint-initdb.d/08-evidence-pipeline.sql:ro
       - ./postgres/09-evidence-access-control.sql:/docker-entrypoint-initdb.d/09-evidence-access-control.sql:ro
       - ./postgres/10-citizen-report-intake.sql:/docker-entrypoint-initdb.d/10-citizen-report-intake.sql:ro
-      - ./seed/01-dev-seed.sql:/docker-entrypoint-initdb.d/11-dev-seed.sql:ro
+      - ./postgres/11-report-evidence-linking.sql:/docker-entrypoint-initdb.d/11-report-evidence-linking.sql:ro
+      - ./seed/01-dev-seed.sql:/docker-entrypoint-initdb.d/12-dev-seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d atgt_dev"]
       interval: 5s

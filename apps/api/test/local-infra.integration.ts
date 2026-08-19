@@ -132,6 +132,17 @@ describe("T01: Local dev infrastructure smoke tests", () => {
       });
     });
 
+    it("loads the T11B1 atomic READY evidence attachment boundary", async () => {
+      if (SKIP) return;
+      const result = await client.query<{ function_count: number }>(`
+        SELECT count(*)::int function_count
+          FROM pg_proc p
+          JOIN pg_namespace n ON n.oid=p.pronamespace
+         WHERE n.nspname='evidence' AND p.proname='attach_ready_to_report'
+      `);
+      expect(result.rows[0]?.function_count).toBe(1);
+    });
+
     it("audit.audit_events table exists", async () => {
       if (SKIP) return;
       const result = await client.query(`
@@ -198,6 +209,9 @@ describe("T01: Local dev infrastructure smoke tests", () => {
       }>;
       expect(bindings.map((binding) => binding.routing_key)).toContain(
         "report.received.v1",
+      );
+      expect(bindings.map((binding) => binding.routing_key)).toContain(
+        "report.evidence_linked.v1",
       );
     });
   });
