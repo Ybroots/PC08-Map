@@ -254,6 +254,10 @@ describe("T11B2A operator report verification", () => {
         duplicateCandidateExpectedVersion: 1,
       },
       traceId,
+      new Date(0),
+    );
+    expect(new Date(result.updatedAt).getTime()).toBeGreaterThanOrEqual(
+      new Date(result.createdAt).getTime(),
     );
     expect(result).toMatchObject({
       id: reportId,

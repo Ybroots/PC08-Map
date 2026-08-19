@@ -180,6 +180,9 @@ export class PostgresReportOpsRepository {
       if (!this.isAuthorized(scope, PolicyAction.REPORT_VERIFY, row)) {
         throw new ReportOpsFailure("FORBIDDEN", "Report is outside scope");
       }
+      const effectiveAt = new Date(
+        Math.max(now.getTime(), row.updated_at.getTime()),
+      );
       let next;
       try {
         next = transitionReport(
@@ -209,17 +212,19 @@ export class PostgresReportOpsRepository {
           "CONFIRMED",
           scope.principalId,
           input.reason!,
-          now,
+          effectiveAt,
         );
       }
 
       const updated = await client.query<ReportRow>(
         `UPDATE report.reports
-            SET state=$2,version=$3,updated_at=$4
+            SET state=$2,version=$3,
+                updated_at=GREATEST($4::timestamptz,updated_at,created_at)
           WHERE id=$1
           RETURNING ${REPORT_COLUMNS}`,
-        [reportId, next.state, next.version, now],
+        [reportId, next.state, next.version, effectiveAt],
       );
+      const persistedAt = updated.rows[0]!.updated_at;
       await client.query(
         `INSERT INTO report.status_history
            (report_id,from_state,to_state,actor_ref,reason,trace_id,created_at)
@@ -231,7 +236,7 @@ export class PostgresReportOpsRepository {
           scope.principalId,
           input.reason ?? null,
           traceId,
-          now,
+          persistedAt,
         ],
       );
       await client.query(
@@ -262,7 +267,7 @@ export class PostgresReportOpsRepository {
         event_id: randomUUID(),
         type: EVENT_ROUTING_KEYS.REPORT_VERIFICATION_DECIDED,
         version: 1,
-        occurred_at: now.toISOString(),
+        occurred_at: persistedAt.toISOString(),
         trace_id: traceId,
         aggregate_id: reportId,
         aggregate_type: "report",
@@ -297,6 +302,9 @@ export class PostgresReportOpsRepository {
           "Duplicate suggestion cannot be overridden",
         );
       }
+      const effectiveAt = new Date(
+        Math.max(now.getTime(), row.updated_at.getTime()),
+      );
       const candidate = await this.resolveCandidate(
         client,
         row,
@@ -305,7 +313,7 @@ export class PostgresReportOpsRepository {
         "FALSE_POSITIVE",
         scope.principalId,
         input.reason,
-        now,
+        effectiveAt,
       );
       await client.query(
         `INSERT INTO audit.audit_events
@@ -329,7 +337,7 @@ export class PostgresReportOpsRepository {
         event_id: randomUUID(),
         type: EVENT_ROUTING_KEYS.REPORT_DUPLICATE_FALSE_POSITIVE,
         version: 1,
-        occurred_at: now.toISOString(),
+        occurred_at: effectiveAt.toISOString(),
         trace_id: traceId,
         aggregate_id: reportId,
         aggregate_type: "report",
@@ -385,7 +393,8 @@ export class PostgresReportOpsRepository {
     const updated = await client.query<CandidateRow>(
       `UPDATE report.duplicate_candidates
           SET status=$2,version=version+1,resolved_by=$3,
-              resolution_reason=$4,resolved_at=$5
+              resolution_reason=$4,
+              resolved_at=GREATEST($5::timestamptz,observed_at,created_at)
         WHERE id=$1
         RETURNING id,report_id,candidate_report_id,signals,status,observed_at,version`,
       [candidateId, status, principalId, reason, now],
