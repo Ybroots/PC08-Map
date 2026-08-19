@@ -14,7 +14,7 @@ import {
 
 // Leave enough wall-clock headroom for coverage/instrumentation running in
 // parallel; the dedicated timeout test below still uses a 5 ms caller budget.
-const context = { traceId: "trace-test", timeoutMs: 250 };
+const context = { traceId: "trace-test", timeoutMs: 2_000 };
 
 function resilience(
   overrides: Partial<MapResilienceOptions[MapProviderApi]> = {},
