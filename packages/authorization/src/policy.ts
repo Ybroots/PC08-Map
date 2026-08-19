@@ -14,6 +14,8 @@ export enum PolicyAction {
   INCIDENT_READ = "incident.read",
   INCIDENT_ASSIGN = "incident.assign",
   INCIDENT_UPDATE_STATUS = "incident.update_status",
+  REPORT_READ = "report.read",
+  REPORT_VERIFY = "report.verify",
   EVIDENCE_VIEW = "evidence.view",
   MAP_DRAFT_WRITE = "map.draft.write",
   MAP_PUBLISH = "map.publish",
@@ -69,6 +71,8 @@ const ROLE_ACTIONS: Readonly<Record<OfficerRole, ReadonlySet<PolicyAction>>> = {
     PolicyAction.INCIDENT_ASSIGN,
     PolicyAction.INCIDENT_UPDATE_STATUS,
     PolicyAction.EVIDENCE_VIEW,
+    PolicyAction.REPORT_READ,
+    PolicyAction.REPORT_VERIFY,
   ]),
   [OfficerRole.FIELD_OFFICER]: new Set([
     PolicyAction.INCIDENT_READ,
@@ -96,7 +100,9 @@ function requiresArea(action: PolicyAction, role: OfficerRole): boolean {
     return (
       action === PolicyAction.INCIDENT_READ ||
       action === PolicyAction.INCIDENT_ASSIGN ||
-      action === PolicyAction.INCIDENT_UPDATE_STATUS
+      action === PolicyAction.INCIDENT_UPDATE_STATUS ||
+      action === PolicyAction.REPORT_READ ||
+      action === PolicyAction.REPORT_VERIFY
     );
   }
   return (

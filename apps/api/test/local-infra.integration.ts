@@ -214,6 +214,30 @@ describe("T01: Local dev infrastructure smoke tests", () => {
         "report.evidence_linked.v1",
       );
     });
+
+    it("durably isolates operator decisions in the report lifecycle queue", async () => {
+      if (SKIP) return;
+      const authorization = Buffer.from(
+        "atgt:devpassword_local",
+        "utf8",
+      ).toString("base64");
+      const response = await fetch(
+        "http://localhost:15672/api/bindings/%2F/e/atgt.events/q/reports.lifecycle",
+        { headers: { authorization: `Basic ${authorization}` } },
+      );
+      expect(response.status).toBe(200);
+      const routingKeys = (
+        (await response.json()) as Array<{
+          routing_key: string;
+        }>
+      ).map((binding) => binding.routing_key);
+      expect(routingKeys).toEqual(
+        expect.arrayContaining([
+          "report.verification_decided.v1",
+          "report.duplicate_false_positive.v1",
+        ]),
+      );
+    });
   });
 
   // ============================================================

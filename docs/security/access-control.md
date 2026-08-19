@@ -37,6 +37,13 @@ then reevaluates the actual data class. Preview signs only the derivative and
 download signs only the immutable original. Missing and out-of-scope resources
 share a uniform not-found response while each issuance/denial is audited.
 
+For citizen report verification, `dispatcher` must have `report.read` or
+`report.verify` and the exact route area within the resolved scope. The repository
+rechecks persisted area and actual data class. Field officers and other roles
+cannot decide reports. A DUPLICATE decision additionally requires a pending
+candidate ID and optimistic candidate version; the suggestion itself has no
+authority to change report state.
+
 ## OIDC claim contract
 
 | Claim             | Required      | Use                                           |

@@ -42,6 +42,12 @@ import {
   OpsIncidentFeedSchema,
   OpsIncidentSchema,
   OpsIncidentTransitionRequestSchema,
+  OpsReportSchema,
+  OpsReportDuplicateCandidateSchema,
+  OpsReportVerificationQueueQuerySchema,
+  OpsReportVerificationQueueSchema,
+  OpsReportVerificationDecisionSchema,
+  DuplicateFalsePositiveRequestSchema,
 } from "../src";
 
 const registry = new OpenAPIRegistry();
@@ -115,6 +121,23 @@ const opsIncidentFeed = registry.register(
 const opsIncidentTransition = registry.register(
   "OpsIncidentTransitionRequest",
   OpsIncidentTransitionRequestSchema,
+);
+const opsReport = registry.register("OpsReport", OpsReportSchema);
+const opsReportDuplicateCandidate = registry.register(
+  "OpsReportDuplicateCandidate",
+  OpsReportDuplicateCandidateSchema,
+);
+const opsReportVerificationQueue = registry.register(
+  "OpsReportVerificationQueue",
+  OpsReportVerificationQueueSchema,
+);
+const opsReportVerificationDecision = registry.register(
+  "OpsReportVerificationDecision",
+  OpsReportVerificationDecisionSchema,
+);
+const duplicateFalsePositiveRequest = registry.register(
+  "DuplicateFalsePositiveRequest",
+  DuplicateFalsePositiveRequestSchema,
 );
 const problemDetails = registry.register(
   "ProblemDetails",
@@ -493,6 +516,113 @@ registry.registerPath({
     },
     409: {
       description: "State precondition or optimistic version conflict",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+const reportAreaParameter = registry.registerParameter(
+  "ReportAreaId",
+  z.string().openapi({ param: { name: "areaId", in: "path" } }),
+);
+const reportIdParameter = registry.registerParameter(
+  "ReportId",
+  z
+    .string()
+    .uuid()
+    .openapi({ param: { name: "reportId", in: "path" } }),
+);
+const duplicateCandidateIdParameter = registry.registerParameter(
+  "DuplicateCandidateId",
+  z
+    .string()
+    .uuid()
+    .openapi({ param: { name: "candidateId", in: "path" } }),
+);
+
+registry.registerPath({
+  method: "get",
+  path: "/api/v1/ops/areas/{areaId}/reports/verification",
+  summary: "Resume the scoped citizen report verification queue",
+  description:
+    "Returns only PENDING_VERIFICATION reports. Duplicate candidates are suggestions and never conclusions.",
+  tags: ["Reports"],
+  request: {
+    params: z.object({ areaId: reportAreaParameter }),
+    query: OpsReportVerificationQueueQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Scoped verification queue page",
+      content: { "application/json": { schema: opsReportVerificationQueue } },
+    },
+    403: {
+      description: "Area or data-class scope denied",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/ops/areas/{areaId}/reports/{reportId}/verification",
+  summary: "Apply an operator citizen report verification decision",
+  description:
+    "Uses optimistic versions. DUPLICATE requires the operator to confirm a pending candidate explicitly.",
+  tags: ["Reports"],
+  request: {
+    params: z.object({
+      areaId: reportAreaParameter,
+      reportId: reportIdParameter,
+    }),
+    body: {
+      required: true,
+      content: {
+        "application/json": { schema: opsReportVerificationDecision },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Verification decision committed with audit and outbox",
+      content: { "application/json": { schema: opsReport } },
+    },
+    409: {
+      description: "State, report version, or candidate version conflict",
+      content: { "application/problem+json": { schema: problemDetails } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/v1/ops/areas/{areaId}/reports/{reportId}/duplicate-candidates/{candidateId}/false-positive",
+  summary: "Override a duplicate suggestion as a false positive",
+  description:
+    "Leaves the report pending for verification and records the operator override atomically.",
+  tags: ["Reports"],
+  request: {
+    params: z.object({
+      areaId: reportAreaParameter,
+      reportId: reportIdParameter,
+      candidateId: duplicateCandidateIdParameter,
+    }),
+    body: {
+      required: true,
+      content: {
+        "application/json": { schema: duplicateFalsePositiveRequest },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Suggestion marked false-positive",
+      content: {
+        "application/json": { schema: opsReportDuplicateCandidate },
+      },
+    },
+    409: {
+      description: "Report state or candidate version conflict",
       content: { "application/problem+json": { schema: problemDetails } },
     },
   },

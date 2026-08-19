@@ -593,6 +593,295 @@
         "required": ["toState", "expectedVersion"],
         "additionalProperties": false
       },
+      "OpsReport": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "categoryCode": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+          },
+          "coordinateLongitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "coordinateLatitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "plateTextUnverified": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "reportedAt": { "type": "string", "format": "date-time" },
+          "state": {
+            "type": "string",
+            "enum": [
+              "RECEIVED",
+              "SCREENING",
+              "PENDING_VERIFICATION",
+              "VERIFIED",
+              "REJECTED",
+              "DUPLICATE",
+              "IN_PROCESS",
+              "RESOLVED",
+              "CLOSED",
+              "ARCHIVED"
+            ]
+          },
+          "areaId": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "version": { "type": "integer", "exclusiveMinimum": 0 },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "duplicateCandidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "candidateReportId": { "type": "string", "format": "uuid" },
+                "signals": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": ["TIME", "SPACE", "HASH", "PLATE"]
+                  },
+                  "minItems": 1,
+                  "maxItems": 4
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["PENDING", "CONFIRMED", "FALSE_POSITIVE"]
+                },
+                "observedAt": { "type": "string", "format": "date-time" },
+                "version": { "type": "integer", "exclusiveMinimum": 0 }
+              },
+              "required": [
+                "id",
+                "candidateReportId",
+                "signals",
+                "status",
+                "observedAt",
+                "version"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "categoryCode",
+          "coordinateLongitude",
+          "coordinateLatitude",
+          "description",
+          "reportedAt",
+          "state",
+          "areaId",
+          "version",
+          "createdAt",
+          "updatedAt",
+          "duplicateCandidates"
+        ],
+        "additionalProperties": false
+      },
+      "OpsReportDuplicateCandidate": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "candidateReportId": { "type": "string", "format": "uuid" },
+          "signals": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["TIME", "SPACE", "HASH", "PLATE"]
+            },
+            "minItems": 1,
+            "maxItems": 4
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "CONFIRMED", "FALSE_POSITIVE"]
+          },
+          "observedAt": { "type": "string", "format": "date-time" },
+          "version": { "type": "integer", "exclusiveMinimum": 0 }
+        },
+        "required": [
+          "id",
+          "candidateReportId",
+          "signals",
+          "status",
+          "observedAt",
+          "version"
+        ],
+        "additionalProperties": false
+      },
+      "OpsReportVerificationQueue": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cursor": { "type": "string", "pattern": "^\\d+$" },
+                "report": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "categoryCode": {
+                      "type": "string",
+                      "pattern": "^[A-Z][A-Z0-9_]{1,63}$"
+                    },
+                    "coordinateLongitude": {
+                      "type": "number",
+                      "minimum": -180,
+                      "maximum": 180
+                    },
+                    "coordinateLatitude": {
+                      "type": "number",
+                      "minimum": -90,
+                      "maximum": 90
+                    },
+                    "description": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "plateTextUnverified": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32
+                    },
+                    "reportedAt": { "type": "string", "format": "date-time" },
+                    "state": {
+                      "type": "string",
+                      "enum": [
+                        "RECEIVED",
+                        "SCREENING",
+                        "PENDING_VERIFICATION",
+                        "VERIFIED",
+                        "REJECTED",
+                        "DUPLICATE",
+                        "IN_PROCESS",
+                        "RESOLVED",
+                        "CLOSED",
+                        "ARCHIVED"
+                      ]
+                    },
+                    "areaId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "version": { "type": "integer", "exclusiveMinimum": 0 },
+                    "createdAt": { "type": "string", "format": "date-time" },
+                    "updatedAt": { "type": "string", "format": "date-time" },
+                    "duplicateCandidates": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "candidateReportId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "signals": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["TIME", "SPACE", "HASH", "PLATE"]
+                            },
+                            "minItems": 1,
+                            "maxItems": 4
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["PENDING", "CONFIRMED", "FALSE_POSITIVE"]
+                          },
+                          "observedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "candidateReportId",
+                          "signals",
+                          "status",
+                          "observedAt",
+                          "version"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "categoryCode",
+                    "coordinateLongitude",
+                    "coordinateLatitude",
+                    "description",
+                    "reportedAt",
+                    "state",
+                    "areaId",
+                    "version",
+                    "createdAt",
+                    "updatedAt",
+                    "duplicateCandidates"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": ["cursor", "report"],
+              "additionalProperties": false
+            }
+          },
+          "nextCursor": { "type": "string", "pattern": "^\\d+$" },
+          "hasMore": { "type": "boolean" }
+        },
+        "required": ["items", "nextCursor", "hasMore"],
+        "additionalProperties": false
+      },
+      "OpsReportVerificationDecision": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": ["VERIFIED", "REJECTED", "DUPLICATE"]
+          },
+          "expectedVersion": { "type": "integer", "exclusiveMinimum": 0 },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "duplicateCandidateId": { "type": "string", "format": "uuid" },
+          "duplicateCandidateExpectedVersion": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": ["decision", "expectedVersion"],
+        "additionalProperties": false
+      },
+      "DuplicateFalsePositiveRequest": {
+        "type": "object",
+        "properties": {
+          "expectedVersion": { "type": "integer", "exclusiveMinimum": 0 },
+          "reason": { "type": "string", "minLength": 1, "maxLength": 1000 }
+        },
+        "required": ["expectedVersion", "reason"],
+        "additionalProperties": false
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -702,6 +991,8 @@
               "incident.verified.v1",
               "report.received.v1",
               "report.evidence_linked.v1",
+              "report.verification_decided.v1",
+              "report.duplicate_false_positive.v1",
               "assignment.created.v1",
               "assignment.ack_timed_out.v1",
               "evidence.scan_requested.v1",
@@ -1206,6 +1497,9 @@
       "EvidenceId": { "type": "string", "format": "uuid" },
       "IncidentAreaId": { "type": "string" },
       "IncidentId": { "type": "string", "format": "uuid" },
+      "ReportAreaId": { "type": "string" },
+      "ReportId": { "type": "string", "format": "uuid" },
+      "DuplicateCandidateId": { "type": "string", "format": "uuid" },
       "MapLayerKey": { "type": "string" },
       "MapAreaId": { "type": "string" },
       "MapLayerId": { "type": "string", "format": "uuid" },
@@ -1240,6 +1534,24 @@
         "schema": { "$ref": "#/components/schemas/IncidentId" },
         "required": true,
         "name": "incidentId",
+        "in": "path"
+      },
+      "ReportAreaId": {
+        "schema": { "$ref": "#/components/schemas/ReportAreaId" },
+        "required": true,
+        "name": "areaId",
+        "in": "path"
+      },
+      "ReportId": {
+        "schema": { "$ref": "#/components/schemas/ReportId" },
+        "required": true,
+        "name": "reportId",
+        "in": "path"
+      },
+      "DuplicateCandidateId": {
+        "schema": { "$ref": "#/components/schemas/DuplicateCandidateId" },
+        "required": true,
+        "name": "candidateId",
         "in": "path"
       },
       "MapLayerKey": {
@@ -1806,6 +2118,134 @@
           },
           "409": {
             "description": "State precondition or optimistic version conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ops/areas/{areaId}/reports/verification": {
+      "get": {
+        "summary": "Resume the scoped citizen report verification queue",
+        "description": "Returns only PENDING_VERIFICATION reports. Duplicate candidates are suggestions and never conclusions.",
+        "tags": ["Reports"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ReportAreaId" },
+          {
+            "schema": { "type": "string", "pattern": "^\\d+$", "default": "0" },
+            "required": false,
+            "name": "after",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scoped verification queue page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpsReportVerificationQueue"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Area or data-class scope denied",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ops/areas/{areaId}/reports/{reportId}/verification": {
+      "post": {
+        "summary": "Apply an operator citizen report verification decision",
+        "description": "Uses optimistic versions. DUPLICATE requires the operator to confirm a pending candidate explicitly.",
+        "tags": ["Reports"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ReportAreaId" },
+          { "$ref": "#/components/parameters/ReportId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpsReportVerificationDecision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification decision committed with audit and outbox",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OpsReport" }
+              }
+            }
+          },
+          "409": {
+            "description": "State, report version, or candidate version conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": { "$ref": "#/components/schemas/ProblemDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ops/areas/{areaId}/reports/{reportId}/duplicate-candidates/{candidateId}/false-positive": {
+      "post": {
+        "summary": "Override a duplicate suggestion as a false positive",
+        "description": "Leaves the report pending for verification and records the operator override atomically.",
+        "tags": ["Reports"],
+        "parameters": [
+          { "$ref": "#/components/parameters/ReportAreaId" },
+          { "$ref": "#/components/parameters/ReportId" },
+          { "$ref": "#/components/parameters/DuplicateCandidateId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateFalsePositiveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Suggestion marked false-positive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpsReportDuplicateCandidate"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Report state or candidate version conflict",
             "content": {
               "application/problem+json": {
                 "schema": { "$ref": "#/components/schemas/ProblemDetails" }

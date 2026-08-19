@@ -55,6 +55,16 @@ describe("AuthorizationPolicy traceability matrix", () => {
       request(PolicyAction.INCIDENT_UPDATE_STATUS, { areaId: AREA_A }),
     ],
     [
+      "dispatcher can read a citizen report verification queue in its area",
+      OfficerRole.DISPATCHER,
+      request(PolicyAction.REPORT_READ, { areaId: AREA_A }),
+    ],
+    [
+      "dispatcher can decide a citizen report in its area",
+      OfficerRole.DISPATCHER,
+      request(PolicyAction.REPORT_VERIFY, { areaId: AREA_A }),
+    ],
+    [
       "dispatcher can view evidence in its area and assigned case",
       OfficerRole.DISPATCHER,
       request(PolicyAction.EVIDENCE_VIEW, {
@@ -114,6 +124,18 @@ describe("AuthorizationPolicy traceability matrix", () => {
       scope(OfficerRole.DISPATCHER),
       request(PolicyAction.INCIDENT_READ, { areaId: AREA_B }),
       "AREA_SCOPE_MISMATCH",
+    ],
+    [
+      "dispatcher verifying a report across areas",
+      scope(OfficerRole.DISPATCHER),
+      request(PolicyAction.REPORT_VERIFY, { areaId: AREA_B }),
+      "AREA_SCOPE_MISMATCH",
+    ],
+    [
+      "field officer deciding a citizen report",
+      scope(OfficerRole.FIELD_OFFICER),
+      request(PolicyAction.REPORT_VERIFY, { areaId: AREA_A }),
+      "ROLE_NOT_ALLOWED",
     ],
     [
       "field officer crossing unit",

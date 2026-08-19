@@ -26,16 +26,71 @@ import {
   SosIdempotencyHeadersSchema,
   IncidentReceivedEventDataSchema,
   OpsIncidentFeedQuerySchema,
+  OpsReportVerificationDecisionSchema,
+  OpsReportVerificationQueueQuerySchema,
+  DuplicateFalsePositiveRequestSchema,
   ReportReceivedEventDataSchema,
   ReportEvidenceLinkHeadersSchema,
   ReportEvidenceLinkedSchema,
   ReportEvidenceLinkedEventDataSchema,
+  ReportVerificationDecidedEventDataSchema,
+  ReportDuplicateFalsePositiveEventDataSchema,
 } from "./index";
 
 const traceId = "0123456789abcdef0123456789abcdef";
 const uuid = "550e8400-e29b-41d4-a716-446655440000";
 
 describe("executable contracts", () => {
+  it("requires explicit, versioned operator duplicate decisions", () => {
+    expect(
+      OpsReportVerificationQueueQuerySchema.parse({ after: "12", limit: "25" }),
+    ).toEqual({ after: "12", limit: 25 });
+    expect(
+      OpsReportVerificationDecisionSchema.safeParse({
+        decision: "DUPLICATE",
+        expectedVersion: 3,
+        reason: "Operator confirmed the suggested match",
+      }).success,
+    ).toBe(false);
+    expect(
+      OpsReportVerificationDecisionSchema.parse({
+        decision: "DUPLICATE",
+        expectedVersion: 3,
+        reason: "Operator confirmed the suggested match",
+        duplicateCandidateId: uuid,
+        duplicateCandidateExpectedVersion: 1,
+      }),
+    ).toMatchObject({ decision: "DUPLICATE", expectedVersion: 3 });
+    expect(
+      DuplicateFalsePositiveRequestSchema.safeParse({
+        expectedVersion: 1,
+        reason: "",
+      }).success,
+    ).toBe(false);
+    expect(
+      ReportVerificationDecidedEventDataSchema.parse({
+        report_id: uuid,
+        area_id: "area-dalat",
+        state: "DUPLICATE",
+        version: 4,
+      }),
+    ).toEqual({
+      report_id: uuid,
+      area_id: "area-dalat",
+      state: "DUPLICATE",
+      version: 4,
+    });
+    expect(
+      ReportDuplicateFalsePositiveEventDataSchema.safeParse({
+        report_id: uuid,
+        candidate_id: "75f84ae8-bf67-41d6-a25e-e5b601b3ba71",
+        area_id: "area-dalat",
+        candidate_version: 2,
+        reason: "must not leave the transaction boundary",
+      }).success,
+    ).toBe(false);
+  });
+
   it("accepts a PII-free citizen report with explicitly unverified plate text", () => {
     const payload = {
       categoryCode: "TRAFFIC_VIOLATION",

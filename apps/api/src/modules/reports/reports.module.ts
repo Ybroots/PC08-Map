@@ -10,6 +10,8 @@ import {
 import { PublicReportController } from "./report.controller";
 import { PostgresReportRepository } from "./report.repository";
 import { EvidenceAttachmentService } from "../evidence/evidence-attachment.service";
+import { OpsReportController } from "./report-ops.controller";
+import { PostgresReportOpsRepository } from "./report-ops.repository";
 
 @Module({})
 export class ReportsModule {
@@ -20,8 +22,21 @@ export class ReportsModule {
     return {
       module: ReportsModule,
       imports: [evidenceModule],
-      controllers: [PublicReportController],
+      controllers: [PublicReportController, OpsReportController],
       providers: [
+        {
+          provide: PostgresReportOpsRepository,
+          inject: [
+            DATABASE_POOL,
+            PostgresTransactionManager,
+            PostgresOutboxWriter,
+          ],
+          useFactory: (
+            pool: Pool,
+            transactions: PostgresTransactionManager,
+            outbox: PostgresOutboxWriter,
+          ) => new PostgresReportOpsRepository(pool, transactions, outbox),
+        },
         {
           provide: PostgresReportRepository,
           inject: [

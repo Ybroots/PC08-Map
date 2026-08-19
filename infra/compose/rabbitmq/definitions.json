@@ -127,6 +127,24 @@
       "durable": true,
       "auto_delete": false,
       "arguments": { "x-queue-type": "classic" }
+    },
+    {
+      "name": "reports.lifecycle",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic",
+        "x-dead-letter-exchange": "atgt.dlx",
+        "x-dead-letter-routing-key": "reports.lifecycle.dlq"
+      }
+    },
+    {
+      "name": "reports.lifecycle.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": { "x-queue-type": "classic" }
     }
   ],
   "bindings": [
@@ -184,6 +202,22 @@
       "destination": "notifications",
       "destination_type": "queue",
       "routing_key": "notification.requested.v1",
+      "arguments": {}
+    },
+    {
+      "source": "atgt.events",
+      "vhost": "/",
+      "destination": "reports.lifecycle",
+      "destination_type": "queue",
+      "routing_key": "report.verification_decided.v1",
+      "arguments": {}
+    },
+    {
+      "source": "atgt.events",
+      "vhost": "/",
+      "destination": "reports.lifecycle",
+      "destination_type": "queue",
+      "routing_key": "report.duplicate_false_positive.v1",
       "arguments": {}
     }
   ]

@@ -18,7 +18,7 @@
 | T08  | BLOCKED               | Chờ D-04 SLA/escalation và D-05 unit/service-area              |
 | T09  | ANDROID EMULATOR PASS | UAT-01..04 xong; physical/iOS và production config còn pending |
 | T10  | T10B3 VIEWER PASS     | Local controlled viewer xong; production/UAT còn bị khóa       |
-| T11  | T11B1 LINKING PASS    | Intake/tracking + READY evidence link local; abuse/ops TODO    |
+| T11  | T11B2A OPERATOR PASS  | Scoped manual verification + duplicate override; abuse TODO    |
 | T12+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
@@ -94,6 +94,14 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   session, report capability và upload capability đều bắt buộc; DB chỉ gắn object
   READY chưa có owner, không cho reassign. Link/audit/`report.evidence_linked.v1`
   outbox commit atomically; raw capability không vào report/audit/outbox.
+- T11B2A thêm queue `PENDING_VERIFICATION` theo area/data class với resume cursor
+  được cấp đúng lúc report vào queue. Chỉ dispatcher đúng area được quyết định
+  VERIFIED/REJECTED/DUPLICATE bằng optimistic version. DUPLICATE bắt buộc confirm
+  một candidate đang PENDING; false-positive giữ report trong queue. Candidate,
+  audit và `report.verification_decided.v1` hoặc
+  `report.duplicate_false_positive.v1` outbox commit atomically. Event không mang
+  public code, tọa độ, mô tả, plate, reason hay principal. Hai event lifecycle có
+  durable queue + DLQ riêng, không trộn vào consumer screening.
 
 ## Hard stops còn mở
 
@@ -110,7 +118,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất: T11B2 abuse/duplicate/operator foundation
+## Bước tiếp theo đề xuất: T11B2B screening/abuse ports
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -130,13 +138,13 @@ profile, malware alert workflow và end-user UAT-11..14. Khi chưa có các quy�
 này, giữ `EVIDENCE_PIPELINE_ENABLED=false`; không dựng fake production, không đánh
 dấu pilot UAT pass và không thêm retention delete khi D-06 còn pending.
 
-T11B1 local/test đã hoàn tất READY evidence ownership/linking với capability và
-session hợp lệ. Lát cắt tiếp theo là T11B2: risk/rate-limit/captcha ports;
-duplicate candidate theo time/space/hash/plate; và ops verification queue có
-confirm/false-positive override. Heuristic chỉ được tạo suggestion, không tự đổi
-report thành DUPLICATE/VERIFIED và không tạo enforcement decision. Không tự điền
-threshold D-09; mọi giá trị local/test phải explicit, production vẫn fail-closed
-cho đến khi T09/T10 provider/UAT/D-09 gates được phê duyệt.
+T11B2A local/test đã hoàn tất nền operator: scoped queue, manual decision và
+confirm/false-positive override. Lát cắt tiếp theo là T11B2B: consumer chuyển
+RECEIVED -> SCREENING -> PENDING_VERIFICATION, cùng risk/rate-limit/captcha ports
+và producer candidate theo time/space/hash/plate. Phần này vẫn bị khóa bởi D-09:
+không tự điền threshold, rate, window hay score. Heuristic chỉ được tạo suggestion,
+không tự đổi report thành DUPLICATE/VERIFIED và không tạo enforcement decision.
+Production vẫn fail-closed cho đến khi T09/T10 provider/UAT/D-09 gates được duyệt.
 
 ## Kiểm chứng và lệnh chuẩn
 
@@ -221,6 +229,17 @@ API 59/59 + worker 5/5. HTTP test xác nhận thiếu citizen session bị 401, 
 capability + READY thì link 200 và report vẫn RECEIVED. Production linking/intake
 vẫn fail-closed; T11B2 không được tự đặt threshold khi D-09 còn pending.
 Implementation ở commit `2b72255`; GitHub CI run `32223513120` xanh đủ 6/6 job.
+
+T11B2A verification (2026-08-19) có executable OpenAPI cho queue/decision/override,
+26 contract tests, 26 authorization tests và 73 API unit tests. Cold-start đã xóa
+đúng 6 volume synthetic `atgt-*`, chạy migration 12 trước seed 13, dựng 8 service
+healthy, 3 MinIO bucket private/versioned và durable `reports.lifecycle` + DLQ.
+Non-cached integration pass API 65/65 + worker 5/5. Integration xác nhận cross-area
+và non-dispatcher bị deny, cursor không bỏ sót report cũ vừa vào queue, false-positive
+không kết luận report, confirm DUPLICATE kiểm tra cả report/candidate version, và
+audit/outbox atomic không lộ dữ liệu nhạy cảm. Full frozen-install, format/lint/
+typecheck/unit/coverage/contract/e2e/build đều pass. Automatic screening/candidate
+generation và abuse controls vẫn blocked bởi D-09; production vẫn fail-closed.
 
 Từ repository root:
 

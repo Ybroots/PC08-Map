@@ -55,11 +55,12 @@ public tracking.
 
 ### report schema
 
-| Table            | Key columns                                                                                                                 | Notes                                            |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| category_catalog | code, label_vi, label_en, enabled                                                                                           | Local seed is explicitly synthetic               |
-| reports          | id, public_code, category_code, longitude/latitude/geom, description, plate_text_unverified, reported_at, state, risk_score | PII-free; plate is UNVERIFIED; risk NULL in T11A |
-| status_history   | report_id, from/to state, actor_ref, reason, trace_id, created_at                                                           | Append-only                                      |
+| Table                | Key columns                                                                                                                                        | Notes                                                       |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| category_catalog     | code, label_vi, label_en, enabled                                                                                                                  | Local seed is explicitly synthetic                          |
+| reports              | id, public_code, category_code, longitude/latitude/geom, description, plate_text_unverified, reported_at, state, risk_score, verification_sequence | PII-free; queue cursor assigned on PENDING_VERIFICATION     |
+| status_history       | report_id, from/to state, actor_ref, reason, trace_id, created_at                                                                                  | Append-only                                                 |
+| duplicate_candidates | report_id, candidate_report_id, signals, status, observed_at, source_ref, version, resolution                                                      | Suggestion-only; immutable evidence + one manual resolution |
 
 `report.reports` contains no citizen session, IP, device, account, token or
 identity-link column. A database trigger protects the acknowledged category,
@@ -68,8 +69,10 @@ The app role cannot delete report rows or update/delete/truncate history. T11B1
 may set an unowned `evidence.objects` owner to this report only after the object
 is READY and both HMAC capabilities plus a live citizen session are valid. The
 ownership cannot be reassigned. Raw report capability material is not stored in
-the business table or idempotency response. Risk scoring, duplicate detection
-and conclusions remain later T11B/operator-verification concerns.
+the business table or idempotency response. T11B2A duplicate candidates store only
+signal kinds (`TIME/SPACE/HASH/PLATE`) and never thresholds. Only a scoped
+dispatcher may resolve PENDING to CONFIRMED/FALSE_POSITIVE through an optimistic
+transaction; automatic candidate generation and risk scoring remain blocked.
 
 ### evidence schema
 
