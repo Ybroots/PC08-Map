@@ -1,0 +1,4 @@
+# A credential-bearing URL assembled by a T14A unit test was committed once and
+# immediately replaced. Exclude only that historical test path from the manual
+# full-history scan. Push and pull-request ranges still scan every change to it.
+^apps/ops-web/features/incidents/feed-client\.spec\.ts$

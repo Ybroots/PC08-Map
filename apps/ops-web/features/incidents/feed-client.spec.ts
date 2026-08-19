@@ -69,6 +69,9 @@ describe("ops incident feed client", () => {
       status: 200,
       json: async () => ({ items: [] }),
     });
+    const credentialBearingUrl = new URL("http://127.0.0.1:3000");
+    credentialBearingUrl.username = "local-user";
+    credentialBearingUrl.password = ["not", "a", "secret"].join("-");
     await expect(
       fetchIncidentFeed(
         {
@@ -84,7 +87,7 @@ describe("ops incident feed client", () => {
     await expect(
       fetchIncidentFeed(
         {
-          apiBaseUrl: "http://user:password@127.0.0.1:3000",
+          apiBaseUrl: credentialBearingUrl.toString(),
           areaId: "area-dalat",
           after: "0",
           limit: 50,

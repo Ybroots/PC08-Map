@@ -9,7 +9,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "test:coverage": "turbo run test -- --coverage",
+    "test:coverage": "turbo run test --concurrency=4 -- --coverage --runInBand",
     "test:integration": "turbo run test:integration",
     "test:contract": "turbo run test:contract",
     "test:e2e": "turbo run test:e2e",
