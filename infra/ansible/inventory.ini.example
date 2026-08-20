@@ -2,27 +2,31 @@
 # Fill in actual IPs before T17 production deployment
 
 [edge]
-vps01 ansible_host=FILL_IP_VPS01 role=edge_a
-vps02 ansible_host=FILL_IP_VPS02 role=edge_b
+vps01 ansible_host=FILL_IP_VPS01 atgt_node_role=edge_a
+vps02 ansible_host=FILL_IP_VPS02 atgt_node_role=edge_b
 
 [bastion]
-vps03 ansible_host=FILL_IP_VPS03 role=bastion_ansible
+vps03 ansible_host=FILL_IP_VPS03 atgt_node_role=bastion_ansible
 
 [app]
-vps04 ansible_host=FILL_IP_VPS04 role=app_a
-vps05 ansible_host=FILL_IP_VPS05 role=app_b
+vps04 ansible_host=FILL_IP_VPS04 atgt_node_role=app_a
+vps05 ansible_host=FILL_IP_VPS05 atgt_node_role=app_b
 
 [worker]
-vps06 ansible_host=FILL_IP_VPS06 role=worker_rmq_redis
+vps06 ansible_host=FILL_IP_VPS06 atgt_node_role=worker_rmq_redis
 
 [database]
-vps07 ansible_host=FILL_IP_VPS07 role=postgres_primary
-vps08 ansible_host=FILL_IP_VPS08 role=postgres_standby
+vps07 ansible_host=FILL_IP_VPS07 atgt_node_role=postgres_primary
+vps08 ansible_host=FILL_IP_VPS08 atgt_node_role=postgres_standby
 
 [monitoring]
-vps09 ansible_host=FILL_IP_VPS09 role=monitoring_backup
+vps09 ansible_host=FILL_IP_VPS09 atgt_node_role=monitoring_backup
 
 [all:vars]
 ansible_user=FILL_DEPLOY_USER
-ansible_ssh_private_key_file=~/.ssh/atgt_deploy
 ansible_python_interpreter=/usr/bin/python3
+atgt_deployment_environment=FILL_STAGING_OR_PRODUCTION
+atgt_release_digest=FILL_SHA256_OCI_DIGEST
+atgt_secret_bundle_ref=FILL_VAULT_OR_EXTERNAL_SECRET_REF
+atgt_tls_certificate_ref=FILL_VAULT_OR_EXTERNAL_SECRET_REF
+atgt_tls_private_key_ref=FILL_VAULT_OR_EXTERNAL_SECRET_REF

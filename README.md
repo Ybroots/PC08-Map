@@ -206,6 +206,19 @@ pnpm build
 - Baseline/target vẫn `GOVERNED_UNSET`. Chưa có route, migration, persisted read
   model, audit export hoặc dashboard; D-04/D-05/D-06/D-07/D-09/D-10 khóa T16B.
 
+## Production infrastructure preflight
+
+- T17A có executable Ansible preflight cho đúng 09 VPS và exact group/role map;
+  committed placeholder inventory bắt buộc fail.
+- Mọi host phải có address duy nhất, deploy user không phải root, môi trường chỉ
+  `staging|production`, release là immutable `sha256:` digest và secret/TLS chỉ là
+  opaque `vault://` hoặc `external-secret://` reference.
+- Synthetic documentation-range inventory chạy hai lần check-mode với `changed=0`;
+  10 nhóm negative gate bao phủ placeholder, environment/user/release/secret,
+  address và host/role/group. CI chạy syntax + production-profile ansible-lint.
+- T17A không kết nối VPS hay cài service. D-01/D-10 và inventory/network/DNS/TLS/
+  secret backend/OS/capacity/backup được duyệt vẫn khóa T17B.
+
 ## Backlog trien khai (Codex tasks)
 
 | Task | Ten                                     | Phu thuoc             | Trang thai                      |
@@ -227,7 +240,7 @@ pnpm build
 | T14  | Ops workspace hoan chinh                | T07-T10               | T14A LOCAL / T14B BLOCKED       |
 | T15  | Notifications va contact fallback       | T02-T03 + provider    | T15A LOCAL / T15B BLOCKED       |
 | T16  | Audit, KPI va dashboard lanh dao        | T04 + core flows      | T16A LOCAL / T16B BLOCKED       |
-| T17  | Production infrastructure as code       | T00-T16 + ha tang cap | TODO                            |
+| T17  | Production infrastructure as code       | T00-T16 + ha tang cap | T17A LOCAL / T17B BLOCKED       |
 | T18  | Security hardening va release candidate | Feature complete      | TODO                            |
 | T19  | Performance, HA/DR va chaos rehearsal   | T17-T18               | TODO                            |
 | T20  | UAT, pilot release va rollback          | T18-T19 + legal gates | TODO                            |

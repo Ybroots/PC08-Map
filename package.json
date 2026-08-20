@@ -13,6 +13,7 @@
     "test:integration": "turbo run test:integration",
     "test:contract": "turbo run test:contract",
     "test:e2e": "turbo run test:e2e",
+    "test:infra": "bash infra/ansible/tests/verify.sh",
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "dev:up": "bash scripts/dev-up.sh",

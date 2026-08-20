@@ -1,0 +1,82 @@
+---
+- name: Assert exact inventory host set
+  ansible.builtin.assert:
+    that:
+      - groups['all'] | sort == preflight_expected_host_roles.keys() | list | sort
+    fail_msg: Inventory must contain exactly vps01 through vps09
+
+- name: Assert exact inventory group membership
+  ansible.builtin.assert:
+    that:
+      - groups[item.key] | default([]) | sort == item.value | sort
+    fail_msg: "Inventory group {{ item.key }} must contain exactly {{ item.value }}"
+  loop: "{{ preflight_expected_groups | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Assert host address and role contracts
+  ansible.builtin.assert:
+    that:
+      - hostvars[item.key].ansible_host | default('') | length > 0
+      - "'FILL_' not in (hostvars[item.key].ansible_host | default(''))"
+      - >-
+        hostvars[item.key].ansible_host | default('')
+        is match('^[A-Za-z0-9][A-Za-z0-9.:-]{0,252}$')
+      - hostvars[item.key].atgt_node_role | default('') == item.value
+    fail_msg: "{{ item.key }} must have an approved address and role {{ item.value }}"
+  loop: "{{ preflight_expected_host_roles | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Collect inventory addresses
+  ansible.builtin.set_fact:
+    preflight_inventory_addresses: >-
+      {{ preflight_expected_host_roles.keys()
+         | map('extract', hostvars, 'ansible_host')
+         | list }}
+
+- name: Assert inventory addresses are unique
+  ansible.builtin.assert:
+    that:
+      - >-
+        preflight_inventory_addresses | unique | length
+        == preflight_inventory_addresses | length
+    fail_msg: Every VPS must have a unique inventory address
+
+- name: Assert global deployment controls
+  ansible.builtin.assert:
+    that:
+      - hostvars[item].ansible_user | default('') | length > 0
+      - hostvars[item].ansible_user | default('') != 'root'
+      - "'FILL_' not in (hostvars[item].ansible_user | default(''))"
+      - >-
+        hostvars[item].atgt_deployment_environment | default('')
+        in preflight_allowed_deployment_environments
+      - >-
+        hostvars[item].atgt_release_digest | default('')
+        is match('^sha256:[0-9a-f]{64}$')
+    fail_msg: >-
+      {{ item }} requires a deployment environment, non-root user and immutable
+      OCI digest
+  loop: "{{ preflight_expected_host_roles.keys() }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Assert secret and TLS values are references only
+  ansible.builtin.assert:
+    that:
+      - >-
+        hostvars[item.0][item.1] | default('')
+        is match(preflight_reference_pattern)
+      - "'FILL_' not in (hostvars[item.0][item.1] | default(''))"
+    fail_msg: >-
+      {{ item.0 }} {{ item.1 }} must be an opaque vault or external-secret reference
+  loop: >-
+    {{ preflight_expected_host_roles.keys()
+       | product([
+         'atgt_secret_bundle_ref',
+         'atgt_tls_certificate_ref',
+         'atgt_tls_private_key_ref'
+       ]) | list }}
+  loop_control:
+    label: "{{ item.0 }} / {{ item.1 }}"

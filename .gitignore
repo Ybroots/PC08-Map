@@ -12,6 +12,13 @@ coverage/
 .DS_Store
 Thumbs.db
 
+# Production infrastructure values and decrypted Ansible material
+infra/ansible/inventory.ini
+infra/ansible/group_vars/all/secrets.yml
+infra/ansible/group_vars/**/secrets*.yml
+infra/ansible/host_vars/**/secrets*.yml
+infra/ansible/.vault-password*
+
 # React Native native worktrees and machine-local build state
 apps/citizen-mobile/android/.gradle/
 apps/citizen-mobile/android/.cxx/

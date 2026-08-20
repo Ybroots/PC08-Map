@@ -24,7 +24,8 @@
 | T14  | T14A LOCAL PASS       | Read-only resume workspace; live/dispatch chờ D-02/04/05/09    |
 | T15  | T15A LOCAL PASS       | Internal-only contract/ports; provider/runtime chờ D-08        |
 | T16  | T16A LOCAL PASS       | Scoped trusted-event KPI core; dashboard/export còn bị khóa    |
-| T17+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
+| T17  | T17A LOCAL PASS       | 09-VPS preflight; service roles/deploy chờ hạ tầng được cấp    |
+| T18+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
 real HTTP adapter/contract fixtures và sandbox contract suite; xem
@@ -134,6 +135,11 @@ real HTTP adapter/contract fixtures và sandbox contract suite; xem
   conflict/source-version drift fail closed, ngày dùng `Asia/Ho_Chi_Minh` và
   small-cell count trả `null` theo ngưỡng bắt buộc injected. Không có route,
   migration, read model, audit export hay dashboard runtime.
+- T17A thay placeholder-only Ansible bằng executable inventory preflight. Contract
+  yêu cầu exact 09 host/group/role, unique address, non-root user, immutable OCI
+  digest và opaque secret/TLS reference. Synthetic inventory chạy check-mode hai
+  lần không drift; 10 nhóm negative gate bao phủ placeholder, environment/user/
+  release/secret, address và host/role/group. Chưa có remote task hay service role.
 
 ## Hard stops còn mở
 
@@ -150,7 +156,7 @@ Không tự điền các giá trị sau; xem `docs/plans/DECISION-REGISTER.md`:
 - D-09 load profile/media limits.
 - D-10 ATTT classification; không tuyên bố đạt cấp độ.
 
-## Bước tiếp theo đề xuất sau T16A: rà T17 production infrastructure
+## Bước tiếp theo đề xuất sau T17A: T18 security hardening safe foundation
 
 T08 không được bắt đầu phần SLA/assignment production cho tới khi có quyết định
 D-04 và D-05. Nếu chủ dự án cung cấp SLA/escalation, capability catalog và
@@ -194,6 +200,12 @@ runtime; không thêm baseline/target, persisted analytics, audit export hay lea
 dashboard trước khi governance, suppression/load và ATTT gates được duyệt. Rà T17
 theo inventory/topology thực tế; không tự tạo production address, certificate,
 secret hoặc capacity value.
+
+T17A chỉ xác minh contract inventory, không chứng minh hạ tầng production. Không
+thêm hoặc apply edge/app/RMQ/Redis/PostgreSQL/monitoring roles trước khi có D-01,
+D-10 và approved inventory/network zones/DNS/VIP/certificate issuer/secret backend/
+OS baseline/capacity/backup targets. T17B còn cần staging deploy hai lần không
+drift, rolling deploy/rollback, PITR/object restore và UAT-26..30.
 
 ## Kiểm chứng và lệnh chuẩn
 

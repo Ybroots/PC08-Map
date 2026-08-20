@@ -1,0 +1,35 @@
+---
+preflight_expected_host_roles:
+  vps01: edge_a
+  vps02: edge_b
+  vps03: bastion_ansible
+  vps04: app_a
+  vps05: app_b
+  vps06: worker_rmq_redis
+  vps07: postgres_primary
+  vps08: postgres_standby
+  vps09: monitoring_backup
+
+preflight_expected_groups:
+  edge:
+    - vps01
+    - vps02
+  bastion:
+    - vps03
+  app:
+    - vps04
+    - vps05
+  worker:
+    - vps06
+  database:
+    - vps07
+    - vps08
+  monitoring:
+    - vps09
+
+preflight_allowed_deployment_environments:
+  - staging
+  - production
+
+preflight_reference_pattern: >-
+  ^(vault|external-secret)://[A-Za-z0-9][A-Za-z0-9._/-]{2,255}$

@@ -1,0 +1,7 @@
+---
+- name: Validate the ATGT 09 VPS inventory contract
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles:
+    - role: preflight
