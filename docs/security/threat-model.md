@@ -23,8 +23,39 @@ Five user groups: citizen/tourist, dispatcher, field officer, leader, system adm
 1. Public internet -> Edge (HAProxy/WAF) -> API
 2. API -> Database (internal network, TLS)
 3. API -> RabbitMQ (internal network, TLS)
-4. Worker -> Object storage (internal/S3, TLS)
-5. API/Worker -> VietMap (egress allowlist)
+4. Citizen/API/Worker -> Object storage (signed public PUT plus internal S3, TLS)
+5. Officer client -> external IdP -> API (OIDC/JWKS; production pending D-02)
+6. API/Worker -> VietMap and notification providers (egress allowlist; pending)
+
+## Data-flow model
+
+```mermaid
+flowchart LR
+  Citizen[Citizen web/mobile] -->|session, SOS, report metadata| Edge[Edge/WAF]
+  Officer[Officer/leader/admin] -->|OIDC token, scoped action| Edge
+  Edge --> API[ATGT API]
+  IdP[External IdP] -->|JWKS/claims| API
+  API -->|scoped business rows| DB[(PostgreSQL/PostGIS)]
+  API -->|append-only security events| Audit[(Audit schema)]
+  API -->|atomic outbox| Queue[(RabbitMQ)]
+  Citizen -->|short-lived signed PUT| Quarantine[(S3 quarantine)]
+  API -->|initiate/finalize metadata| Quarantine
+  Queue --> Worker[ATGT worker]
+  Worker -->|magic/size/hash/AV| Quarantine
+  Worker -->|immutable original + EXIF-free derivative| Evidence[(S3 evidence)]
+  API -->|short-lived signed read after ABAC| Evidence
+  API -->|server-side only| VietMap[VietMap]
+  Worker -->|allowlisted projection| Notify[Notification provider]
+```
+
+| Flow                | Data/classification                                               | Persistence and disclosure boundary                                                                                  | Current gate                                                                |
+| ------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| F1 citizen intake   | Coordinates, description, opaque citizen session; Sensitive       | API allowlist -> scoped report/incident rows; public response is generalized                                         | Strict contract, session capability, idempotency, repository scope          |
+| F2 evidence         | Media and SHA-256; Sensitive                                      | Direct signed PUT to quarantine -> worker -> immutable original/derivative; object keys never enter public contracts | HMAC capability, READY-only ownership, magic/size/hash/fake-AV local checks |
+| F3 operator actions | OIDC claims and scoped case/map/report action; Internal/Sensitive | Token is not persisted; authorization decision and object reference enter append-only audit                          | Explicit route policy, ABAC plus repository recheck, maker-checker          |
+| F4 events           | Versioned allowlisted event payloads; classification varies       | Business write + outbox commit atomically -> RabbitMQ -> idempotent inbox                                            | Executable contracts, PII-negative tests, DLQ/inbox controls                |
+| F5 map/provider     | Coordinates/search/map data; Public/Internal                      | Server-side adapter only; provider key reference cannot enter client bundle or logs                                  | Fake local adapter, timeout/shape validation, production fail-closed        |
+| F6 notification     | Opaque recipient and citizen-safe projection; Public/Internal     | Worker port only; provider persistence/retention is not yet approved                                                 | Strict template/audience policy; provider registration remains disabled     |
 
 ## Threat register (STRIDE)
 

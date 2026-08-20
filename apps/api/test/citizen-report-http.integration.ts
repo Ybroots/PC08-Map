@@ -5,6 +5,7 @@ import { loadAndValidateConfig } from "@atgt/config";
 import { Pool } from "pg";
 import { AppModule } from "../src/app.module";
 import { hashUploadCapability } from "../src/modules/evidence/evidence-capability";
+import { configureHttpSecurity } from "../src/platform/http-security";
 
 const SKIP = process.env["SKIP_SMOKE"] === "true";
 const ADMIN_DATABASE_URL =
@@ -78,6 +79,7 @@ describe("T11A citizen report HTTP boundary", () => {
     app = await NestFactory.create(AppModule.register(config), {
       logger: false,
     });
+    configureHttpSecurity(app);
     app.setGlobalPrefix("api/v1");
     await app.listen(0, "127.0.0.1");
     const address = app.getHttpServer().address() as AddressInfo;
@@ -167,6 +169,13 @@ describe("T11A citizen report HTTP boundary", () => {
       body: JSON.stringify({ device_class: "web" }),
     });
     expect(sessionResponse.status).toBe(201);
+    expect(sessionResponse.headers.get("x-content-type-options")).toBe(
+      "nosniff",
+    );
+    expect(sessionResponse.headers.get("cross-origin-resource-policy")).toBe(
+      "same-origin",
+    );
+    expect(sessionResponse.headers.get("x-powered-by")).toBeNull();
     const session = (await sessionResponse.json()) as {
       session_id: string;
       session_token: string;

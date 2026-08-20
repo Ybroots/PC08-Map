@@ -23,8 +23,9 @@ Ansible syntax/lint/idempotency/fail-closed verifier.
   and 1138809 have no patched `image-size` version. `pnpm audit --prod` remains a
   required local/manual release check, with findings tracked in
   `dependency-audit.md`. No ignore or `continue-on-error` is allowed.
-- DAST requires a deployable staging target, approved identity/provider settings
-  and test accounts. Those are blocked by D-01/D-02/D-03/D-10.
+- Local unauthenticated ZAP API evidence exists in `security-test-matrix.md`.
+  Authenticated/staging DAST still requires approved identity/provider settings
+  and test accounts; those are blocked by D-01/D-02/D-03/D-10.
 - Container scanning and signed image provenance begin when production
   Dockerfiles/images exist. The local Compose services are third-party
   development dependencies, not ATGT release images.

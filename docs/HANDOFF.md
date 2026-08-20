@@ -397,6 +397,13 @@ xanh 3/3, tạo CycloneDX artifact 114,984 bytes; CI run `32334099211` xanh 7/7.
 CodeQL xanh chứng minh scan/upload thành công, chưa thay thế ATTT triage; SBOM
 chưa phải signed release provenance.
 
+T18A4 local thêm Helmet runtime headers, data-flow model và security test matrix.
+Citizen HTTP integration xác nhận `nosniff`, CORP `same-origin` và không còn
+`X-Powered-By`. OWASP ZAP 2.17 active API retest import 57 OpenAPI URL/exercise
+175 URL: 119 rule pass, 0 fail, 1 warning 503 đúng do traffic-alert feature đang
+fail-closed; không có ignore rule. Đây chỉ là unauthenticated local DAST; real
+OIDC/IDOR/business/manual retest vẫn chờ D-01/D-02/D-03/D-10 và test accounts.
+
 Từ repository root:
 
 ```bash
