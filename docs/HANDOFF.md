@@ -387,6 +387,13 @@ worker 9/9. Implementation ở commit `9d3663f`; GitHub CI run `32333158608`
 xanh đủ 7/7. T18A2 và release candidate vẫn bị khóa bởi hai high `image-size`
 không có bản vá, cùng các gate security còn thiếu.
 
+T18A3 local implementation thêm workflow `Security`: CodeQL JavaScript/TypeScript,
+Checkov policy cho GitHub Actions và CycloneDX source SBOM từ Syft. Mọi action,
+scanner image và Syft version đều được pin; CI workflow mặc định chỉ có
+`contents: read`. Checkov local pass 232/232. Repo-wide High SCA không bị làm xanh
+giả: hai `image-size` blocker vẫn mở. DAST/container provenance chờ staging và
+release image. Workflow mới cần GitHub verification trước khi publish lát cắt.
+
 Từ repository root:
 
 ```bash

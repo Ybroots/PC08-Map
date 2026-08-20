@@ -25,7 +25,8 @@ khong co Critical/High mo ma chua duoc phe duyet.
 
 - Secret scan, authorization-negative tests, strict contracts, fail-closed config,
   evidence controls and Ansible production lint exist.
-- CI does not yet have SAST/SCA/DAST/container/IaC/SBOM gates.
+- CI has secret/Ansible gates. T18A3 adds CodeQL SAST, GitHub Actions policy
+  scanning and a pinned CycloneDX source SBOM; SCA/DAST/container gaps remain.
 - Baseline `pnpm audit --prod`: 39 advisories (16 high, 20 moderate, 3 low,
   0 critical). After T18A1: 3 advisories (2 high, 1 moderate, 0 critical).
 - Both remaining highs are Metro transitive `image-size` 1.2.1 advisories with
@@ -94,11 +95,14 @@ khong co Critical/High mo ma chua duoc phe duyet.
 - [x] Full format/lint/typecheck, 19/19 coverage tasks, contract 30/30, e2e,
       13/13 build tasks, service restart, API integration 70/70 and worker 9/9 pass.
 - [x] T18A1 published at `9d3663f`; GitHub CI run `32333158608` passed 7/7.
+- [x] T18A3 implemented locally: pinned CodeQL, Checkov workflow policy and Syft
+      CycloneDX jobs; Checkov local scan passed 232/232. GitHub verification pending.
 
 ## Handoff
 
 - Changed files: API/web/mobile manifests and lock; Express 5 wildcard/param
-  compatibility; Next monorepo config; threat model and this plan.
+  compatibility; Next monorepo config; security workflows/gate docs; threat model
+  and this plan.
 - Tests run/results: full quality/coverage/contract/e2e/build pass; restarted
   8-service stack is healthy; API integration 70/70 and worker 9/9 pass. Audit
   reduced from 39 total / 16 high / 0 critical to 3 total / 2 high / 0 critical.

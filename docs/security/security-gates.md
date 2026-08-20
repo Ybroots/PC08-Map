@@ -1,0 +1,34 @@
+# Security gates
+
+## Blocking automated gates
+
+The `Security` GitHub Actions workflow runs on pushes to `main`, pull requests and
+manual dispatch:
+
+- CodeQL analyzes JavaScript and TypeScript and uploads results to GitHub code
+  scanning.
+- Checkov rejects GitHub Actions policy violations. The scanner image and every
+  action are pinned to immutable commit or image digests.
+- Syft generates a CycloneDX JSON source SBOM and retains the workflow artifact
+  for 14 days. The action commit and Syft version are pinned.
+
+The existing CI also blocks on TruffleHog secret findings and the executable
+Ansible syntax/lint/idempotency/fail-closed verifier.
+
+## Explicit gaps
+
+- Repo-wide SCA at High cannot be a green blocking gate while advisories 1138808
+  and 1138809 have no patched `image-size` version. `pnpm audit --prod` remains a
+  required local/manual release check, with findings tracked in
+  `dependency-audit.md`. No ignore or `continue-on-error` is allowed.
+- DAST requires a deployable staging target, approved identity/provider settings
+  and test accounts. Those are blocked by D-01/D-02/D-03/D-10.
+- Container scanning and signed image provenance begin when production
+  Dockerfiles/images exist. The local Compose services are third-party
+  development dependencies, not ATGT release images.
+- Ansible is governed by the dedicated verifier. Checkov currently discovers no
+  applicable Ansible resources in the T17A preflight-only skeleton, so the
+  workflow does not claim an Ansible Checkov gate.
+
+These gaps keep T18 and release-candidate approval open even when the automated
+workflow is green.

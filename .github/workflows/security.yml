@@ -1,0 +1,64 @@
+name: Security
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: SAST / CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@f3712979fa5f215279b101dd0a2e3bdfb4353324 # v3.37.7
+        with:
+          languages: javascript-typescript
+          build-mode: none
+      - name: Analyze JavaScript and TypeScript
+        uses: github/codeql-action/analyze@f3712979fa5f215279b101dd0a2e3bdfb4353324 # v3.37.7
+        with:
+          category: /language:javascript-typescript
+
+  workflow-policy:
+    name: GitHub Actions Policy / Checkov
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Scan workflow policy
+        run: >-
+          docker run --rm
+          --volume "$GITHUB_WORKSPACE:/workspace:ro"
+          --workdir /workspace
+          bridgecrew/checkov@sha256:0f169d3d9a5c6666da223253ce4d9f8c3f184e6542ce8328523d03343788a578
+          --directory /workspace/.github
+          --framework github_actions
+          --quiet
+          --compact
+
+  source-sbom:
+    name: Source SBOM / CycloneDX
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Generate source SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: atgt-source-sbom.cdx.json
+          artifact-name: atgt-source-sbom-${{ github.sha }}.cdx.json
+          upload-artifact: true
+          upload-artifact-retention: 14
+          upload-release-assets: false
+          syft-version: v1.51.0
