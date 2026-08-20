@@ -46,6 +46,8 @@ workflow is green.
   checks with 0 failures. Frozen install, format, lint, typecheck, forced no-cache
   coverage (19/19 tasks), contract (30/30), integration (API 70/70 and worker
   9/9), e2e and build (13/13 tasks) passed.
+- T18A5 commit `14b0ee8`: CI run `32337368832` passed 7/7 and Security run
+  `32337368847` passed 3/3 with the immutable action references.
 - Security run `32334099209`: CodeQL, Checkov and CycloneDX jobs passed 3/3.
 - The SBOM artifact for commit `b716b36` is 114,984 bytes and is retained by the
   workflow for 14 days.
