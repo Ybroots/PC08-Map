@@ -24,7 +24,7 @@
 | T14  | T14A LOCAL PASS       | Read-only resume workspace; live/dispatch chờ D-02/04/05/09    |
 | T15  | T15A LOCAL PASS       | Internal-only contract/ports; provider/runtime chờ D-08        |
 | T16  | T16A LOCAL PASS       | Scoped trusted-event KPI core; dashboard/export còn bị khóa    |
-| T17  | T17A LOCAL PASS       | 09-VPS preflight; service roles/deploy chờ hạ tầng được cấp    |
+| T17  | T17A PREFLIGHT PASS   | 09-VPS contract; service roles/deploy chờ hạ tầng được cấp     |
 | T18+ | TODO                  | Theo thứ tự/phụ thuộc trong README và từng execution plan      |
 
 T05 không được gọi là production VietMap integration. Hai tiêu chí còn mở là
@@ -366,6 +366,12 @@ integration cũng sửa nondeterminism cũ bằng advisory lock chung theo layer
 kiểm tra trực tiếp GiST bbox predicate. T16B vẫn chờ governed baseline/target,
 small-cell/load policy, persisted read model, audit export, dashboard và UAT.
 Implementation ở commit `cd4c61b`; GitHub CI run `32241122195` xanh đủ 6/6 job.
+
+T17A local/container verification (2026-08-20) pass Ansible syntax, production
+ansible-lint 0 failure/0 warning, hai check-mode run `changed=0` và 10 nhóm
+fail-closed negative. Full repository gates vẫn xanh; CI thêm infrastructure job
+và cold-start integration. Implementation ở commit `56b3db2`; GitHub CI run
+`32331465121` xanh đủ 7/7 job. Đây không phải production deployment evidence.
 
 Từ repository root:
 

@@ -240,7 +240,7 @@ pnpm build
 | T14  | Ops workspace hoan chinh                | T07-T10               | T14A LOCAL / T14B BLOCKED       |
 | T15  | Notifications va contact fallback       | T02-T03 + provider    | T15A LOCAL / T15B BLOCKED       |
 | T16  | Audit, KPI va dashboard lanh dao        | T04 + core flows      | T16A LOCAL / T16B BLOCKED       |
-| T17  | Production infrastructure as code       | T00-T16 + ha tang cap | T17A LOCAL / T17B BLOCKED       |
+| T17  | Production infrastructure as code       | T00-T16 + ha tang cap | T17A PREFLIGHT / T17B BLOCKED   |
 | T18  | Security hardening va release candidate | Feature complete      | TODO                            |
 | T19  | Performance, HA/DR va chaos rehearsal   | T17-T18               | TODO                            |
 | T20  | UAT, pilot release va rollback          | T18-T19 + legal gates | TODO                            |

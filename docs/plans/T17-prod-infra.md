@@ -72,14 +72,15 @@ va rolling deploy/rollback evidence.
 - [x] Exact 09-node inventory and group/role mapping fail closed.
 - [x] Immutable release and opaque secret/TLS references are mandatory.
 - [x] Syntax/lint/two check-mode passes and placeholder rejection pass.
-- [ ] CI and repository gates pass with no secret finding.
+- [x] CI and repository gates pass with no secret finding.
 - [x] T17B production inputs and unimplemented roles remain explicit.
 
 ## Progress log
 
 - [x] 2026-08-19: current state, source and hard-gate review complete.
 - [x] 2026-08-20: T17A implementation and local verification complete.
-- [ ] Publish implementation and record green CI evidence.
+- [x] 2026-08-20: implementation `56b3db2` published; CI run `32331465121`
+      green 7/7.
 
 ## Handoff
 
@@ -88,6 +89,7 @@ va rolling deploy/rollback evidence.
 - Tests run/results: syntax pass; production ansible-lint 0 failure/0 warning;
   synthetic check-mode twice `changed=0`; ten fail-closed negative categories;
   repository format/lint/typecheck/coverage/contract/e2e/build/integration pass.
+  GitHub CI run `32331465121` passed all seven jobs for implementation `56b3db2`.
 - Remaining risks: all service roles, actual staging/production deployment,
   certificates/secrets, replication/PITR, monitoring, backup/restore and UAT-26..30.
 - Rollback: no remote change; revert T17A validator and CI job.
