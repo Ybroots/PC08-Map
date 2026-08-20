@@ -373,6 +373,18 @@ fail-closed negative. Full repository gates vẫn xanh; CI thêm infrastructure 
 và cold-start integration. Implementation ở commit `56b3db2`; GitHub CI run
 `32331465121` xanh đủ 7/7 job. Đây không phải production deployment evidence.
 
+T18A1 local implementation (2026-08-20) nâng API lên Nest 11.2.1/Express 5 và
+hai App Router lên Next 16.3.1/React 19.2.8. Express wildcard dùng `{*splat}`;
+route param lặp/array bị bỏ và authorization fail closed. Next tracing root được
+cố định vào monorepo, type React 18 mobile và React 19 web được tách rõ. Production
+audit giảm từ 39 advisory/16 high xuống 3 advisory/2 high; server/web không còn
+high. Hai high còn lại là `image-size` 1.2.1 qua Metro, upstream khai báo không có
+bản vá; không có ignore/waiver, nên T18/RC vẫn bị khóa. Chi tiết tại
+`docs/security/dependency-audit.md`. Focused API/web/mobile type, unit và build
+đã pass. Full format/lint/typecheck, 19/19 coverage tasks, contract 30/30, e2e,
+13/13 build tasks và service restart giữ volume đều pass; API integration 70/70,
+worker 9/9. CI cần xanh trước khi coi lát cắt đã publish xong.
+
 Từ repository root:
 
 ```bash

@@ -33,6 +33,19 @@
     "turbo": "^2.0.0",
     "typescript": "^5.4.0"
   },
+  "pnpm": {
+    "overrides": {
+      "qs": "6.15.2"
+    },
+    "packageExtensions": {
+      "next@16.3.1": {
+        "dependencies": {
+          "@types/react": "19.2.18",
+          "@types/react-dom": "19.2.4"
+        }
+      }
+    }
+  },
   "engines": {
     "node": ">=20.9.0",
     "pnpm": ">=9.0.0"

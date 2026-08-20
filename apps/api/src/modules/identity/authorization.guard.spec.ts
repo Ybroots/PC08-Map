@@ -154,6 +154,28 @@ describe("AuthorizationGuard", () => {
     });
   });
 
+  it("fails closed when Express supplies a repeated area route parameter", async () => {
+    const handler = () => undefined;
+    policyMetadata(handler);
+    const audit = new InMemorySecurityAuditSink();
+    const guard = new AuthorizationGuard(
+      new Reflector(),
+      new AuthorizationPolicy(),
+      { authenticate: async () => dispatcherScope },
+      audit,
+    );
+    const httpRequest = request();
+    httpRequest.params = { areaId: ["area-a", "area-b"] };
+
+    await expect(
+      guard.canActivate(executionContext(handler, httpRequest)),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(audit.events.at(-1)).toMatchObject({
+      outcome: "DENIED",
+      reason: "AREA_SCOPE_MISMATCH",
+    });
+  });
+
   it("attaches a resolved scope only after authentication and policy success", async () => {
     const handler = () => undefined;
     policyMetadata(handler);

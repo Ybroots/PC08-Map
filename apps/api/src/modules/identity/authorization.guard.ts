@@ -41,15 +41,24 @@ function bearerToken(request: Request): string | undefined {
     : undefined;
 }
 
+function routeParam(
+  request: Request,
+  name: string | undefined,
+): string | undefined {
+  if (!name) return undefined;
+  const value = request.params[name];
+  return typeof value === "string" ? value : undefined;
+}
+
 function resourceFromRequest(
   request: Request,
   metadata: RequiredPolicyMetadata,
 ): PolicyResource {
   return {
     dataClass: metadata.dataClass,
-    areaId: metadata.areaParam ? request.params[metadata.areaParam] : undefined,
-    unitId: metadata.unitParam ? request.params[metadata.unitParam] : undefined,
-    caseId: metadata.caseParam ? request.params[metadata.caseParam] : undefined,
+    areaId: routeParam(request, metadata.areaParam),
+    unitId: routeParam(request, metadata.unitParam),
+    caseId: routeParam(request, metadata.caseParam),
   };
 }
 
