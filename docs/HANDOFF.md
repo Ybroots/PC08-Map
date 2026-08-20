@@ -383,7 +383,9 @@ bản vá; không có ignore/waiver, nên T18/RC vẫn bị khóa. Chi tiết t�
 `docs/security/dependency-audit.md`. Focused API/web/mobile type, unit và build
 đã pass. Full format/lint/typecheck, 19/19 coverage tasks, contract 30/30, e2e,
 13/13 build tasks và service restart giữ volume đều pass; API integration 70/70,
-worker 9/9. CI cần xanh trước khi coi lát cắt đã publish xong.
+worker 9/9. Implementation ở commit `9d3663f`; GitHub CI run `32333158608`
+xanh đủ 7/7. T18A2 và release candidate vẫn bị khóa bởi hai high `image-size`
+không có bản vá, cùng các gate security còn thiếu.
 
 Từ repository root:
 

@@ -93,6 +93,7 @@ khong co Critical/High mo ma chua duoc phe duyet.
       Express-compatible qs 6.15.2. Focused type/unit/build gates pass.
 - [x] Full format/lint/typecheck, 19/19 coverage tasks, contract 30/30, e2e,
       13/13 build tasks, service restart, API integration 70/70 and worker 9/9 pass.
+- [x] T18A1 published at `9d3663f`; GitHub CI run `32333158608` passed 7/7.
 
 ## Handoff
 
@@ -101,6 +102,7 @@ khong co Critical/High mo ma chua duoc phe duyet.
 - Tests run/results: full quality/coverage/contract/e2e/build pass; restarted
   8-service stack is healthy; API integration 70/70 and worker 9/9 pass. Audit
   reduced from 39 total / 16 high / 0 critical to 3 total / 2 high / 0 critical.
+  GitHub CI run `32333158608` passed 7/7.
 - Remaining risks: Metro `image-size` has no patched version in current advisory;
   DAST/container scans need deployable images/staging; D-10/ATTT review pending.
 - Rollback: revert framework manifests/lock and compatibility edits together.
