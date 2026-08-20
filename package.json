@@ -43,12 +43,17 @@
           "@types/react": "19.2.18",
           "@types/react-dom": "19.2.4"
         }
+      },
+      "react-native@0.73.11": {
+        "dependencies": {
+          "@types/react": "18.3.31"
+        }
       }
     }
   },
   "engines": {
     "node": ">=20.9.0",
-    "pnpm": ">=9.0.0"
+    "pnpm": ">=9.15.9"
   },
-  "packageManager": "pnpm@9.0.0"
+  "packageManager": "pnpm@9.15.9"
 }

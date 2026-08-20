@@ -7,7 +7,7 @@ settings:
 overrides:
   qs: 6.15.2
 
-packageExtensionsChecksum: bd70d42d9e768f691ffeb4373dcf1238
+packageExtensionsChecksum: a4351209f613990e19bccbf2b55b4f6d
 
 importers:
   .:
@@ -80,7 +80,7 @@ importers:
         version: 11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)
       "@nestjs/terminus":
         specifier: 11.1.1
-        version: 11.1.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
+        version: 11.1.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -108,7 +108,7 @@ importers:
         version: 11.0.24(@types/node@20.19.43)(prettier@3.9.6)
       "@nestjs/testing":
         specifier: 11.2.1
-        version: 11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1))
+        version: 11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(@nestjs/platform-express@11.2.1)
       "@types/express":
         specifier: 5.0.6
         version: 5.0.6
@@ -186,10 +186,10 @@ importers:
         specifier: ^20.0.0
         version: 20.19.43
       "@types/react":
-        specifier: ^18.0.0
+        specifier: 18.3.31
         version: 18.3.31
       "@types/react-test-renderer":
-        specifier: ^18.0.0
+        specifier: 18.3.1
         version: 18.3.1
       babel-jest:
         specifier: ^29.6.3
@@ -2213,7 +2213,6 @@ packages:
       }
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
 
   "@img/sharp-libvips-linuxmusl-arm64@1.3.2":
     resolution:
@@ -2284,7 +2283,6 @@ packages:
     engines: { node: ">=20.9.0" }
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
 
   "@img/sharp-linuxmusl-arm64@0.35.3":
     resolution:
@@ -10434,7 +10432,7 @@ snapshots:
     transitivePeerDependencies:
       - chokidar
 
-  "@nestjs/terminus@11.1.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)":
+  "@nestjs/terminus@11.1.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)":
     dependencies:
       "@nestjs/common": 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
       "@nestjs/core": 11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -10443,7 +10441,7 @@ snapshots:
       reflect-metadata: 0.2.2
       rxjs: 7.8.2
 
-  "@nestjs/testing@11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1))":
+  "@nestjs/testing@11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.2.1)(@nestjs/platform-express@11.2.1)":
     dependencies:
       "@nestjs/common": 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
       "@nestjs/core": 11.2.1(@nestjs/common@11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.2.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -10775,9 +10773,7 @@ snapshots:
     transitivePeerDependencies:
       - "@babel/core"
       - "@babel/preset-env"
-      - bufferutil
       - supports-color
-      - utf-8-validate
 
   "@react-native/normalize-colors@0.73.2": {}
 
@@ -13517,6 +13513,7 @@ snapshots:
       "@react-native/js-polyfills": 0.73.1
       "@react-native/normalize-colors": 0.73.2
       "@react-native/virtualized-lists": 0.73.4(react-native@0.73.11(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react@18.2.0))
+      "@types/react": 18.3.31
       abort-controller: 3.0.0
       anser: 1.4.10
       ansi-regex: 5.0.1
