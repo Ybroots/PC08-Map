@@ -100,10 +100,15 @@ khong co Critical/High mo ma chua duoc phe duyet.
 - [x] T18A3 published at `b716b36`: pinned CodeQL, Checkov workflow policy and
       Syft CycloneDX jobs. Checkov local passed 232/232; Security run `32334099209`
       passed 3/3 and CI run `32334099211` passed 7/7.
-- [x] T18A4 local: data-flow/security matrix and unauthenticated active ZAP retest
-      cover 175 URLs with 119 rule passes, 0 failures and one explicit fail-closed
-      503 warning. Helmet header regression passes; authenticated staging DAST
-      remains blocked.
+- [x] T18A4 published at `1169360`: data-flow/security matrix and unauthenticated
+      active ZAP retest cover 175 URLs with 119 rule passes, 0 failures and one
+      explicit fail-closed 503 warning. Helmet header regression passes;
+      authenticated staging DAST remains blocked.
+- [x] CI run `32335266014` exposed a fresh-install React 18/19 type leak hidden by
+      local Turbo cache. Commit `4de0c81` pins pnpm 9.15.9 and gives React Native
+      its own React 18 type dependency. Fresh Linux mobile coverage passes 9/9
+      suites and 36/36 tests; replacement CI run `32336361409` passes 7/7 and
+      Security run `32336361352` passes 3/3.
 
 ## Handoff
 
@@ -116,6 +121,8 @@ khong co Critical/High mo ma chua duoc phe duyet.
   GitHub CI run `32333158608` passed 7/7.
   T18A3 Security run `32334099209` passed 3/3 with a 114,984-byte SBOM artifact;
   matching CI run `32334099211` passed 7/7.
+  T18A4 replacement CI run `32336361409` passed 7/7 and Security run
+  `32336361352` passed 3/3 after a forced no-cache workspace coverage pass.
 - Remaining risks: Metro `image-size` has no patched version in current advisory;
   authenticated DAST/container scans need deployable images/staging; D-10/ATTT
   review pending.

@@ -221,29 +221,29 @@ pnpm build
 
 ## Backlog trien khai (Codex tasks)
 
-| Task | Ten                                     | Phu thuoc             | Trang thai                      |
-| ---- | --------------------------------------- | --------------------- | ------------------------------- |
-| T00  | Khởi tạo repository và chuẩn chất lượng | ADR stack tham chiếu  | DONE                            |
-| T01  | Local development infrastructure        | T00                   | DONE                            |
-| T02  | Contract và error platform              | T00-T01               | DONE                            |
-| T03  | Identity và authorization nền           | T02 + mock IdP local  | DONE                            |
-| T04  | Nen tang du lieu va PostGIS             | T01-T03               | DONE                            |
-| T05  | VietMap Adapter                         | T02 + VietMap sandbox | SAFE FOUNDATION / D-03 BLOCKED  |
-| T06  | Map data lifecycle                      | T03-T04               | DONE                            |
-| T07  | SOS incident vertical slice             | T02-T04               | DONE                            |
-| T08  | Dispatch engine va SLA                  | T05+T07+SLA rules     | BLOCKED D-04/D-05               |
-| T09  | Citizen mobile SOS                      | T07 + UI prototype    | ANDROID EMULATOR UAT PASS       |
-| T10  | Evidence pipeline                       | T04 + S3/AV decision  | T10B3 VIEWER PASS / UAT BLOCKED |
-| T11  | Citizen reports va chong lam dung       | T09-T10               | T11B2B1 LOCAL / D-09 BLOCKED    |
-| T12  | Privacy vault va break-glass            | T03-T04 + quy che     | BLOCKED D-06/D-07               |
-| T13  | Canh bao giao thong                     | T05-T06               | T13A LOCAL / T13B BLOCKED       |
-| T14  | Ops workspace hoan chinh                | T07-T10               | T14A LOCAL / T14B BLOCKED       |
-| T15  | Notifications va contact fallback       | T02-T03 + provider    | T15A LOCAL / T15B BLOCKED       |
-| T16  | Audit, KPI va dashboard lanh dao        | T04 + core flows      | T16A LOCAL / T16B BLOCKED       |
-| T17  | Production infrastructure as code       | T00-T16 + ha tang cap | T17A PREFLIGHT / T17B BLOCKED   |
-| T18  | Security hardening va release candidate | Feature complete      | T18A1/A3 DONE / T18A2 BLOCKED   |
-| T19  | Performance, HA/DR va chaos rehearsal   | T17-T18               | TODO                            |
-| T20  | UAT, pilot release va rollback          | T18-T19 + legal gates | TODO                            |
+| Task | Ten                                     | Phu thuoc             | Trang thai                       |
+| ---- | --------------------------------------- | --------------------- | -------------------------------- |
+| T00  | Khởi tạo repository và chuẩn chất lượng | ADR stack tham chiếu  | DONE                             |
+| T01  | Local development infrastructure        | T00                   | DONE                             |
+| T02  | Contract và error platform              | T00-T01               | DONE                             |
+| T03  | Identity và authorization nền           | T02 + mock IdP local  | DONE                             |
+| T04  | Nen tang du lieu va PostGIS             | T01-T03               | DONE                             |
+| T05  | VietMap Adapter                         | T02 + VietMap sandbox | SAFE FOUNDATION / D-03 BLOCKED   |
+| T06  | Map data lifecycle                      | T03-T04               | DONE                             |
+| T07  | SOS incident vertical slice             | T02-T04               | DONE                             |
+| T08  | Dispatch engine va SLA                  | T05+T07+SLA rules     | BLOCKED D-04/D-05                |
+| T09  | Citizen mobile SOS                      | T07 + UI prototype    | ANDROID EMULATOR UAT PASS        |
+| T10  | Evidence pipeline                       | T04 + S3/AV decision  | T10B3 VIEWER PASS / UAT BLOCKED  |
+| T11  | Citizen reports va chong lam dung       | T09-T10               | T11B2B1 LOCAL / D-09 BLOCKED     |
+| T12  | Privacy vault va break-glass            | T03-T04 + quy che     | BLOCKED D-06/D-07                |
+| T13  | Canh bao giao thong                     | T05-T06               | T13A LOCAL / T13B BLOCKED        |
+| T14  | Ops workspace hoan chinh                | T07-T10               | T14A LOCAL / T14B BLOCKED        |
+| T15  | Notifications va contact fallback       | T02-T03 + provider    | T15A LOCAL / T15B BLOCKED        |
+| T16  | Audit, KPI va dashboard lanh dao        | T04 + core flows      | T16A LOCAL / T16B BLOCKED        |
+| T17  | Production infrastructure as code       | T00-T16 + ha tang cap | T17A PREFLIGHT / T17B BLOCKED    |
+| T18  | Security hardening va release candidate | Feature complete      | T18A1/A3/A4 DONE / T18A2 BLOCKED |
+| T19  | Performance, HA/DR va chaos rehearsal   | T17-T18               | TODO                             |
+| T20  | UAT, pilot release va rollback          | T18-T19 + legal gates | TODO                             |
 
 ## Diem dung bat buoc (khong tu suy doan)
 
