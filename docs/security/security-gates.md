@@ -9,13 +9,17 @@ manual dispatch:
   scanning. A green job proves analysis delivery, not that ATTT triaged every
   alert.
 - Checkov rejects GitHub Actions policy violations. The scanner image and every
-  action are pinned to immutable commit or image digests.
+  external action in both `CI` and `Security` are pinned to immutable commit or
+  image digests. `pnpm test:workflow-pins` independently rejects mutable action
+  references so this invariant does not depend on Checkov coverage alone.
 - Syft generates a CycloneDX JSON source SBOM and retains the workflow artifact
   for 14 days. The action commit and Syft version are pinned. This is inventory
   evidence, not signed release provenance.
 
 The existing CI also blocks on TruffleHog secret findings and the executable
-Ansible syntax/lint/idempotency/fail-closed verifier.
+Ansible syntax/lint/idempotency/fail-closed verifier. Both the TruffleHog action
+commit and its CLI version are pinned; this avoids the action's `latest` CLI
+default.
 
 ## Explicit gaps
 
@@ -38,6 +42,10 @@ workflow is green.
 
 ## Verification evidence
 
+- T18A5 local workflow-pin gate passed. Pinned Checkov scanned 236 GitHub Actions
+  checks with 0 failures. Frozen install, format, lint, typecheck, forced no-cache
+  coverage (19/19 tasks), contract (30/30), integration (API 70/70 and worker
+  9/9), e2e and build (13/13 tasks) passed.
 - Security run `32334099209`: CodeQL, Checkov and CycloneDX jobs passed 3/3.
 - The SBOM artifact for commit `b716b36` is 114,984 bytes and is retained by the
   workflow for 14 days.

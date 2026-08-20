@@ -410,6 +410,16 @@ Fresh Linux mobile coverage xanh 9/9 suite, 36/36 test; full local coverage ch�
 `--force` xanh 19/19 không cache. CI thay thế `32336361409` xanh 7/7 và Security
 run `32336361352` xanh 3/3.
 
+T18A5 local implementation khóa mọi external GitHub Action trong cả `CI` và
+`Security` bằng commit SHA bất biến, đồng thời chuyển các first-party setup
+action sang line Node 24. TruffleHog được khóa cả action commit lẫn CLI 3.97.0,
+không còn phụ thuộc mặc định `latest`. Gate `pnpm test:workflow-pins` kiểm tra độc
+lập mọi `uses:` và exact TruffleHog CLI version; pinned Checkov xanh 236/236.
+Frozen install, format/lint/typecheck, forced no-cache coverage 19/19 task,
+contract 30/30, integration API 70/70 + worker 9/9, e2e và build 13/13 đều xanh.
+T18 tổng thể vẫn chưa DONE: hai High `image-size` chưa có bản vá, authenticated
+staging DAST, production image/provenance và D-10/ATTT vẫn là hard stop.
+
 Từ repository root:
 
 ```bash

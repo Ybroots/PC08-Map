@@ -109,12 +109,19 @@ khong co Critical/High mo ma chua duoc phe duyet.
       its own React 18 type dependency. Fresh Linux mobile coverage passes 9/9
       suites and 36/36 tests; replacement CI run `32336361409` passes 7/7 and
       Security run `32336361352` passes 3/3.
+- [x] T18A5 local implementation pins every external action in `CI` and `Security`
+      to an immutable commit, upgrades first-party setup actions to their Node 24
+      lines and pins both the TruffleHog action and CLI at 3.97.0. The repository
+      workflow-pin regression passes; pinned Checkov passes 236/236. Full frozen
+      install, quality, forced no-cache coverage (19/19), contract 30/30,
+      integration API 70/70 + worker 9/9, e2e and build 13/13 pass.
 
 ## Handoff
 
 - Changed files: API/web/mobile manifests and lock; Express 5 wildcard/param
   compatibility; Next monorepo config; security workflows/gate docs; threat model
-  and this plan.
+  and this plan. T18A5 additionally changes both GitHub Actions workflows, the
+  root gate manifest and `scripts/verify-workflow-pins.js`.
 - Tests run/results: full quality/coverage/contract/e2e/build pass; restarted
   8-service stack is healthy; API integration 70/70 and worker 9/9 pass. Audit
   reduced from 39 total / 16 high / 0 critical to 3 total / 2 high / 0 critical.
@@ -123,6 +130,7 @@ khong co Critical/High mo ma chua duoc phe duyet.
   matching CI run `32334099211` passed 7/7.
   T18A4 replacement CI run `32336361409` passed 7/7 and Security run
   `32336361352` passed 3/3 after a forced no-cache workspace coverage pass.
+  T18A5 local Checkov passed 236/236 and the full repository gate set passed.
 - Remaining risks: Metro `image-size` has no patched version in current advisory;
   authenticated DAST/container scans need deployable images/staging; D-10/ATTT
   review pending.
