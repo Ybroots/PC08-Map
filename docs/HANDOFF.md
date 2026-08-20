@@ -392,7 +392,10 @@ Checkov policy cho GitHub Actions và CycloneDX source SBOM từ Syft. Mọi act
 scanner image và Syft version đều được pin; CI workflow mặc định chỉ có
 `contents: read`. Checkov local pass 232/232. Repo-wide High SCA không bị làm xanh
 giả: hai `image-size` blocker vẫn mở. DAST/container provenance chờ staging và
-release image. Workflow mới cần GitHub verification trước khi publish lát cắt.
+release image. Implementation ở commit `b716b36`; Security run `32334099209`
+xanh 3/3, tạo CycloneDX artifact 114,984 bytes; CI run `32334099211` xanh 7/7.
+CodeQL xanh chứng minh scan/upload thành công, chưa thay thế ATTT triage; SBOM
+chưa phải signed release provenance.
 
 Từ repository root:
 

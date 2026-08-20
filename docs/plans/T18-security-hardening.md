@@ -83,6 +83,8 @@ khong co Critical/High mo ma chua duoc phe duyet.
 - [x] Full contract/authorization/cold-start/build gates pass after framework majors.
 - [ ] Mobile build-chain highs fixed or remain explicit unapproved RC blockers.
 - [x] Threat model describes implemented controls only.
+- [x] Pinned CodeQL/Checkov/CycloneDX automation runs successfully; limitations
+      are explicit and do not claim alert triage or signed provenance.
 - [ ] Reproducible SCA/SAST/IaC/SBOM gates pass; DAST/manual gaps explicit.
 - [ ] No Critical/High remains open without authorized approval.
 
@@ -95,8 +97,9 @@ khong co Critical/High mo ma chua duoc phe duyet.
 - [x] Full format/lint/typecheck, 19/19 coverage tasks, contract 30/30, e2e,
       13/13 build tasks, service restart, API integration 70/70 and worker 9/9 pass.
 - [x] T18A1 published at `9d3663f`; GitHub CI run `32333158608` passed 7/7.
-- [x] T18A3 implemented locally: pinned CodeQL, Checkov workflow policy and Syft
-      CycloneDX jobs; Checkov local scan passed 232/232. GitHub verification pending.
+- [x] T18A3 published at `b716b36`: pinned CodeQL, Checkov workflow policy and
+      Syft CycloneDX jobs. Checkov local passed 232/232; Security run `32334099209`
+      passed 3/3 and CI run `32334099211` passed 7/7.
 
 ## Handoff
 
@@ -107,6 +110,8 @@ khong co Critical/High mo ma chua duoc phe duyet.
   8-service stack is healthy; API integration 70/70 and worker 9/9 pass. Audit
   reduced from 39 total / 16 high / 0 critical to 3 total / 2 high / 0 critical.
   GitHub CI run `32333158608` passed 7/7.
+  T18A3 Security run `32334099209` passed 3/3 with a 114,984-byte SBOM artifact;
+  matching CI run `32334099211` passed 7/7.
 - Remaining risks: Metro `image-size` has no patched version in current advisory;
   DAST/container scans need deployable images/staging; D-10/ATTT review pending.
 - Rollback: revert framework manifests/lock and compatibility edits together.

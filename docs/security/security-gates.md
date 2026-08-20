@@ -1,16 +1,18 @@
 # Security gates
 
-## Blocking automated gates
+## Automated security jobs
 
 The `Security` GitHub Actions workflow runs on pushes to `main`, pull requests and
 manual dispatch:
 
 - CodeQL analyzes JavaScript and TypeScript and uploads results to GitHub code
-  scanning.
+  scanning. A green job proves analysis delivery, not that ATTT triaged every
+  alert.
 - Checkov rejects GitHub Actions policy violations. The scanner image and every
   action are pinned to immutable commit or image digests.
 - Syft generates a CycloneDX JSON source SBOM and retains the workflow artifact
-  for 14 days. The action commit and Syft version are pinned.
+  for 14 days. The action commit and Syft version are pinned. This is inventory
+  evidence, not signed release provenance.
 
 The existing CI also blocks on TruffleHog secret findings and the executable
 Ansible syntax/lint/idempotency/fail-closed verifier.
@@ -32,3 +34,11 @@ Ansible syntax/lint/idempotency/fail-closed verifier.
 
 These gaps keep T18 and release-candidate approval open even when the automated
 workflow is green.
+
+## Verification evidence
+
+- Security run `32334099209`: CodeQL, Checkov and CycloneDX jobs passed 3/3.
+- The SBOM artifact for commit `b716b36` is 114,984 bytes and is retained by the
+  workflow for 14 days.
+- CI run `32334099211` passed all 7 quality, test, build, secret and infrastructure
+  jobs for the same commit.
